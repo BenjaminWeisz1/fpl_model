@@ -10,7 +10,7 @@ downloads, then imported offline by `sofascore_weekly.py`. It never makes HTTP r
 (`data/validation/sofascore_revision_check_20261028/`); earlier revisions are untested.
 
 **Routine:**
-1. `python -u -X utf8 scripts/fetch/sofascore_weekly.py plan` lists the round pages
+1. `python -u -X utf8 -m fpl_model.fetch.sofascore_weekly plan` lists the round pages
    (and any known lineups) still needed for completed FPL fixtures.
 2. Ask Claude to "collect Sofascore round N". In Chrome it opens
    `/api/v1/unique-tournament/17/season/{season_id}/events/round/N`, downloads a capture,
@@ -43,7 +43,7 @@ For a new round, import the round page first and rerun `plan` to get its lineup 
 In Chrome, allow *Automatic downloads* for `www.sofascore.com` (Site settings), or click
 Allow when Chrome asks.
 
-Tests: `python -u -X utf8 -m unittest discover -s scripts/fetch -p test_sofascore_weekly.py -v`.
+Tests: `python -u -X utf8 -m unittest discover -s fpl_model/fetch -p test_sofascore_weekly.py -v`.
 
 **Full history completed and published (2026-10-27, CHANGELOG §62).**
 All 3,500 source-discovered completed EPL fixtures are cached under
@@ -137,19 +137,19 @@ unchanged; settled builds preserve raw/registry/derived bytes. The 31-player aud
 was not instrumented; status/headers remain unknown. No access-evidence flag was created.
 
 ```powershell
-python -u -X utf8 scripts/fetch/sofascore_browser_pilot.py sync
-python -u -X utf8 scripts/fetch/sofascore_browser_pilot.py build
-python -u -X utf8 -m unittest discover -s scripts/fetch -p test_sofascore_browser.py -v
+python -u -X utf8 -m fpl_model.fetch.sofascore_browser_pilot sync
+python -u -X utf8 -m fpl_model.fetch.sofascore_browser_pilot build
+python -u -X utf8 -m unittest discover -s fpl_model/fetch -p test_sofascore_browser.py -v
 python -u -X utf8 data/validation/sofascore_browser_pilot_20261026/validate_pilot.py
 ```
 
 ## Existing Python commands and bulk access gate (not a browser runner)
 
 ```powershell
-python -u -X utf8 scripts/fetch/fetch_sofascore.py --probe
-python -u -X utf8 scripts/fetch/player_identity.py
-python -u -X utf8 scripts/fetch/fetch_sofascore.py --build-only
-python -u -X utf8 -m unittest discover -s scripts/fetch -p test_sofascore.py -v
+python -u -X utf8 -m fpl_model.fetch.fetch_sofascore --probe
+python -u -X utf8 -m fpl_model.fetch.player_identity
+python -u -X utf8 -m fpl_model.fetch.fetch_sofascore --build-only
+python -u -X utf8 -m unittest discover -s fpl_model/fetch -p test_sofascore.py -v
 ```
 
 Do not repeatedly probe unchanged HTTP denial; `--probe` above uses requests, not Chrome.
@@ -165,9 +165,9 @@ the successful bounded browser pilot or authorize a full backfill.
 Deferred follow-up commands, only after separately established permitted access:
 
 ```powershell
-python -u -X utf8 scripts/fetch/fetch_sofascore.py --access-evidence <actual-evidence.json> --season 2017 --limit 4
-python -u -X utf8 scripts/fetch/fetch_sofascore.py --access-evidence <actual-evidence.json>
-python -u -X utf8 scripts/fetch/fetch_sofascore.py --weekly --access-evidence <actual-evidence.json>
+python -u -X utf8 -m fpl_model.fetch.fetch_sofascore --access-evidence <actual-evidence.json> --season 2017 --limit 4
+python -u -X utf8 -m fpl_model.fetch.fetch_sofascore --access-evidence <actual-evidence.json>
+python -u -X utf8 -m fpl_model.fetch.fetch_sofascore --weekly --access-evidence <actual-evidence.json>
 ```
 
 `--season` can repeat. `--limit` caps new successful lineup downloads, including repairs,

@@ -18,7 +18,7 @@ come from FPL Review. Benchmark only, never a model input or target.
    ```
 
 4. Write `capture.json` beside it: `{"captured_utc": "<now, ISO UTC>", "first_gameweek_shown": <N>, "view": "Projections > Baselines"}`.
-5. Run `python scripts/solio/clean_solio_baselines.py` (part 2 also runs it) and check it prints
+5. Run `python -m fpl_model.solio.clean_solio_baselines` (part 2 also runs it) and check it prints
    `usable_for_comparison: True`.
 
 Recapturing overwrites the two raw files; each part-2 snapshot keeps the copy it ran on under `solio/raw/`.
@@ -82,6 +82,6 @@ is constant to 0.1% (team assists per match). `dc90` looks like a historical ave
 
 ## Comparing
 
-`python scripts/solio/compare_solio.py` (latest pre-deadline snapshot with usable Solio data), `--current`, or
+`python -m fpl_model.solio.compare_solio` (latest pre-deadline snapshot with usable Solio data), `--current`, or
 `--rounds N`. Writes `data/solio/comparisons/<snapshot>/`: players, summary by position and stat, teams, top
 differences. Descriptive only; never calibrate toward Solio.

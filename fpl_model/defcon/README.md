@@ -173,7 +173,7 @@ on unseen outcomes; normal weekly production refits continue independently.
 `protocol.json` fixes the target, metrics, expected effect and assessment rule.
 The forecast, input and model files are protected by SHA256 hashes.
 
-`run_post_gameweek.py` runs `scripts/defcon/forward_check.py score` after fetching
+`run_post_gameweek.py` runs `fpl_model/defcon/forward_check.py score` after fetching
 player stats and match results. It never trains, changes forecasts or switches
 the production model. `reports/latest.json` contains completed-match coverage,
 paired log loss/Brier, calibration, per-round scores and separate player/fixture
@@ -188,7 +188,7 @@ An inconclusive result retains the update; convincing deterioration is flagged
 for review without automatic rollback. Run the scorer manually with:
 
 ```
-python scripts/defcon/forward_check.py score
+python -m fpl_model.defcon.forward_check score
 ```
 
 The initial snapshot was created with `forward_check.py freeze`; running that
@@ -214,4 +214,4 @@ Full results and limitations are in CHANGELOG §43 and
 
 ## Points calibration
 
-Defender forecasts ran under FPL's real `Defensive_Contribution` hits, so `scripts/defcon_scaling.py` multiplies a defender's 90-minute mean by 1.083 for defcon points, the defcon charts and `player_ratings.csv`. Bonus keeps the raw mean. It's applied downstream, so this model's own outputs are unchanged. `DEFCON_POINTS_CALIBRATION=0` reverts it; refit it when a season ends (CHANGELOG §153, §159).
+Defender forecasts ran under FPL's real `Defensive_Contribution` hits, so `fpl_model/defcon_scaling.py` multiplies a defender's 90-minute mean by 1.083 for defcon points, the defcon charts and `player_ratings.csv`. Bonus keeps the raw mean. It's applied downstream, so this model's own outputs are unchanged. `DEFCON_POINTS_CALIBRATION=0` reverts it; refit it when a season ends (CHANGELOG §153, §159).

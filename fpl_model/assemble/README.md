@@ -1,7 +1,7 @@
 # Predicted points assembly
 
 The final stage of the pipeline: combines every facet into per-player,
-per-gameweek predicted FPL points for the forecast window (`scripts/forecast_horizon.py`, 10 gameweeks since GW11 of 2026/27).
+per-gameweek predicted FPL points for the forecast window (`fpl_model/forecast_horizon.py`, 10 gameweeks since GW11 of 2026/27).
 
 ## Scripts
 
@@ -22,7 +22,7 @@ Assembles the consolidated per-player-per-gameweek feature table
 Each row also carries its fixture opponent and venue for the next-gameweek
 leaderboards.
 
-The bonus simulation (`scripts/bonus/simulate_bonus.py`) consumes this table
+The bonus simulation (`fpl_model/bonus/simulate_bonus.py`) consumes this table
 — that is why this stage runs before it in the orchestrator.
 
 ### build_predicted_points.py
@@ -60,7 +60,7 @@ defcon, minutes and penalty stages.
 
 ## Card points
 
-`build_predicted_points.py` adds `CardPts` per gameweek: -(yellows/90 + 3 x reds/90) x xMins/90, from `scripts/card_points.py` (CHANGELOG 175). A yellow rate is the position rate x the player's shrunk record; a new player gets the position rate. Reds are pooled by position. `CARD_POINTS=0` reverts. Since CHANGELOG 195: starts and cameos have their own yellow rates, mixed per fixture by (P1 - P60) x mean cameo length / raw xMins (`CARD_ROLE_SPLIT=0` reverts; `CARD_ROLE_MIX=trailing` uses the last five club matches instead), and a player one yellow short of a ban before its cut-off gets x 0.851 on the yellow rate (`CARD_SUSPENSION=0` reverts).
+`build_predicted_points.py` adds `CardPts` per gameweek: -(yellows/90 + 3 x reds/90) x xMins/90, from `fpl_model/card_points.py` (CHANGELOG 175). A yellow rate is the position rate x the player's shrunk record; a new player gets the position rate. Reds are pooled by position. `CARD_POINTS=0` reverts. Since CHANGELOG 195: starts and cameos have their own yellow rates, mixed per fixture by (P1 - P60) x mean cameo length / raw xMins (`CARD_ROLE_SPLIT=0` reverts; `CARD_ROLE_MIX=trailing` uses the last five club matches instead), and a player one yellow short of a ban before its cut-off gets x 0.851 on the yellow rate (`CARD_SUSPENSION=0` reverts).
 
 ## xMins clock
 

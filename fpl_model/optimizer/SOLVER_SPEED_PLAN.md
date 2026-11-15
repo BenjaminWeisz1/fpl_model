@@ -70,7 +70,7 @@ Pre-register each experiment's expected effect before you run it.
 - **Timings vary about ±20% between identical runs** (gap0001's plan 1 was slower than base). Before calling any lever a
   win or a loss, repeat it with 3 `random_seed` values, and report the median and the range.
 - **Compute every constant in code; declare each setting once** (memory rules). The three modes live in one module,
-  e.g. `scripts/optimizer/solve_modes.py`, imported by `run_optimizer.py`, `optimizer_app.py` and the benchmark.
+  e.g. `fpl_model/optimizer/solve_modes.py`, imported by `run_optimizer.py`, `optimizer_app.py` and the benchmark.
 - **Adoption rule for Standard** (pre-registered, `website_plan.md`):
   - the replay score stays within 0.1 points of the gap-0 optimum;
   - GW-now transfers are unchanged on all instances but at most one, or the user accepts the trade.
@@ -82,14 +82,14 @@ Pre-register each experiment's expected effect before you run it.
   - AGENDA "Website";
   - `website_plan.md`;
   - CLAUDE.md's § range.
-- Run tests with `python -m unittest scripts/optimizer/test_chips.py` (plus any new test file).
+- Run tests with `python -m unittest fpl_model/optimizer/test_chips.py` (plus any new test file).
 
 ## Harness (`benchmark_solver.py`, built §226)
 
 ```
-python -u -X utf8 -W ignore scripts/optimizer/benchmark_solver.py run --instance gw11_h10 --variant base
-python -u -X utf8 -W ignore scripts/optimizer/benchmark_solver.py queue gw11_h10:warm gw11_h5:warm   # skips finished pairs
-python -W ignore scripts/optimizer/benchmark_solver.py report
+python -u -X utf8 -W ignore research/optimizer/benchmark_solver.py run --instance gw11_h10 --variant base
+python -u -X utf8 -W ignore research/optimizer/benchmark_solver.py queue gw11_h10:warm gw11_h5:warm   # skips finished pairs
+python -W ignore research/optimizer/benchmark_solver.py report
 ```
 
 **Instances** (frozen in `data/optimizer/benchmark/instances/`, don't rebuild them):

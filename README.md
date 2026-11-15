@@ -30,7 +30,7 @@ A Fantasy Premier League points-prediction pipeline. Every week it:
 3. forecasts minutes, penalties and clean sheets,
 4. simulates bonus points, and
 5. assembles everything into per-player, per-gameweek predicted points for
-   the next ten fixtures (the window is set once, in `scripts/forecast_horizon.py`).
+   the next ten fixtures (the window is set once, in `fpl_model/forecast_horizon.py`).
 
 ![Team ratings](images/team_ratings/team_ratings_overall.png)
 
@@ -44,21 +44,21 @@ A Fantasy Premier League points-prediction pipeline. Every week it:
 
 | Model | What it predicts | Documentation |
 |---|---|---|
-| Team ratings | Non-penalty goals for/against each team per fixture | [scripts/team_ratings/README.md](scripts/team_ratings/README.md) |
-| Goal/assist ratings | NPG/90 and Assists/90 for every player | [scripts/player_ratings/README.md](scripts/player_ratings/README.md) |
-| Defcon | P(defensive contribution clears a threshold) per fixture | [scripts/defcon/README.md](scripts/defcon/README.md) |
-| Predicted points | All facets combined into weekly FPL points | [scripts/assemble/README.md](scripts/assemble/README.md) |
+| Team ratings | Non-penalty goals for/against each team per fixture | [fpl_model/team_ratings/README.md](fpl_model/team_ratings/README.md) |
+| Goal/assist ratings | NPG/90 and Assists/90 for every player | [fpl_model/player_ratings/README.md](fpl_model/player_ratings/README.md) |
+| Defcon | P(defensive contribution clears a threshold) per fixture | [fpl_model/defcon/README.md](fpl_model/defcon/README.md) |
+| Predicted points | All facets combined into weekly FPL points | [fpl_model/assemble/README.md](fpl_model/assemble/README.md) |
 
 Supporting stages (each documented in its module docstring):
 
-- `scripts/fetch/` — pulls squads, fixtures, results and live player stats
+- `fpl_model/fetch/` — pulls squads, fixtures, results and live player stats
   from the official FPL API.
-- `scripts/minutes_penalties_cs/` — turns the FPL Review expected-minutes
+- `fpl_model/minutes_penalties_cs/` — turns the FPL Review expected-minutes
   forecast into appearance and 60+-minute probabilities, and builds penalty
   predictions from fixture goal forecasts plus the penalty-share table.
-- `scripts/bonus/` — a residual BPS baseline and a Monte Carlo bonus-points
+- `fpl_model/bonus/` — a residual BPS baseline and a Monte Carlo bonus-points
   simulation with official tie-breaking rules.
-- `scripts/export_weekly_heatmaps.py` — renders the weekly heatmaps and
+- `fpl_model/export_weekly_heatmaps.py` — renders the weekly heatmaps and
   next-gameweek charts into `images/team_ratings/`, `images/player_ratings/`,
   `images/predicted_points/`, `images/next_gameweek/` and `images/fdr/`.
 

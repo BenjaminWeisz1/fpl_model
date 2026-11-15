@@ -41,7 +41,7 @@ match history, with:
 
 Goal/assist priors for players new to the PL. Arrivals from La Liga, Bundesliga,
 Serie A, Ligue 1 and the RFPL use their last three seasons from the frozen
-Understat league files (`scripts/fetch/fetch_understat_leagues.py`), recency-weighted;
+Understat league files (`fpl_model/fetch/fetch_understat_leagues.py`), recency-weighted;
 all others use their manual `transfers.csv` values. A fitted league factor (partially
 pooled), position-prior shrinkage and new-team factor turn them into a per-90 prior;
 FPL-era xAG priors are scaled by 0.921 (FPL expected assists run below fbref xAG).
@@ -49,7 +49,7 @@ The parameters are frozen in `new_player_prior_params.json` (`--fit` refits them
 needs a new pre-registration). The builder runs as a part-1 stage before the ratings
 and writes `data/current/new_player_priors.csv`; only rows marked `Adopted` (league
 groups that passed the out-of-time test) are used. Championship arrivals found in the frozen FotMob league
-lists (`data/raw/fotmob/`, `scripts/fetch/fetch_fotmob_leagues.py`) instead use the FotMob-path model in
+lists (`data/raw/fotmob/`, `fpl_model/fetch/fetch_fotmob_leagues.py`) instead use the FotMob-path model in
 `fotmob_priors.py` (up to three FotMob seasons; parameters in `new_player_prior_params_fotmob.json`,
 CHANGELOG §116; `GOAL_MODEL_FOTMOB_PRIORS=0` reverts). Since §127 every blank-Notes Championship arrival (and,
 since §139 by user decision, every La Liga / Bundesliga / Serie A arrival) uses that structure refit on the β-dampened loop (`new_player_prior_params_refit.json`, `--fit-refit`;

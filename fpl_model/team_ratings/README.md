@@ -51,7 +51,7 @@ uses money-only priors for newly promoted teams. Output:
 ### predict_fixture_goals.py
 
 Forecasts non-penalty goals for and against each team for the next ten
-rounds (the forecast window (`scripts/forecast_horizon.py`, 10 gameweeks since GW11 of 2026/27)) of `fixtures.csv` from the current ratings and home advantage.
+rounds (the forecast window (`fpl_model/forecast_horizon.py`, 10 gameweeks since GW11 of 2026/27)) of `fixtures.csv` from the current ratings and home advantage.
 Output: `fixture_goal_predictions.csv` — the fixture-strength input every
 downstream facet (penalties, clean sheets, bonus simulation) consumes.
 
