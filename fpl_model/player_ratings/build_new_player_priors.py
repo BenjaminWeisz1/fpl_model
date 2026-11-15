@@ -11,12 +11,12 @@ An arrival from La Liga, Bundesliga, Serie A, Ligue 1 or the RFPL is automated: 
 from the frozen Understat league files by Understat ID (the crosswalk, else a unique name match in his
 League's previous season). Every other arrival uses his manual Min_Old / npxG_Old / xAG_Old with the fitted
 league factor. `Adopted` marks the league groups that passed the §103 test; build_player_ratings.py uses
-only those rows (GOAL_MODEL_NEW_PRIORS=0 ignores the file).
+only those rows.
 
 FotMob path (CHANGELOG §116): an arrival in a group adopted there (the Championship) whom FotMob's frozen league
 lists (`data/raw/fotmob/`, `scripts/fetch/fetch_fotmob_leagues.py`) match by name in his League's previous season
 takes the FotMob-path model instead (`new_player_prior_params_fotmob.json`): up to three FotMob seasons in any of
-22 leagues. GOAL_MODEL_FOTMOB_PRIORS=0 keeps the §103 values for them.
+22 leagues.
 
 The ratings include the fitted new-team adjustment (Team_Attack_Rating / 1.32023)^gamma, so
 build_player_ratings.py must not apply its own weight_team factor to them again.
@@ -42,7 +42,6 @@ PARAMS_FOTMOB = Path(__file__).resolve().parent / "new_player_prior_params_fotmo
 # §116 was tested on the post-§112 loop scale; its fit uses that log
 FIT_LOG_FOTMOB = npp.ROOT / "data" / "validation" / "prior_k_20261029" / "log_k16.csv"
 FOTMOB_RESULTS = npp.ROOT / "data" / "validation" / "fotmob_priors_20261029" / "results.json"
-FOTMOB_ON = __import__("os").environ.get("GOAL_MODEL_FOTMOB_PRIORS", "1") == "1"
 
 
 def _norm(name):
@@ -139,7 +138,6 @@ def fit_fotmob(last_season=FIT_LAST_SEASON, write=True):
 PARAMS_REFIT = Path(__file__).resolve().parent / "new_player_prior_params_refit.json"
 FIT_LOG_REFIT = npp.ROOT / "data" / "validation" / "prior_refit_beta_20261030" / "log_beta.csv"
 REFIT_RESULTS = npp.ROOT / "data" / "validation" / "prior_refit_beta_20261030" / "results.json"
-REFIT_ON = __import__("os").environ.get("GOAL_MODEL_PRIOR_REFIT", "1") == "1"
 # Groups adopted by user decision against the §119 rule (§139: top3 failed only on a +0.1% xAG MSE, noise)
 USER_ADOPTED_REFIT = {"top3"}
 
@@ -183,9 +181,6 @@ def era_scales(seasons):
     return out
 
 
-TAGGED_ON = __import__("os").environ.get("GOAL_MODEL_TAGGED_PRIORS", "1") == "1"
-
-
 def tagged_championship(params, scales, pf=None):
     """§130: Championship arrivals with a tag in Notes (mid-season, two leagues, ...) get the same fitted prior as a
     blank-Notes arrival: the FotMob path if FotMob matches them, else the §103 manual path."""
@@ -200,7 +195,7 @@ def tagged_championship(params, scales, pf=None):
     sc = era_scales(sorted(set(arr["Season"]) | set(scales)))
     out = arr[["Player", "Season", "Pos", "League", "Group", "Path", "Team_Attack_Rating"]].copy()
     use_f = np.zeros(len(arr), bool)
-    if pf is None and FOTMOB_ON and PARAMS_FOTMOB.exists():
+    if pf is None and PARAMS_FOTMOB.exists():
         pf = json.loads(PARAMS_FOTMOB.read_text(encoding="utf-8"))
     if pf is not None:
         farr, fslots = fp.attach_fotmob(arr, slots, fp.load_fotmob())
@@ -234,12 +229,12 @@ def build():
 
 def priors_frame(params=None, pf=None, pr=None):
     """The priors table build() writes. params / pf / pr are the §103, §116 and §127 parameter sets; None reads the
-    frozen JSONs (respecting GOAL_MODEL_FOTMOB_PRIORS / GOAL_MODEL_PRIOR_REFIT). build_oot_priors.py passes its
+    frozen JSONs. build_oot_priors.py passes its
     season-by-season fits instead."""
     params = json.loads(PARAMS.read_text(encoding="utf-8")) if params is None else params
-    if pf is None and FOTMOB_ON and PARAMS_FOTMOB.exists():
+    if pf is None and PARAMS_FOTMOB.exists():
         pf = json.loads(PARAMS_FOTMOB.read_text(encoding="utf-8"))
-    if pr is None and REFIT_ON and PARAMS_REFIT.exists():
+    if pr is None and PARAMS_REFIT.exists():
         pr = json.loads(PARAMS_REFIT.read_text(encoding="utf-8"))
     arr, slots = dataset(with_outcomes=False)
     scales = era_scales(sorted(arr["Season"].unique()))
@@ -280,11 +275,10 @@ def priors_frame(params=None, pf=None, pr=None):
     out = out[["Player", "Season", "Initial_NPG_Rating", "Initial_Assist_Rating", "Adopted", "Group", "Path",
                "League", "Pos", "Understat_ID", "ID_Source", "Understat_Seasons", "Prior_Minutes_Used", "Age",
                "Team_Attack_Rating"]]
-    if TAGGED_ON:
-        tg = tagged_championship(params, scales, pf)
-        out = pd.concat([out, tg[out.columns]], ignore_index=True)
-        assert not out.duplicated(["Player", "Season"]).any()
-        print(f"[§130] {len(tg)} tagged Championship arrivals (mid-season / two leagues) get the fitted prior")
+    tg = tagged_championship(params, scales, pf)
+    out = pd.concat([out, tg[out.columns]], ignore_index=True)
+    assert not out.duplicated(["Player", "Season"]).any()
+    print(f"[§130] {len(tg)} tagged Championship arrivals (mid-season / two leagues) get the fitted prior")
     if out[["Initial_NPG_Rating", "Initial_Assist_Rating"]].isna().any().any():
         bad = out[out[["Initial_NPG_Rating", "Initial_Assist_Rating"]].isna().any(axis=1)]
         raise ValueError(f"NaN priors:\n{bad[['Player', 'Season', 'League']]}")

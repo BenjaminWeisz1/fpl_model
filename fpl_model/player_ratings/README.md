@@ -34,8 +34,7 @@ match history, with:
   extreme per-90 values,
 - transfer handling via `transfers.csv`,
 - new-player priors from `new_player_priors.csv` for arrivals from Ligue 1 and the
-  Championship (CHANGELOG §103–§104; `GOAL_MODEL_NEW_PRIORS=0` restores the
-  `transfers.csv` formula for them).
+  Championship (CHANGELOG §103–§104).
 
 ### new_player_priors.py, build_new_player_priors.py
 
@@ -51,10 +50,9 @@ and writes `data/current/new_player_priors.csv`; only rows marked `Adopted` (lea
 groups that passed the out-of-time test) are used. Championship arrivals found in the frozen FotMob league
 lists (`data/raw/fotmob/`, `fpl_model/fetch/fetch_fotmob_leagues.py`) instead use the FotMob-path model in
 `fotmob_priors.py` (up to three FotMob seasons; parameters in `new_player_prior_params_fotmob.json`,
-CHANGELOG §116; `GOAL_MODEL_FOTMOB_PRIORS=0` reverts). Since §127 every blank-Notes Championship arrival (and,
-since §139 by user decision, every La Liga / Bundesliga / Serie A arrival) uses that structure refit on the β-dampened loop (`new_player_prior_params_refit.json`, `--fit-refit`;
-`GOAL_MODEL_PRIOR_REFIT=0` reverts), and tagged Championship arrivals (mid-season, two leagues) get the fitted prior too
-(§130, `GOAL_MODEL_TAGGED_PRIORS=0` reverts). Hand-found FotMob IDs live in `data/current/fotmob_id_overrides.csv`.
+CHANGELOG §116). Since §127 every blank-Notes Championship arrival (and,
+since §139 by user decision, every La Liga / Bundesliga / Serie A arrival) uses that structure refit on the β-dampened loop (`new_player_prior_params_refit.json`, `--fit-refit`), and tagged Championship arrivals (mid-season, two leagues) get the fitted prior too
+(§130). Hand-found FotMob IDs live in `data/current/fotmob_id_overrides.csv`.
 Loop settings: starting rating worth K = 16 matches (§112, `GOAL_MODEL_PRIOR_K`); opponent factor dampened to
 (concede / mean)^β with β = 0.7 npxG / 0.8 xAG, in the loop and in `build_simulation_features.py` (§123,
 `GOAL_MODEL_OPP_BETA_NPG` / `_AST`); learning-rate floor 0.035 for npxG (§233, `GOAL_MODEL_ALPHA_NPG`;

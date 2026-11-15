@@ -58,11 +58,11 @@ def starts_frame():
     s = s[s["Is_Starter"].astype(str).str.lower().eq("true")].copy()
     s["Slot"] = s["Position_Resolved"].map(SLOT_CANON)
     s = s[s["Slot"].notna()].copy()
-    # §136 red-card player factors, as build_player_ratings.py (GOAL_MODEL_RED_CARD, GOAL_MODEL_RED_CARD_FILE)
+    # §136 red-card player factors, as build_player_ratings.py (GOAL_MODEL_RED_CARD_FILE)
     rc_file = Path(os.environ.get("GOAL_MODEL_RED_CARD_FILE", DATA / "red_card_player_factors.csv"))
     fx = np.ones(len(s))
     fn = np.ones(len(s))
-    if os.environ.get("GOAL_MODEL_RED_CARD", "1") == "1" and rc_file.exists():
+    if rc_file.exists():
         rc = pd.read_csv(rc_file, encoding="utf-8-sig")
         f = s[KEY].merge(rc[KEY + ["Factor_npxG", "Factor_xAG"]].drop_duplicates(KEY), on=KEY, how="left")
         assert len(f) == len(s)

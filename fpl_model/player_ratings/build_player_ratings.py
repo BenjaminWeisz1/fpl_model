@@ -16,9 +16,7 @@ Run locally:
     python build_player_ratings.py
 """
 from fpl_model import paths
-import sys
 import os
-from collections import deque, defaultdict, Counter
 
 import pandas as pd
 import numpy as np
@@ -50,25 +48,6 @@ RETURN_H = float(os.environ.get("GOAL_MODEL_RETURN_H", "5000"))  # second-season
 PRIOR_K = float(os.environ.get("GOAL_MODEL_PRIOR_K", "16"))  # matches the starting rating counts as (§112; 5 = pre-§112)
 # Players whose rating starts from a `youth` row (§126); defaults to PRIOR_K (no separate weight).
 PRIOR_K_YOUTH = float(os.environ.get("GOAL_MODEL_PRIOR_K_YOUTH", str(PRIOR_K)))
-
-# ---- role-change detection (CHANGELOG §39, AGENDA §4 (C)) ----
-# Feeds the Understat per-match formation slots shipped into defcon (§38) into
-# this goal/assist model: on a *sustained* slot change the smoothing loop opens a
-# short high-learning-rate window so the rating re-converges to the new role
-# instead of dragging the old role's rating forward (a recency reset, not a
-# bounce -- the treatment cold-start data sources.md §4 recommends for structural
-# breaks). Default OFF: GOAL_MODEL_UNDERSTAT_POS unset/0 reproduces the pre-§39
-# output bit-for-bit. Mirrors defcon's DEFCON_UNDERSTAT_POS gate.
-UNDERSTAT_POS_GOAL = os.environ.get("GOAL_MODEL_UNDERSTAT_POS", "0") == "1"
-ROLE_APPLY = os.environ.get("GOAL_ROLE_APPLY", "1") == "1"   # 0 = detect+flag only
-ROLE_DIAG = os.environ.get("GOAL_MODEL_DIAG", "0") == "1"    # dump per-row diagnostics
-ROLE_W = int(os.environ.get("GOAL_ROLE_W", "5"))             # consecutive matches to call it sustained
-ROLE_MIN_MATCHES = int(os.environ.get("GOAL_ROLE_MIN_MATCHES", "8"))  # matches to establish the reference slot
-ROLE_COOLDOWN = int(os.environ.get("GOAL_ROLE_COOLDOWN", "10"))       # silence between fires (in PriorMatches)
-ROLE_FACTOR = float(os.environ.get("GOAL_ROLE_FACTOR", "1.5"))       # attacking-prior ratio gate within a coarse group
-ROLE_BOOST_ALPHA = float(os.environ.get("GOAL_ROLE_BOOST_ALPHA", "0.15"))  # learning rate during the boost window
-ROLE_WINDOW = int(os.environ.get("GOAL_ROLE_WINDOW", "8"))   # boosted matches after a fire
-ROLE_DIAG_OUT = os.environ.get("GOAL_DIAG_OUT", "_role_diag.csv")
 
 # ---- pre-match rating log (CHANGELOG §72, §74) ----
 # When set to a path, every rated row's goal/assist rating *before* that match's
@@ -110,22 +89,6 @@ if MOVE_TABLE_FILE:
 
 def _role_mult(m1, up, down):
     return m1 ** (up if m1 > 1 else down)
-
-# Canonicalise the fbref-style resolved slot onto position_combinations.csv's
-# single-slot vocabulary, so lateral label churn (a full-back alternating LB/RB)
-# is not mistaken for a role change.
-SLOT_CANON = {
-    "CB": "CB", "LB": "FB", "RB": "FB", "WB": "WB",
-    "DM": "DM", "CM": "CM", "AM": "AM",
-    "LM": "WM", "RM": "WM", "LW": "W", "RW": "W",
-    "FW": "FW", "GK": "GK",
-}
-SLOT_COARSE = {
-    "CB": "DEF", "FB": "DEF", "WB": "DEF",
-    "DM": "MID", "CM": "MID", "AM": "MID", "WM": "MID", "W": "MID",
-    "FW": "FWD", "GK": "GK",
-}
-SLOT_PRIOR = {}  # canonical slot -> (NPG/90, Assists/90); filled from positions_df below
 
 # ---- load inputs ----
 transfers_df = pd.read_csv(_DATA / 'transfers.csv')
@@ -183,9 +146,8 @@ playerstats = pd.read_csv(_DATA / 'player_match_stats.csv', encoding='utf-8-sig'
 
 # ---- red-card adjustment of player npxG / xAG (§136): the team-level factors, per player from his own shots ----
 # Keyed on the native Season (before the overwrite below). The data files stay unadjusted.
-RED_CARD_ON = os.environ.get("GOAL_MODEL_RED_CARD", "1") == "1"   # 0 reverts (§136)
 RED_CARD_FILE = Path(os.environ.get("GOAL_MODEL_RED_CARD_FILE", _DATA / 'red_card_player_factors.csv'))
-if RED_CARD_ON and RED_CARD_FILE.exists():
+if RED_CARD_FILE.exists():
     _rc = pd.read_csv(RED_CARD_FILE, encoding='utf-8-sig')
     _key = ['Season', 'Player', 'Team', 'Opponent', 'Venue']
     _f = playerstats[_key].merge(_rc[_key + ['Factor_npxG', 'Factor_xAG']], on=_key, how='left')
@@ -193,41 +155,6 @@ if RED_CARD_ON and RED_CARD_FILE.exists():
     playerstats['npxG'] = playerstats['npxG'] * _f['Factor_npxG'].fillna(1.0).to_numpy()
     playerstats['xAG'] = playerstats['xAG'] * _f['Factor_xAG'].fillna(1.0).to_numpy()
     print(f"[§136] red-card factors applied to {int(_f['Factor_npxG'].notna().sum())} player-match rows")
-
-# ---- role-change (§39): merge the Understat per-match resolved slot ----
-# Must run BEFORE the Season overwrite below: player_match_positions.csv is keyed
-# on player_match_stats' NATIVE Season (2025 and 2026 distinct), while the overwrite
-# collapses every FPL_API row to 2025 (MatchID//380 is a stale derivation, §9). The
-# join key is (native Season, Team, Opponent, Venue, Player) -- never MatchID, which
-# cannot join the FPL era (crosswalk docstring; CLAUDE.md §2.5).
-if UNDERSTAT_POS_GOAL:
-    _pc_single = positions_df[~positions_df['Pos'].astype(str).str.contains(',')]
-    SLOT_PRIOR.update({r['Pos']: (float(r['NPG/90']), float(r['Assists/90']))
-                       for _, r in _pc_single.iterrows()})
-    _pos_file = _DATA / 'player_match_positions.csv'
-    if _pos_file.exists():
-        playerstats['_NativeSeason'] = playerstats['Season']
-        _posdf = pd.read_csv(_pos_file, encoding='utf-8-sig', low_memory=False)
-        _posdf = _posdf.dropna(subset=['Position_Resolved'])
-        _n_before = len(playerstats)
-        playerstats = playerstats.merge(
-            _posdf[['Season', 'Team', 'Opponent', 'Venue', 'Player', 'Position_Resolved']],
-            left_on=['_NativeSeason', 'Team', 'Opponent', 'Venue', 'Player'],
-            right_on=['Season', 'Team', 'Opponent', 'Venue', 'Player'],
-            how='left', suffixes=('', '_pos'))
-        assert len(playerstats) == _n_before, \
-            f"role-change merge fanned out rows ({_n_before} -> {len(playerstats)}); " \
-            f"player_match_positions.csv is not unique on the 5-key"
-        if 'Season_pos' in playerstats.columns:
-            playerstats = playerstats.drop(columns=['Season_pos'])
-        playerstats['_CanonSlot'] = playerstats['Position_Resolved'].map(SLOT_CANON)
-        _got = int(playerstats['_CanonSlot'].notna().sum())
-        print(f"[role-change S39] Position_Resolved merged onto {_got}/{len(playerstats)} "
-              f"rows ({_got / len(playerstats):.1%}); ROLE_APPLY={int(ROLE_APPLY)}")
-    else:
-        print(f"WARNING: GOAL_MODEL_UNDERSTAT_POS=1 but {_pos_file.name} is missing -- "
-              f"role-change detection disabled (run build_position_crosswalk.py).")
-        UNDERSTAT_POS_GOAL = False
 
 # Substitute appearances are learned on a starter-equivalent scale (CHANGELOG §100, §101): their
 # per-90 prediction carries the frozen uplift for their minutes band. Start flag: Understat Is_Starter.
@@ -247,10 +174,6 @@ playerstats = playerstats.drop(columns='_StartSeason')
 _is_sub = playerstats['_IsStarter'].astype(str).str.lower().eq('false')
 print(f"[§101] start flag on {playerstats['_IsStarter'].notna().mean():.1%} of rows; substitute rows {int(_is_sub.sum())}")
 
-# §242: FPL-era xAG (Opta xA, 2025+) put on the fbref xAG scale by match slot, so the loop's assist target doesn't change
-# model at 2025. Factors from the 2022-2024 overlap, computed each run (xag_source_scale.py). A row without a slot takes
-# the player's most common FPL-era slot, else the overall factor. Default off until the user decides (CHANGELOG §242).
-XAG_SLOT_SCALE = os.environ.get("GOAL_MODEL_XAG_SLOT_SCALE", "0") == "1"
 # §243-§244: expected assists calibrated to conventional assists by match slot. Adopted by user decision 2026-11-13:
 # default fw_cb; GOAL_MODEL_XAG_CALIBRATION=off reverts. Season-end check frozen in
 # data/validation/xag_calibration_seasonend_2027/protocol.json.
@@ -260,10 +183,8 @@ XAG_SLOT_SCALE = os.environ.get("GOAL_MODEL_XAG_SLOT_SCALE", "0") == "1"
 XAG_CALIBRATION = os.environ.get("GOAL_MODEL_XAG_CALIBRATION", "fw_cb")
 if XAG_CALIBRATION not in ("off", "fw_cb", "all", "both"):
     raise SystemExit(f"GOAL_MODEL_XAG_CALIBRATION must be off, fw_cb, all or both, not {XAG_CALIBRATION!r}")
-if XAG_SLOT_SCALE and XAG_CALIBRATION != "off":
-    raise SystemExit("GOAL_MODEL_XAG_SLOT_SCALE and GOAL_MODEL_XAG_CALIBRATION are alternatives; set one")
-if XAG_SLOT_SCALE or XAG_CALIBRATION != "off":
-    from fpl_model.player_ratings.xag_source_scale import CANON as _XS_CANON, slot_factors as _xs_factors, assist_factors as _xs_assist
+if XAG_CALIBRATION != "off":
+    from fpl_model.player_ratings.xag_source_scale import CANON as _XS_CANON, assist_factors as _xs_assist
     _fpl = playerstats['Data_Source'].eq('FPL_API').to_numpy()
     _slot = playerstats['_MatchPos'].map(_XS_CANON)
     _modal = (playerstats.assign(_s=_slot).dropna(subset=['_s'])
@@ -276,28 +197,19 @@ if XAG_SLOT_SCALE or XAG_CALIBRATION != "off":
             f = f.where(_slot.isin(slots), 1.0)
         return f.to_numpy()
 
-    if XAG_SLOT_SCALE:
-        _xs = _xs_factors(_DATA)
-        playerstats['xAG'] = np.where(_fpl, playerstats['xAG'] * _factors_for(_xs), playerstats['xAG'])
-        print(f"[§242] FPL-era xAG put on the fbref scale on {int(_fpl.sum())} rows; factors "
-              + ", ".join(f"{k} {v:.3f}" for k, v in sorted(_xs.items())))
-    else:
-        _opta = _xs_assist(_DATA, "opta")
-        _keep = ["FW", "CB"] if XAG_CALIBRATION == "fw_cb" else None
-        _new = np.where(_fpl, playerstats['xAG'] * _factors_for(_opta, _keep), playerstats['xAG'])
-        if XAG_CALIBRATION == "both":
-            _fb = _xs_assist(_DATA, "fbref")
-            _new = np.where(_fpl, _new, playerstats['xAG'] * _factors_for(_fb))
-        playerstats['xAG'] = _new
-        print(f"[§243] xAG calibrated to assists ({XAG_CALIBRATION}); Opta factors "
-              + ", ".join(f"{k} {v:.3f}" for k, v in sorted(_opta.items())))
-
-
-SUB_UPLIFT_ON = os.environ.get("GOAL_MODEL_SUB_UPLIFT", "1") == "1"  # 0 restores the §87 loop
+    _opta = _xs_assist(_DATA, "opta")
+    _keep = ["FW", "CB"] if XAG_CALIBRATION == "fw_cb" else None
+    _new = np.where(_fpl, playerstats['xAG'] * _factors_for(_opta, _keep), playerstats['xAG'])
+    if XAG_CALIBRATION == "both":
+        _fb = _xs_assist(_DATA, "fbref")
+        _new = np.where(_fpl, _new, playerstats['xAG'] * _factors_for(_fb))
+    playerstats['xAG'] = _new
+    print(f"[§243] xAG calibrated to assists ({XAG_CALIBRATION}); Opta factors "
+          + ", ".join(f"{k} {v:.3f}" for k, v in sorted(_opta.items())))
 
 
 def sub_uplift(kind, is_starter, minutes):
-    if not SUB_UPLIFT_ON or str(is_starter).lower() != 'false':
+    if str(is_starter).lower() != 'false':
         return 1.0
     return next(u for upper, u in SUB_UPLIFT[kind] if minutes <= upper)
 
@@ -346,8 +258,7 @@ playerstats = playerstats.assign(_Chrono=chrono_order(playerstats, _DATA)).sort_
 # the opponent's pre-match Defense_Rating / that season's mean, keyed on (Season, Team, Opponent, Venue).
 # It used to be the player's team's predicted goals keyed on MatchID: in 2017-2024 that also divided
 # out his own team's attack (inflating weak-attack players), and FPL-era MatchIDs don't match, so 2025+
-# rows got ~1 (CHANGELOG §78, §79, §110). GOAL_MODEL_OPP_DEFENCE=0 restores it.
-OPP_DEFENCE = os.environ.get("GOAL_MODEL_OPP_DEFENCE", "1") == "1"
+# rows got ~1 (CHANGELOG §78, §79, §110).
 # Dampening exponent on the opponent factor, per target (§123, adopted 0.7 / 0.8); 1 = the plain multiplier.
 OPP_BETA_NPG = float(os.environ.get("GOAL_MODEL_OPP_BETA_NPG", "0.7"))
 OPP_BETA_AST = float(os.environ.get("GOAL_MODEL_OPP_BETA_AST", "0.8"))
@@ -355,26 +266,15 @@ OPP_BETA_AST = float(os.environ.get("GOAL_MODEL_OPP_BETA_AST", "0.8"))
 
 def build_concede_lookup(matchlogs):
     concede = {}
-    if OPP_DEFENCE:
-        season_mean = pd.concat([
-            matchlogs[["Season", "Home_Defense_Rating"]].rename(columns={"Home_Defense_Rating": "Def"}),
-            matchlogs[["Season", "Away_Defense_Rating"]].rename(columns={"Away_Defense_Rating": "Def"}),
-        ]).groupby("Season")["Def"].mean()
-        for _, row in matchlogs.iterrows():
-            season, home_team, away_team = row["Season"], row["Home"], row["Away"]
-            scale = AVG_CONCEDED / season_mean[season]
-            concede[(season, home_team, away_team, "Home")] = row["Away_Defense_Rating"] * scale
-            concede[(season, away_team, home_team, "Away")] = row["Home_Defense_Rating"] * scale
-        return concede
+    season_mean = pd.concat([
+        matchlogs[["Season", "Home_Defense_Rating"]].rename(columns={"Home_Defense_Rating": "Def"}),
+        matchlogs[["Season", "Away_Defense_Rating"]].rename(columns={"Away_Defense_Rating": "Def"}),
+    ]).groupby("Season")["Def"].mean()
     for _, row in matchlogs.iterrows():
-        m_id = row["MatchID"]
-        home_team = row["Home"]
-        away_team = row["Away"]
-        # The team prediction already contains update_team_ratings.py's home factor
-        # (same value); strip it so the loop's venue_coefficient applies home/away
-        # once, not twice (CHANGELOG §83, §84)
-        concede[(m_id, home_team)] = row["Away_Prediction"] / (2 - home_advantage)
-        concede[(m_id, away_team)] = row["Home_Prediction"] / home_advantage
+        season, home_team, away_team = row["Season"], row["Home"], row["Away"]
+        scale = AVG_CONCEDED / season_mean[season]
+        concede[(season, home_team, away_team, "Home")] = row["Away_Defense_Rating"] * scale
+        concede[(season, away_team, home_team, "Away")] = row["Home_Defense_Rating"] * scale
     return concede
 
 concede_lookup = build_concede_lookup(matchlogs)
@@ -514,25 +414,23 @@ if len(_bad_blend):
 # ---- new-player priors (CHANGELOG §103, §104) ----
 # For arrivals in the league groups that passed the out-of-time test (Adopted), the prior comes from
 # new_player_priors.csv (build_new_player_priors.py). Those values already carry their own fitted
-# new-team factor, so they replace the rating after the weight_team step above. 0 restores the old method.
-NEW_PRIORS_ON = os.environ.get("GOAL_MODEL_NEW_PRIORS", "1") == "1"
+# new-team factor, so they replace the rating after the weight_team step above.
 NEW_PRIORS_FILE = Path(os.environ.get("GOAL_MODEL_NEW_PRIORS_FILE", _DATA / 'new_player_priors.csv'))
-if NEW_PRIORS_ON:
-    if NEW_PRIORS_FILE.exists():
-        _np = pd.read_csv(NEW_PRIORS_FILE, encoding='utf-8-sig')
-        _np = _np[_np['Adopted'].astype(str).str.lower() == 'true']
-        assert not _np.duplicated(['Player', 'Season']).any(), "new_player_priors.csv repeats a Player/Season"
-        _np = _np.set_index(['Player', 'Season'])[['Initial_NPG_Rating', 'Initial_Assist_Rating']]
-        _n_hit = 0
-        for _df in (initial_ratings_df, first_season_df):
-            _key = pd.MultiIndex.from_arrays([_df['Player'], _df['Season']])
-            _hit = np.asarray(_key.isin(_np.index))
-            _df.loc[_hit, ['Initial_NPG_Rating', 'Initial_Assist_Rating']] = _np.loc[_key[_hit]].to_numpy()
-            _n_hit = max(_n_hit, int(_hit.sum()))
-        print(f"[§103] new-player priors from {NEW_PRIORS_FILE.name}: {_n_hit} transfers.csv rows")
-    else:
-        print(f"WARNING: {NEW_PRIORS_FILE.name} missing -- new arrivals use the old transfers.csv priors "
-              f"(run build_new_player_priors.py)")
+if NEW_PRIORS_FILE.exists():
+    _np = pd.read_csv(NEW_PRIORS_FILE, encoding='utf-8-sig')
+    _np = _np[_np['Adopted'].astype(str).str.lower() == 'true']
+    assert not _np.duplicated(['Player', 'Season']).any(), "new_player_priors.csv repeats a Player/Season"
+    _np = _np.set_index(['Player', 'Season'])[['Initial_NPG_Rating', 'Initial_Assist_Rating']]
+    _n_hit = 0
+    for _df in (initial_ratings_df, first_season_df):
+        _key = pd.MultiIndex.from_arrays([_df['Player'], _df['Season']])
+        _hit = np.asarray(_key.isin(_np.index))
+        _df.loc[_hit, ['Initial_NPG_Rating', 'Initial_Assist_Rating']] = _np.loc[_key[_hit]].to_numpy()
+        _n_hit = max(_n_hit, int(_hit.sum()))
+    print(f"[§103] new-player priors from {NEW_PRIORS_FILE.name}: {_n_hit} transfers.csv rows")
+else:
+    print(f"WARNING: {NEW_PRIORS_FILE.name} missing -- new arrivals use the old transfers.csv priors "
+          f"(run build_new_player_priors.py)")
 
 
 # ---- position update for entrants (CHANGELOG §247, §249; adopted for npxG and xAG by user decision 2026-11-14) ----
@@ -575,27 +473,6 @@ def _pu_listed(pos):
     return (prior['NPG/90'], prior['Assists/90'])
 
 
-# ---- the main smoothing loop (npxG-only, no beta) ----
-def _role_gate(ref, new):
-    """True if a ref->new canonical slot change is material enough to fire (§39).
-
-    Fires when the coarse group (DEF/MID/FWD/GK) changes, or -- within one coarse
-    group -- when the total attacking prior (NPG/90 + Assists/90) differs by at
-    least ROLE_FACTOR. The second clause is what catches the Calafiori CB->WB case
-    (both DEF, but the wing-back assist prior is ~4.7x the centre-back's), while
-    ignoring lateral churn like DM<->CM whose priors are near-identical.
-    """
-    if ref not in SLOT_PRIOR or new not in SLOT_PRIOR:
-        return False
-    if SLOT_COARSE.get(ref) != SLOT_COARSE.get(new):
-        return True
-    a = SLOT_PRIOR[ref][0] + SLOT_PRIOR[ref][1]
-    b = SLOT_PRIOR[new][0] + SLOT_PRIOR[new][1]
-    if a <= 0 or b <= 0:
-        return False
-    return max(a / b, b / a) >= ROLE_FACTOR
-
-
 # Position group of a match for the centre-back npxG floor (§235); groups as validate_kalman_smoothing.POS_GROUP.
 _MATCH_GROUP = {"CB": "CB", "LB": "FB", "RB": "FB", "WB": "FB", "DM": "CM", "CM": "CM",
                 "AM": "AW", "LM": "AW", "RM": "AW", "LW": "AW", "RW": "AW", "FW": "FW"}
@@ -625,16 +502,8 @@ def smooth_ratings_and_mae(player_stats, concede_lu):
     established_weight = 0.0
     player_stats["PriorMatches"] = player_stats.groupby("Player").cumcount()
 
-    # ---- role-change detection state (§39); inert unless GOAL_MODEL_UNDERSTAT_POS ----
-    role_recent = defaultdict(lambda: deque(maxlen=ROLE_W))
-    role_ref = {}                       # player -> established canonical slot
-    role_refcount = defaultdict(Counter)
-    role_boost = defaultdict(int)       # player -> boosted matches remaining
-    role_last_fire = {}                 # player -> PriorMatches at last fire (cooldown)
     youth_keys = set(zip(youth_df["Player"], youth_df["Season"]))
     youth_start = set()                 # players whose rating started from a youth row (§126)
-    n_fires = 0
-    diag_rows = []
     prematch_rows = []
     role_p, role_l0 = {}, {}            # role factor (§172); inert unless GOAL_MODEL_ROLE_K_*
     move_last = {}                      # move factors (§173); inert unless GOAL_MODEL_MOVE_TABLE
@@ -683,39 +552,8 @@ def smooth_ratings_and_mae(player_stats, concede_lu):
         k_prior = PRIOR_K_YOUTH if player in youth_start else PRIOR_K
         alpha_eff = max(1 / (size + k_prior), ALPHA) * (minutes / 90.0)
 
-        # ---- role-change: detect a sustained slot change and open a boost window (§39).
-        # Detection depends only on the slot sequence, never on the ratings, so the
-        # GOAL_ROLE_APPLY=0 arm flags the identical rows while leaving alpha_eff (and
-        # therefore the output) untouched -- the clean A/B the ship rule needs.
-        boost_active = False
-        canon_slot = row.get("_CanonSlot") if UNDERSTAT_POS_GOAL else None
-        if UNDERSTAT_POS_GOAL and isinstance(canon_slot, str) and canon_slot:
-            if player not in role_ref:
-                # establish the reference slot over the first ROLE_MIN_MATCHES matches
-                role_refcount[player][canon_slot] += 1
-                if sum(role_refcount[player].values()) >= ROLE_MIN_MATCHES:
-                    role_ref[player] = role_refcount[player].most_common(1)[0][0]
-            else:
-                role_recent[player].append(canon_slot)
-                if (len(role_recent[player]) == ROLE_W
-                        and len(set(role_recent[player])) == 1
-                        and canon_slot != role_ref[player]
-                        and _role_gate(role_ref[player], canon_slot)
-                        and size - role_last_fire.get(player, -10**9) >= ROLE_COOLDOWN):
-                    n_fires += 1
-                    role_ref[player] = canon_slot          # re-anchor to the new role
-                    role_boost[player] = ROLE_WINDOW
-                    role_last_fire[player] = size
-                    role_recent[player].clear()
-            if role_boost[player] > 0:
-                boost_active = True
-                if ROLE_APPLY:
-                    alpha_eff = ROLE_BOOST_ALPHA * (minutes / 90.0)
-                role_boost[player] -= 1
-
         venue_coefficient = home_advantage if venue == "Home" else (2 - home_advantage)
-        opp_key = (season, row["Team"], opp, venue) if OPP_DEFENCE else (m_id, opp)
-        opp_concede = concede_lu.get(opp_key, AVG_CONCEDED)
+        opp_concede = concede_lu.get((season, row["Team"], opp, venue), AVG_CONCEDED)
 
         if player in ratings:
             g_rating, a_rating = ratings[player]
@@ -735,8 +573,7 @@ def smooth_ratings_and_mae(player_stats, concede_lu):
             a_rating = candidates['Initial_Assist_Rating'].values[-1]
             if (player, candidates['Season'].values[-1]) in youth_keys:
                 youth_start.add(player)
-                if not boost_active:
-                    alpha_eff = max(1 / (size + PRIOR_K_YOUTH), ALPHA) * (minutes / 90.0)
+                alpha_eff = max(1 / (size + PRIOR_K_YOUTH), ALPHA) * (minutes / 90.0)
 
         pu = None
         if POS_UPDATE:
@@ -794,10 +631,6 @@ def smooth_ratings_and_mae(player_stats, concede_lu):
         total_ast_error += abs(xag90 - pred_ast_90) * weight
         total_weight += weight
 
-        if UNDERSTAT_POS_GOAL and ROLE_DIAG:
-            diag_rows.append((player, int(row["_NativeSeason"]), int(m_id), canon_slot,
-                              int(boost_active), float(npxg90), float(pred_goals_90),
-                              float(xag90), float(pred_ast_90), float(weight)))
         if PREMATCH_LOG:
             prematch_rows.append((player, row["Team"], opp, venue, int(m_id), row["Data_Source"],
                                   int(row["_LogSeason"]), float(g_rating), float(a_rating),
@@ -810,11 +643,9 @@ def smooth_ratings_and_mae(player_stats, concede_lu):
             grp = last_group.get(player, _transfer_group(player, row["_PosSeason"]))
         if grp is not None:
             last_group[player] = grp
-        if boost_active and ROLE_APPLY:
-            alpha_npg = alpha_eff
-        else:   # same schedule as alpha_eff, with the npxG floor (§233; centre-backs §235)
-            k_used = PRIOR_K_YOUTH if player in youth_start else PRIOR_K
-            alpha_npg = max(1 / (size + k_used), ALPHA_NPG_CB if grp == "CB" else ALPHA_NPG) * (minutes / 90.0)
+        # same schedule as alpha_eff, with the npxG floor (§233; centre-backs §235)
+        k_used = PRIOR_K_YOUTH if player in youth_start else PRIOR_K
+        alpha_npg = max(1 / (size + k_used), ALPHA_NPG_CB if grp == "CB" else ALPHA_NPG) * (minutes / 90.0)
         upd_g, upd_a = pred_goals_90 > 0, pred_ast_90 > 0
         if pred_goals_90 > 0:
             ratio = npxg90 / pred_goals_90
@@ -864,18 +695,6 @@ def smooth_ratings_and_mae(player_stats, concede_lu):
     if POS_UPDATE:
         print(f"[§249] entrant position update on (c npxG {POS_UPDATE_C[0]}, xAG {POS_UPDATE_C[1]}, Kpos "
               f"{POS_UPDATE_KPOS:g}): {n_pu_shifted} rows shifted")
-    if UNDERSTAT_POS_GOAL:
-        print(f"[role-change S39] fires={n_fires}  apply={int(ROLE_APPLY)}  "
-              f"boost_alpha={ROLE_BOOST_ALPHA}  window={ROLE_WINDOW}  W={ROLE_W}  "
-              f"factor={ROLE_FACTOR}")
-        if ROLE_DIAG and diag_rows:
-            _diag = pd.DataFrame(diag_rows, columns=[
-                "Player", "Season", "MatchID", "Slot", "BoostActive",
-                "npxg90", "pred_goals_90", "xag90", "pred_ast_90", "weight"])
-            _diag_path = Path(__file__).resolve().parents[2] / ROLE_DIAG_OUT
-            _diag.to_csv(_diag_path, index=False, encoding="utf-8-sig")
-            print(f"[role-change S39] wrote {len(_diag)} diagnostic rows "
-                  f"({int(_diag['BoostActive'].sum())} boost-active) -> {_diag_path.name}")
     if PREMATCH_LOG:
         pd.DataFrame(prematch_rows, columns=[
             "Player", "Team", "Opponent", "Venue", "MatchID", "Data_Source", "Season",

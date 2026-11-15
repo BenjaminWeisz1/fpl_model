@@ -118,7 +118,7 @@ STAGES = [
     },
     {
         # Player-level red-card factors (CHANGELOG §136; FotMob from 2026, §197): his own post-red shots / assisted
-        # shots, read by the ratings stage (GOAL_MODEL_RED_CARD=0 reverts). No network.
+        # shots, read by the ratings stage. No network.
         "label": "Red-card player factors",
         "script": SCRIPTS / "player_ratings" / "red_card_player_factors.py",
         "summary_files": ["red_card_player_factors.csv"],
