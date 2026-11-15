@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fpl_model"
+version = "0.1.0"
+description = "Fantasy Premier League points prediction: team ratings, player ratings, defensive contributions, bonus and a transfer optimizer."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pandas==2.2.3",
+    "numpy==2.2.1",
+    "scikit-learn==1.6.0",
+    "scipy==1.14.1",
+    "statsmodels==0.14.4",
+    "matplotlib==3.10.0",
+    "seaborn==0.13.2",
+    "requests==2.32.5",
+    "highspy==1.15.1",
+    "fuzzywuzzy==0.18.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff==0.8.4"]
+
+[tool.setuptools.packages.find]
+include = ["fpl_model*"]
+
+[tool.pytest.ini_options]
+# The repo root goes on sys.path so `import fpl_model` works without installing the package.
+pythonpath = ["."]
+testpaths = ["fpl_model", "tests"]
+python_files = ["test_*.py"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = ["fpl_model/optimizer/open_fpl_solver"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "I", "UP", "SIM"]

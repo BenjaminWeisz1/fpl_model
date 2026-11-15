@@ -35,8 +35,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parent
 DATA = ROOT / "data" / "current"
 SNAPSHOTS = ROOT / "data" / "snapshots"
-sys.path.insert(0, str(Path(__file__).resolve().parent / "scripts"))
-from league_rates import current_season  # noqa: E402
+from fpl_model.league_rates import current_season  # noqa: E402
 
 CURRENT_SEASON = current_season()
 
@@ -254,9 +253,9 @@ def save_snapshot(data=DATA, output=SNAPSHOTS, season=CURRENT_SEASON, gameweek=N
               "modified_utc": datetime.fromtimestamp(p.stat().st_mtime, timezone.utc).isoformat()}
              for p in sorted(destination.rglob("*")) if p.is_file()}
     sources = [ROOT/"run_post_gameweek.py", ROOT/"run_pre_deadline.py", Path(__file__),
-               ROOT/"scripts"/"defcon"/"predict.py", ROOT/"scripts"/"defcon"/"defender_model.py",
-               ROOT/"scripts"/"defcon"/"recent_defcon.py",ROOT/"scripts"/"defcon"/"opponent_model.py"]
-    sources += [ROOT/"scripts"/relative for relative in (
+               ROOT/"fpl_model"/"defcon"/"predict.py", ROOT/"fpl_model"/"defcon"/"defender_model.py",
+               ROOT/"fpl_model"/"defcon"/"recent_defcon.py",ROOT/"fpl_model"/"defcon"/"opponent_model.py"]
+    sources += [ROOT/"fpl_model"/relative for relative in (
         "team_ratings/update_team_ratings.py", "team_ratings/predict_fixture_goals.py",
         "player_ratings/build_player_ratings.py", "player_ratings/export_player_ratings.py",
         "player_ratings/new_player_priors.py", "player_ratings/build_new_player_priors.py",

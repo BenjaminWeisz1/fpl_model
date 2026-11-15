@@ -187,7 +187,10 @@ def run(label: str | None, ref: str | None) -> None:
             sys.exit(f"Stage {stage['label']} points outside the sandbox: {script}")
         t0 = time.time()
         with open(logs / f"{i:02d}_{script.stem}.log", "w", encoding="utf-8") as log:
-            code = subprocess.call([sys.executable, "-u", "-X", "utf8", str(script), *stage["args"]],
+            # package modules run as `python -m` from the sandbox root, as pipeline_stages.py runs them
+            target = (["-m", ".".join(script.relative_to(box).with_suffix("").parts)]
+                      if script.is_relative_to(box / "fpl_model") else [str(script)])
+            code = subprocess.call([sys.executable, "-u", "-X", "utf8", *target, *stage["args"]],
                                    cwd=box, env=_clean_env(), stdout=log, stderr=subprocess.STDOUT)
         print(f"  {i:02d} {stage['label']}: exit {code}, {time.time() - t0:.0f} s")
         if code:

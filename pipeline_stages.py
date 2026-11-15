@@ -30,7 +30,7 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-SCRIPTS = ROOT / "scripts"
+SCRIPTS = ROOT / "fpl_model"
 DATA = ROOT / "data" / "current"
 
 # Child Pythons write UTF-8 to their captured stdout/stderr pipes
@@ -39,6 +39,13 @@ DATA = ROOT / "data" / "current"
 # "Słonina" through the pipe crashes with UnicodeEncodeError under the
 # Windows cp1252 default.
 _CHILD_ENV = {**os.environ, "PYTHONIOENCODING": "utf-8"}
+
+
+def stage_command(script: Path) -> list:
+    """The command that runs a stage: package modules as `python -m`, anything else by path."""
+    if script.is_relative_to(SCRIPTS):
+        return [sys.executable, "-m", ".".join(script.relative_to(ROOT).with_suffix("").parts)]
+    return [sys.executable, str(script)]
 
 
 def _file_info(path: Path) -> str:
@@ -81,8 +88,8 @@ def run_stage(stage: dict, preseason: bool = False, gameweek: int = None) -> boo
     extra = ["--gameweek", str(gameweek)] if gameweek is not None and stage.get("accepts_gameweek") else []
 
     result = subprocess.run(
-        [sys.executable, str(script), *stage.get("args", []), *extra],
-        capture_output=True, text=True,
+        [*stage_command(script), *stage.get("args", []), *extra],
+        cwd=ROOT, capture_output=True, text=True,
         encoding="utf-8", errors="replace",
         env=_CHILD_ENV,
     )

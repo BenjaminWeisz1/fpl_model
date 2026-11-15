@@ -22,9 +22,9 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parent / "scripts" / "optimizer"))
-import solver_jobs  # noqa: E402
-import team_source  # noqa: E402
+sys.path.insert(0, str(HERE.parent))  # the repo root, so the fpl_model package imports
+from fpl_model.optimizer import solver_jobs  # noqa: E402
+from fpl_model.optimizer import team_source  # noqa: E402
 PORT = 8766  # the optimizer page uses 8765
 
 
