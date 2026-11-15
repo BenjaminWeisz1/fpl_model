@@ -23,6 +23,7 @@ adopts nothing.
 Run locally:
     python screen_sofascore_components.py
 """
+from fpl_model import paths
 import json
 from pathlib import Path
 
@@ -31,9 +32,9 @@ import pandas as pd
 
 from fpl_model.bonus.validate_bonus_calibration import SLOT_POSITION
 
-ROOT = Path(__file__).resolve().parents[2]
-DATA = ROOT / "data" / "current"
-OUT_DIR = ROOT / "data" / "validation" / "sofascore_component_screen_20261028"
+ROOT = paths.ROOT
+DATA = paths.CURRENT
+OUT_DIR = paths.VALIDATION / "sofascore_component_screen_20261028"
 SEASONS = range(2018, 2025)
 MIN_APPS = 10
 

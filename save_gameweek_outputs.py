@@ -20,6 +20,7 @@ Full snapshots require the pre-deadline outputs to cover the current forecast
 origin. Part 1 intentionally omits stale part-2 outputs. No fetches or model fits.
 """
 from __future__ import annotations
+from fpl_model import paths
 
 import argparse
 from datetime import datetime, timezone
@@ -32,9 +33,9 @@ import sys
 
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parent
-DATA = ROOT / "data" / "current"
-SNAPSHOTS = ROOT / "data" / "snapshots"
+ROOT = paths.ROOT
+DATA = paths.CURRENT
+SNAPSHOTS = paths.SNAPSHOTS
 from fpl_model.league_rates import current_season  # noqa: E402
 
 CURRENT_SEASON = current_season()

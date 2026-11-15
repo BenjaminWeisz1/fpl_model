@@ -5,6 +5,7 @@ A job writes the request's squad and forced decisions to data/optimizer/site/, r
 replay-checked ones. Each run replaces the folder's plans. The page polls status(); the solver's [progress] lines
 (solve_modes.py) say which plan is being solved. A job is stopped at solve_modes.time_limit(mode), or by cancel().
 """
+from fpl_model import paths
 import json
 import re
 import subprocess
@@ -21,10 +22,10 @@ from fpl_model.optimizer import team_source
 from fpl_model.forecast_horizon import HORIZON
 
 _HERE = Path(__file__).resolve().parent
-_ROOT = _HERE.parents[1]
-FOLDER = _ROOT / "data" / "optimizer" / "site"
-TEAM_FILE = FOLDER / "request_team.json"
-CONSTRAINTS_FILE = FOLDER / "request_constraints.json"
+_ROOT = paths.ROOT
+FOLDER = paths.OPTIMIZER / "site"
+TEAM_FILE = paths.OPTIMIZER / "site" / "request_team.json"
+CONSTRAINTS_FILE = paths.OPTIMIZER / "site" / "request_constraints.json"
 KEEP_LINES = 40
 STATE_CACHE_SECONDS = 300
 # Files a run writes; cleared before each run so an older run's plan_3 never sits beside a one-plan run

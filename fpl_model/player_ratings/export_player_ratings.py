@@ -27,6 +27,7 @@ Web_Names exist, e.g. Wesley/Malick Fofana).
 Run locally:
     python export_player_ratings.py
 """
+from fpl_model import paths
 import sys
 import time
 
@@ -36,13 +37,13 @@ from pathlib import Path
 from fpl_model.defcon_scaling import points_prob_at_90          # noqa: E402
 from fpl_model.player_availability import with_availability     # noqa: E402
 
-_DATA = Path(__file__).resolve().parents[2] / "data" / "current"
+_DATA = paths.CURRENT
 
-RATINGS_FILE = _DATA / "player_goal_assist_ratings.csv"
-DEFCON_FILE = _DATA / "defcon_average_probabilities.csv"
-PLAYERS_CURRENT_FILE = _DATA / "players_current.csv"
-MINUTES_FILE = _DATA / "minutes.csv"
-OUT_FILE = _DATA / "player_ratings.csv"
+RATINGS_FILE = paths.CURRENT / "player_goal_assist_ratings.csv"
+DEFCON_FILE = paths.CURRENT / "defcon_average_probabilities.csv"
+PLAYERS_CURRENT_FILE = paths.CURRENT / "players_current.csv"
+MINUTES_FILE = paths.CURRENT / "minutes.csv"
+OUT_FILE = paths.CURRENT / "player_ratings.csv"
 
 
 def _require(path, producer):

@@ -8,13 +8,14 @@ checks that the 2023 and 2024 splits are identical between the two runs.
 Run locally (after both harness runs):
     python summarize_team_xg_2025.py
 """
+from fpl_model import paths
 import json
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-DIR = Path(__file__).resolve().parents[2] / "data" / "validation" / "team_xg_2025_20261028"
+DIR = paths.VALIDATION / "team_xg_2025_20261028"
 
 
 def long(frame):

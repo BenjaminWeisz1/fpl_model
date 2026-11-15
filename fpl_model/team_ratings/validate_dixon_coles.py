@@ -1,6 +1,7 @@
 """Correlated scorelines (CHANGELOG §157). Walk-forward Dixon-Coles rho on pre-match forecasts; no production writes.
 python -u -X utf8 scripts/team_ratings/validate_dixon_coles.py
 """
+from fpl_model import paths
 import json
 from pathlib import Path
 
@@ -9,7 +10,7 @@ import pandas as pd
 from scipy.optimize import minimize_scalar
 from scipy.stats import poisson
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = paths.ROOT
 PEN = 1 + 792 / 7734 * 0.79
 
 

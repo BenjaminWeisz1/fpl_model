@@ -110,6 +110,7 @@ run_sequential() stays the pristine production reference; see
 rebalance_team_ratings.py / discount_team_ratings.py.
 Parameter-only experiments use the CLI flags.
 """
+from fpl_model import paths
 import argparse
 import hashlib
 import json
@@ -132,11 +133,11 @@ from fpl_model.minutes_penalties_cs.build_penalty_predictions import PEN_ATTEMPT
 # two in step if it ever changes.
 CS_PEN_GOAL_MULT = 1 + PEN_ATTEMPTS_PER_NPG * 0.79
 
-_DATA = Path(__file__).resolve().parents[2] / "data" / "current"
-MATCH_RESULTS_FILE = _DATA / "match_results.csv"
-MONEY_PRIORS_FILE = _DATA / "money_priors_by_season.csv"
-HISTORY_FILE = _DATA / "team_ratings_history.csv"
-OUT_DIR = _DATA / "team_ratings_oot"
+_DATA = paths.CURRENT
+MATCH_RESULTS_FILE = paths.CURRENT / "match_results.csv"
+MONEY_PRIORS_FILE = paths.CURRENT / "money_priors_by_season.csv"
+HISTORY_FILE = paths.CURRENT / "team_ratings_history.csv"
+OUT_DIR = paths.CURRENT / "team_ratings_oot"
 
 # Default held-out seasons: each is scored once, under its own cutoff,
 # with 6+ seasons of training behind it. Overridable via --cutoffs.

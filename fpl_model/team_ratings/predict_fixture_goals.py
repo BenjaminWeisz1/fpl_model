@@ -7,17 +7,18 @@ forward with current team ratings. This is a building block other facets
 Run locally:
     python predict_fixture_goals.py
 """
+from fpl_model import paths
 import sys
 import pandas as pd
 from pathlib import Path
 from fpl_model.team_ratings.get_next_round import get_next_round
 
-_DATA = Path(__file__).resolve().parents[2] / "data" / "current"
+_DATA = paths.CURRENT
 
 
-FIXTURES_FILE = _DATA / "fixtures.csv"
-TEAM_RATINGS_FILE = _DATA / "team_ratings_current.csv"  # latest current ratings
-OUT_FILE = _DATA / "fixture_goal_predictions.csv"
+FIXTURES_FILE = paths.CURRENT / "fixtures.csv"
+TEAM_RATINGS_FILE = paths.CURRENT / "team_ratings_current.csv"  # latest current ratings
+OUT_FILE = paths.CURRENT / "fixture_goal_predictions.csv"
 
 from fpl_model.forecast_horizon import HORIZON as NEXT_N_ROUNDS  # noqa: E402  (set in one place)
 from fpl_model.league_rates import current_season  # noqa: E402

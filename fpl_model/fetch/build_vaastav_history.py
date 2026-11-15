@@ -22,6 +22,7 @@ BPS rules changed over the seasons; see "Rules Verification: BPS Values by Seaso
 Run locally (after fetch_vaastav.py; no network):
     python build_vaastav_history.py
 """
+from fpl_model import paths
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -29,11 +30,11 @@ from scipy.optimize import linear_sum_assignment
 
 from fpl_model.fetch.build_position_crosswalk import name_similarity
 
-_ROOT = Path(__file__).resolve().parents[2]
-RAW = _ROOT / "data" / "raw" / "vaastav"
-_DATA = _ROOT / "data" / "current"
-OUT_FILE = _DATA / "vaastav_player_match_history.csv"
-OVERRIDES_FILE = _DATA / "vaastav_name_overrides.csv"
+_ROOT = paths.ROOT
+RAW = paths.RAW / "vaastav"
+_DATA = paths.CURRENT
+OUT_FILE = paths.CURRENT / "vaastav_player_match_history.csv"
+OVERRIDES_FILE = paths.CURRENT / "vaastav_name_overrides.csv"
 SEASONS = list(range(2017, 2025))
 TEAM = {"Cardiff": "Cardiff City", "Leeds": "Leeds United", "Leicester": "Leicester City", "Luton": "Luton Town",
         "Man City": "Manchester City", "Man Utd": "Manchester Utd", "Newcastle": "Newcastle Utd",

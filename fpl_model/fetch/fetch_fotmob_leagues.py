@@ -15,6 +15,7 @@ data/raw/fotmob/pages/, and data/raw/fotmob/manifest.json (url, status, UTC time
 Season = the year the season starts (2025 = 2025/26; calendar-year leagues: 2025 = the 2025 season).
 FotMob lists are penalty-inclusive: xG's sub-stat is goals, goals' sub-stat is penalty goals.
 """
+from fpl_model import paths
 import sys
 import argparse
 import hashlib
@@ -27,12 +28,12 @@ from pathlib import Path
 
 import requests
 
-ROOT = Path(__file__).resolve().parents[2]
-RAW = ROOT / "data" / "raw" / "fotmob"
-LEAGUE_DIR = RAW / "league"
-PAGE_DIR = RAW / "pages"
-MANIFEST = RAW / "manifest.json"
-PROBE = ROOT / "data" / "validation" / "fotmob_coverage_20261029"   # §115 probe cache, reused when present
+ROOT = paths.ROOT
+RAW = paths.RAW / "fotmob"
+LEAGUE_DIR = paths.RAW / "fotmob" / "league"
+PAGE_DIR = paths.RAW / "fotmob" / "pages"
+MANIFEST = paths.RAW / "fotmob" / "manifest.json"
+PROBE = paths.VALIDATION / "fotmob_coverage_20261029"   # §115 probe cache, reused when present
 from fpl_model.league_rates import current_season  # noqa: E402
 
 CURRENT_SEASON = current_season()

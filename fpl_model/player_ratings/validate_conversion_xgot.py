@@ -4,6 +4,7 @@ Needs a pre-match log first:
   GOAL_MODEL_PREMATCH_LOG=data/validation/conversion_xgot_20261101/log.csv python build_player_ratings.py
 Run: python -u -X utf8 scripts/player_ratings/validate_conversion_xgot.py
 """
+from fpl_model import paths
 import json
 from pathlib import Path
 
@@ -11,9 +12,9 @@ import numpy as np
 import pandas as pd
 from scipy.special import gammaln
 
-ROOT = Path(__file__).resolve().parents[2]
-DATA = ROOT / "data" / "current"
-OUT = ROOT / "data" / "validation" / "conversion_xgot_20261101"
+ROOT = paths.ROOT
+DATA = paths.CURRENT
+OUT = paths.VALIDATION / "conversion_xgot_20261101"
 KEY = ["Season", "Team", "Opponent", "Venue"]
 C = 30
 SCORED_XGOT, MISSED_XGOT = .86, .70

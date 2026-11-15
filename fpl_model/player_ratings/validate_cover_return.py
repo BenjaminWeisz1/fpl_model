@@ -3,6 +3,7 @@
 Protocol, frozen before any return effect was computed:
 data/validation/cover_return_20261101/protocol.json. Uses who started where only. Changes no production file.
 """
+from fpl_model import paths
 import json
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -13,7 +14,7 @@ from sklearn.linear_model import LogisticRegression
 
 from fpl_model.player_ratings.role_shares import LINES, load_starts, role_probs
 
-OUT = Path(__file__).resolve().parents[2] / "data" / "validation" / "cover_return_20261101"
+OUT = paths.VALIDATION / "cover_return_20261101"
 MIN_STARTS, TRAIN_END = 10, 2021
 N_GAIN, N_COEF, SEED = 5000, 2000, 171
 K = len(LINES)

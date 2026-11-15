@@ -14,6 +14,7 @@ candidate_code/ of the run directory, and production build_player_ratings.py is 
 Run locally (after the logged runs):
     python validate_opponent_lookup.py [--dir <run directory>]
 """
+from fpl_model import paths
 import argparse
 import json
 from pathlib import Path
@@ -21,8 +22,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[2]
-DIR = ROOT / "data" / "validation" / "opponent_lookup_20261028"
+ROOT = paths.ROOT
+DIR = paths.VALIDATION / "opponent_lookup_20261028"
 KEY = ["Player", "Team", "Opponent", "Venue", "MatchID", "Data_Source"]
 VALUES = ["NPG_Rating_Pre", "Assist_Rating_Pre", "npxg90", "pred_goals_90", "xag90", "pred_ast_90", "weight"]
 AVG_CONCEDED = 1.32023

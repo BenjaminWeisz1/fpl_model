@@ -21,6 +21,7 @@ Run locally:
     python fetch_understat_leagues.py            # fetch what is missing, then write the manifest
     python fetch_understat_leagues.py --manifest # manifest only, no downloads
 """
+from fpl_model import paths
 import argparse
 import hashlib
 import json
@@ -31,9 +32,9 @@ from pathlib import Path
 
 import requests
 
-_ROOT = Path(__file__).resolve().parents[2]
-LEAGUE_CACHE = _ROOT / "data" / "raw" / "understat" / "league"
-MANIFEST = LEAGUE_CACHE / "manifest_leagues.json"
+_ROOT = paths.ROOT
+LEAGUE_CACHE = paths.RAW / "understat" / "league"
+MANIFEST = paths.RAW / "understat" / "league" / "manifest_leagues.json"
 
 LEAGUES = ["La_liga", "Bundesliga", "Serie_A", "Ligue_1", "RFPL"]
 FIRST_SEASON = 2014

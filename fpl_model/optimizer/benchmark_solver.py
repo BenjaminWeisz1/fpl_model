@@ -20,6 +20,7 @@ export  writes one instance's plan-1 model, exactly as HiGHS would solve it, to 
 
 Variants change one lever at a time from run_optimizer.OVERRIDES plus the Deep mode (BASE_MODE).
 """
+from fpl_model import paths
 import argparse
 import json
 import sys
@@ -32,7 +33,7 @@ import pandas as pd
 import psutil
 
 _HERE = Path(__file__).resolve().parent
-_ROOT = _HERE.parents[1]
+_ROOT = paths.ROOT
 sys.path.insert(0, str(_HERE / "open_fpl_solver"))
 
 from fpl_model.optimizer import chips as chip_rules  # noqa: E402
@@ -41,9 +42,9 @@ from fpl_model.optimizer import run_optimizer  # noqa: E402
 from fpl_model.optimizer import solve_modes  # noqa: E402
 from dev import solver  # noqa: E402
 
-BENCH = _ROOT / "data" / "optimizer" / "benchmark"
-INSTANCES = BENCH / "instances"
-RESULTS = BENCH / "results"
+BENCH = paths.OPTIMIZER / "benchmark"
+INSTANCES = paths.OPTIMIZER / "benchmark" / "instances"
+RESULTS = paths.OPTIMIZER / "benchmark" / "results"
 SAMPLE_SECONDS = 1.0
 BASE_MODE = "deep"  # variants change one lever from this mode's settings (it was run_optimizer.OVERRIDES' until §227)
 WARM_START_SECONDS = 60

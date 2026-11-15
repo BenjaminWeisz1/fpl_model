@@ -8,15 +8,16 @@ did. SEs clustered by team-season. Report only.
 
     python diagnose_red_card_info.py     # -> data/validation/red_card_20261030/red_card_info.json
 """
+from fpl_model import paths
 import json
 from pathlib import Path
 
 import pandas as pd
 import statsmodels.formula.api as smf
 
-ROOT = Path(__file__).resolve().parents[2]
-DATA = ROOT / "data" / "current"
-OUT = ROOT / "data" / "validation" / "red_card_20261030"
+ROOT = paths.ROOT
+DATA = paths.CURRENT
+OUT = paths.VALIDATION / "red_card_20261030"
 
 
 def main():

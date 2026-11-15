@@ -4,6 +4,7 @@ One row per team-match: the expected XI from trailing league minutes, who actual
 Sofascore's own pre-match missing lists, and the quality gap between expected and actual XI on several pre-match measures.
 Run: python -u -X utf8 scripts/absence/build_absence_frame.py
 """
+from fpl_model import paths
 import re
 import unicodedata
 from pathlib import Path
@@ -11,12 +12,12 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[2]
-DATA = ROOT / "data" / "current"
-RAW = ROOT / "data" / "raw" / "transfermarkt"
-OUT = ROOT / "data" / "validation" / "absence_20261031"
+ROOT = paths.ROOT
+DATA = paths.CURRENT
+RAW = paths.RAW / "transfermarkt"
+OUT = paths.VALIDATION / "absence_20261031"
 OUT.mkdir(exist_ok=True)
-RATING_LOG = ROOT / "data" / "validation" / "prematch_bonus_history_20261030" / "player_ratings_prematch.csv"
+RATING_LOG = paths.VALIDATION / "prematch_bonus_history_20261030" / "player_ratings_prematch.csv"
 WINDOW, MIN_WINDOW = 8, 4
 SOFA_K, SOFA_HALF_LIFE = 7.0, 38.0  # about seven pseudo-games, one-year half-life, as the research doc summarises
 SUSPENDED = {3, 11, 12, 13}

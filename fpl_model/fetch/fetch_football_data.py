@@ -15,6 +15,7 @@ script exits non-zero naming the unmapped teams.
 Run locally:
     python fetch_football_data.py
 """
+from fpl_model import paths
 import sys
 import time
 from pathlib import Path
@@ -22,10 +23,10 @@ from pathlib import Path
 import pandas as pd
 import requests
 
-_ROOT = Path(__file__).resolve().parents[2]
-_DATA = _ROOT / "data" / "current"
-RAW_DIR = _ROOT / "data" / "raw" / "football_data"
-MATCH_RESULTS_FILE = _DATA / "match_results.csv"
+_ROOT = paths.ROOT
+_DATA = paths.CURRENT
+RAW_DIR = paths.RAW / "football_data"
+MATCH_RESULTS_FILE = paths.CURRENT / "match_results.csv"
 
 from fpl_model.league_rates import current_season  # noqa: E402
 

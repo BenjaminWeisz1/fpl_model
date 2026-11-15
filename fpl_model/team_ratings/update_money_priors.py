@@ -9,13 +9,14 @@ Run manually whenever historical_money.csv has been updated -- not part of
 the routine weekly cycle, since squad value/wages don't change every
 gameweek the way match results do.
 """
+from fpl_model import paths
 import pandas as pd
 import subprocess
 import sys
 from pathlib import Path
 
-_DATA = Path(__file__).resolve().parents[2] / "data" / "current"
-_COMPUTE_SCRIPT = Path(__file__).resolve().parents[2] / "data" / "archive" / "compute_money_ratings.py"
+_DATA = paths.CURRENT
+_COMPUTE_SCRIPT = paths.ARCHIVE / "compute_money_ratings.py"
 CURRENT_SEASON = 2026
 
 def main():

@@ -13,6 +13,7 @@ never read as an input or modified.
 Run locally:
     python validate_bonus_calibration.py
 """
+from fpl_model import paths
 from collections import Counter, defaultdict
 import hashlib
 import json
@@ -22,18 +23,17 @@ import numpy as np
 import pandas as pd
 
 
-ROOT = Path(__file__).resolve().parents[2]
-DATA = ROOT / "data" / "current"
-STATS_FILE = DATA / "player_match_stats.csv"
-POSITIONS_FILE = DATA / "player_match_positions.csv"
-RESULTS_FILE = DATA / "match_results.csv"
-FIXTURES_FILE = DATA / "fixtures.csv"
+ROOT = paths.ROOT
+DATA = paths.CURRENT
+STATS_FILE = paths.CURRENT / "player_match_stats.csv"
+POSITIONS_FILE = paths.CURRENT / "player_match_positions.csv"
+RESULTS_FILE = paths.CURRENT / "match_results.csv"
+FIXTURES_FILE = paths.CURRENT / "fixtures.csv"
 FROZEN_FORECAST = (
-    ROOT / "data" / "snapshots" / "2026" / "GW08"
-    / "20261020T210325_940676Z_partall" / "gameweek" / "bonus_predictions.csv"
+    paths.SNAPSHOTS / "2026" / "GW08" / "20261020T210325_940676Z_partall" / "gameweek" / "bonus_predictions.csv"
 )
 FROZEN_FORECAST_SHA256 = "cfe48d049c8a1562dc1f1ddad7236e2bef2bc9b8bb062342196f8728ac43bd67"
-OUT_DIR = ROOT / "data" / "validation" / "bonus_profile_20261021"
+OUT_DIR = paths.VALIDATION / "bonus_profile_20261021"
 
 GOAL_BPS = {"G": 12, "D": 12, "M": 18, "F": 24}
 SLOT_POSITION = {

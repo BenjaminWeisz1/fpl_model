@@ -10,6 +10,7 @@ uplifts); secondary: starts only, and calibration for usual subs when starting a
 Run locally (after the candidate's logged run):
     python validate_sub_uplift.py
 """
+from fpl_model import paths
 import json
 from pathlib import Path
 
@@ -18,12 +19,12 @@ import pandas as pd
 
 from fpl_model.player_ratings.validate_opponent_lookup import paired
 
-ROOT = Path(__file__).resolve().parents[2]
-DIR = ROOT / "data" / "validation" / "sub_uplift_20261028"
+ROOT = paths.ROOT
+DIR = paths.VALIDATION / "sub_uplift_20261028"
 # Same-data control: the production code with GOAL_MODEL_SUB_UPLIFT=0, run on the same inputs as the
 # candidate. (The first scoring used the 20:50 Experiment D log, which predates the 22:04 team-ratings
 # rebuild; 7 rows differed by <= 5e-8.)
-BASELINE = DIR / "switch_off_log.csv"
+BASELINE = paths.VALIDATION / "sub_uplift_20261028" / "switch_off_log.csv"
 SUB_UPLIFT = {"npxG": [(15, 1.663), (30, 1.277), (45, 1.170), (999, 0.868)],
               "xAG": [(15, 1.685), (30, 1.276), (45, 1.113), (999, 1.045)]}
 TARGETS = {"npxG": ("npxg90", "pred_goals_90", "NPG_Rating_Pre"), "xAG": ("xag90", "pred_ast_90", "Assist_Rating_Pre")}

@@ -17,11 +17,12 @@ proceeding with the rest of the pipeline.
 Run locally:
     python cleanup_team_names.py
 """
+from fpl_model import paths
 import pandas as pd
 from pathlib import Path
 from fpl_model.fetch.team_name_map import to_fbref_name
 
-_DATA = Path(__file__).resolve().parents[2] / "data" / "current"
+_DATA = paths.CURRENT
 
 FILES_AND_TEAM_COLS = {
     "players_current.csv": ["Team"],

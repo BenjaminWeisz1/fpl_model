@@ -17,6 +17,7 @@ sign flipped so higher is easier); each ticker has its own six k-means bands and
 Teams are sorted easiest run first, by total difficulty with each week's fixtures weighted 0.85 ^ (weeks ahead): a blank
 adds nothing and a double counts both games. data/optimizer/GW<nn>/fixture_difficulty.csv holds the 40 values of each.
 """
+from fpl_model import paths
 import json
 import os
 import sys
@@ -33,9 +34,9 @@ from matplotlib.patches import FancyBboxPatch  # noqa: E402
 from sklearn.cluster import KMeans  # noqa: E402
 
 _HERE = Path(__file__).resolve().parent
-_ROOT = _HERE.parents[1]
-_DATA = _ROOT / "data" / "current"
-_IMAGES = _ROOT / "images" / "fdr"
+_ROOT = paths.ROOT
+_DATA = paths.CURRENT
+_IMAGES = paths.IMAGES / "fdr"
 
 from fpl_model.team_ratings.predict_fixture_goals import AVG_CONCEDED, home_advantage  # noqa: E402
 

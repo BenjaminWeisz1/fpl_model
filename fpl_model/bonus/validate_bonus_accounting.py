@@ -14,6 +14,7 @@ fits 2026/27 GW1-4 and tests GW5-7. GW8 (fit GW1-7) is descriptive only.
 Run locally:
     python validate_bonus_accounting.py
 """
+from fpl_model import paths
 import hashlib
 import json
 from pathlib import Path
@@ -25,8 +26,8 @@ from fpl_model.bonus import build_residual_bps_baseline as residual
 from fpl_model.bonus import simulate_bonus
 from fpl_model.bonus import validate_bonus_calibration as calibration
 
-ROOT = Path(__file__).resolve().parents[2]
-OUT_DIR = ROOT / "data" / "validation" / "bonus_accounting_20261028"
+ROOT = paths.ROOT
+OUT_DIR = paths.VALIDATION / "bonus_accounting_20261028"
 
 N_DRAWS = 2000
 SEED = 42

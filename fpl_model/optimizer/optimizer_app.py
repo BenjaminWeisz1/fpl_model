@@ -6,6 +6,7 @@ Serves app.html on 127.0.0.1 only and opens it in the browser. Start Solve runs 
 picked beside the button; solve_modes.py) and replay_plans.py,
 so the plans shown are the replay-checked ones. A new solve replaces that gameweek's folder. Ctrl+C stops the server.
 """
+from fpl_model import paths
 import json
 import subprocess
 import sys
@@ -19,8 +20,8 @@ from fpl_model.optimizer import run_optimizer
 from fpl_model.optimizer import solve_modes
 
 _HERE = Path(__file__).resolve().parent
-_ROOT = _HERE.parents[1]
-_REQUEST_FILE = _ROOT / "data" / "optimizer" / "constraints_request.json"
+_ROOT = paths.ROOT
+_REQUEST_FILE = paths.OPTIMIZER / "constraints_request.json"
 
 PORT = 8765
 SOLVE_TIMEOUT_SECONDS = 2 * max(solve_modes.solver_options(m)["secs"] * solve_modes.solver_options(m)["num_iterations"]

@@ -8,6 +8,7 @@ evaluate_team_ratings_oot.py on each with --dump-predictions, and scores the hel
     python validate_red_card_variants.py run
     python validate_red_card_variants.py score     # -> data/validation/red_card_20261030/variants/results.json
 """
+from fpl_model import paths
 import json
 import subprocess
 import sys
@@ -19,9 +20,9 @@ import pandas as pd
 
 from fpl_model.team_ratings import red_card_adjust as rca  # noqa: E402
 
-ROOT = Path(__file__).resolve().parents[2]
-VAL = ROOT / "data" / "validation" / "red_card_20261030"
-OUT = VAL / "variants"
+ROOT = paths.ROOT
+VAL = paths.VALIDATION / "red_card_20261030"
+OUT = paths.VALIDATION / "red_card_20261030" / "variants"
 HARNESS = Path(__file__).resolve().parent / "evaluate_team_ratings_oot.py"
 CUTOFFS = (2023, 2024, 2025, 2026)
 FIXED = {"a_none": (1.0, 1.0, None, None), "b_auto": (rca.UP, rca.DOWN, rca.UP2, rca.DOWN2),

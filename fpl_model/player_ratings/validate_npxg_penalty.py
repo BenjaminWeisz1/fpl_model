@@ -10,6 +10,7 @@ run on the fixed data, under data/validation/npxg_penalty_20261028/:
 Run locally (after the logged run):
     python validate_npxg_penalty.py
 """
+from fpl_model import paths
 import json
 from pathlib import Path
 
@@ -17,9 +18,9 @@ import pandas as pd
 
 from fpl_model.player_ratings.validate_opponent_lookup import paired
 
-ROOT = Path(__file__).resolve().parents[2]
-DIR = ROOT / "data" / "validation" / "npxg_penalty_20261028"
-BASE = ROOT / "data" / "validation" / "opponent_lookup_20261028"
+ROOT = paths.ROOT
+DIR = paths.VALIDATION / "npxg_penalty_20261028"
+BASE = paths.VALIDATION / "opponent_lookup_20261028"
 VALUES = ["NPG_Rating_Pre", "Assist_Rating_Pre", "npxg90", "pred_goals_90", "xag90", "pred_ast_90", "weight"]
 
 

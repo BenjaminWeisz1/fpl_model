@@ -3,6 +3,7 @@
 Saves rise with the goals a keeper's side is expected to concede. Each caller's pooled rate keeps
 the level; this multiplier moves spread only. Refit SAVE_FIXTURE_BETA when a season ends.
 """
+from fpl_model import paths
 import sys
 from pathlib import Path
 
@@ -11,7 +12,7 @@ import pandas as pd
 
 from fpl_model.league_rates import penalty_rates  # noqa: E402
 
-_DATA = Path(__file__).resolve().parents[1] / "data" / "current"
+_DATA = paths.CURRENT
 
 SAVE_FIXTURE_BETA = 0.66
 SAVE_RATE_FIRST_SEASON = 2025  # the window of goalkeeper_event_rates' FPL API history

@@ -22,6 +22,7 @@ Keeper saves use the fixture multiplier of keeper_saves.py on the pooled rate, a
 Run locally (after build_simulation_features.py):
     python simulate_bonus.py
 """
+from fpl_model import paths
 import json
 import os
 import sys
@@ -35,12 +36,12 @@ from fpl_model.bonus.bps_rules import ASSIST_BPS, CLEAN_SHEET_BPS, GC_BPS, GOAL_
 from fpl_model.keeper_saves import goalkeeper_event_rates, goalkeeper_pen_save_rate, save_fixture_multiplier, save_fixture_reference
 from fpl_model.league_rates import minute_bands, penalty_rates  # noqa: E402
 
-_DATA = Path(__file__).resolve().parents[2] / "data" / "current"
+_DATA = paths.CURRENT
 
-FEATURES_FILE = _DATA / "simulation_features.csv"
-TEAM_RATINGS_HISTORY_FILE = _DATA / "team_ratings_history.csv"
-FIXTURE_GOALS_FILE = _DATA / "fixture_goal_predictions.csv"
-OUT_FILE = _DATA / "bonus_predictions.csv"
+FEATURES_FILE = paths.CURRENT / "simulation_features.csv"
+TEAM_RATINGS_HISTORY_FILE = paths.CURRENT / "team_ratings_history.csv"
+FIXTURE_GOALS_FILE = paths.CURRENT / "fixture_goal_predictions.csv"
+OUT_FILE = paths.CURRENT / "bonus_predictions.csv"
 
 LEGACY_ACCOUNTING = os.environ.get("BONUS_LEGACY_ACCOUNTING", "0") == "1"
 INTEGER_BPS = os.environ.get("BONUS_INTEGER_BPS", "1") == "1"
@@ -57,7 +58,7 @@ PEN_ATTEMPTS_PER_NPG, PEN_CONVERSION = penalty_rates()
 # Saves were also inside the keeper residual before §64; the 0.35 partly offset that.
 GK_SAVE_BPS_SCALE = 0.35 if LEGACY_ACCOUNTING else 1.0
 PASS_BANDS = np.array([0, 2, 4, 6])
-RESIDUAL_MODE_FILE = _DATA / "residual_bps_mode.json"
+RESIDUAL_MODE_FILE = paths.CURRENT / "residual_bps_mode.json"
 
 rng = np.random.default_rng(42)
 SAVE_RNG = None  # harnesses set this so changing the save rate leaves every other draw alone (§165)

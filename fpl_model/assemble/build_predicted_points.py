@@ -18,6 +18,7 @@ check sees it as an input of the same run.
 Run locally (after every individual facet script has been run):
     python build_predicted_points.py
 """
+from fpl_model import paths
 import os
 import sys
 import pandas as pd
@@ -31,19 +32,19 @@ from fpl_model.keeper_saves import goalkeeper_event_rates  # noqa: E402
 from fpl_model.atomic_write import to_csv_atomic  # noqa: E402
 from fpl_model.keeper_saves import PENALTY_GOALS_FACTOR, SAVE_FIXTURE_BETA, save_fixture_multiplier, save_fixture_reference
 
-_DATA = Path(__file__).resolve().parents[2] / "data" / "current"
+_DATA = paths.CURRENT
 
-MINUTES_PROBS_FILE = _DATA / "minutes_probabilities.csv"
-SIM_FEATURES_FILE = _DATA / "simulation_features.csv"
-PENALTY_FILE = _DATA / "penalty_predictions.csv"
-BONUS_FILE = _DATA / "bonus_predictions.csv"
-PLAYERS_CURRENT_FILE = _DATA / "players_current.csv"
-PLAYER_MATCH_STATS_FILE = _DATA / "player_match_stats.csv"
-PLAYER_MATCH_POSITIONS_FILE = _DATA / "player_match_positions.csv"
-TEAM_RATINGS_HISTORY_FILE = _DATA / "team_ratings_history.csv"
+MINUTES_PROBS_FILE = paths.CURRENT / "minutes_probabilities.csv"
+SIM_FEATURES_FILE = paths.CURRENT / "simulation_features.csv"
+PENALTY_FILE = paths.CURRENT / "penalty_predictions.csv"
+BONUS_FILE = paths.CURRENT / "bonus_predictions.csv"
+PLAYERS_CURRENT_FILE = paths.CURRENT / "players_current.csv"
+PLAYER_MATCH_STATS_FILE = paths.CURRENT / "player_match_stats.csv"
+PLAYER_MATCH_POSITIONS_FILE = paths.CURRENT / "player_match_positions.csv"
+TEAM_RATINGS_HISTORY_FILE = paths.CURRENT / "team_ratings_history.csv"
 
-OUT_FILE = _DATA / "predicted_points.csv"
-COMPONENTS_FILE = _DATA / "predicted_components.csv"
+OUT_FILE = paths.CURRENT / "predicted_points.csv"
+COMPONENTS_FILE = paths.CURRENT / "predicted_components.csv"
 from fpl_model.forecast_horizon import GAMEWEEKS  # noqa: E402  (the forecast window, set in one place)
 
 PTS_PER_GOAL = {"G": 10, "D": 6, "M": 5, "F": 4}

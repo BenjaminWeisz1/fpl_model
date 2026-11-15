@@ -41,6 +41,7 @@ outage cannot silently drop a round as the Understat outage did. FOTMOB_ALLOW_MI
     python fetch_fotmob_matches.py             # fetch new pages (7 s apart), then rebuild the outputs
     python fetch_fotmob_matches.py --offline   # rebuild from the cache only
 """
+from fpl_model import paths
 import argparse
 import json
 import os
@@ -59,9 +60,9 @@ from fpl_model import league_rates  # noqa: E402
 from fpl_model.atomic_write import to_csv_atomic  # noqa: E402
 from fpl_model.fetch.fetch_understat import _mapped_position  # noqa: E402
 
-_ROOT = Path(__file__).resolve().parents[2]
-_DATA = _ROOT / "data" / "current"
-RAW = _ROOT / "data" / "raw" / "fotmob" / "matches"
+_ROOT = paths.ROOT
+_DATA = paths.CURRENT
+RAW = paths.RAW / "fotmob" / "matches"
 CURRENT_SEASON = league_rates.current_season()
 FIRST_SEASON = 2026          # first season served by FotMob instead of Understat (user decision, 2026-11-03)
 LEAGUE_ID = 47
@@ -71,12 +72,12 @@ HEADERS = {"User-Agent": "Mozilla/5.0"}
 THROTTLE_S = 7
 MIN_OVERLAP_STARTERS = 500   # the slot mapping needs at least this many starters seen by both sources
 
-POSITIONS_OUT = _DATA / "fotmob_match_positions.csv"
-SHOTS_OUT = _DATA / "fotmob_shots.csv"
-CODES_FILE = _DATA / "fpl_player_codes.csv"
-OVERLAP_FILE = _ROOT / "data" / "raw" / "fotmob" / "understat_overlap_2026.csv"   # frozen; see freeze_overlap()
-RESULTS_FILE = _DATA / "match_results.csv"
-PMS_FILE = _DATA / "player_match_stats.csv"
+POSITIONS_OUT = paths.CURRENT / "fotmob_match_positions.csv"
+SHOTS_OUT = paths.CURRENT / "fotmob_shots.csv"
+CODES_FILE = paths.CURRENT / "fpl_player_codes.csv"
+OVERLAP_FILE = paths.RAW / "fotmob" / "understat_overlap_2026.csv"   # frozen; see freeze_overlap()
+RESULTS_FILE = paths.CURRENT / "match_results.csv"
+PMS_FILE = paths.CURRENT / "player_match_stats.csv"
 
 TEAM_NAMES = {"Manchester United": "Manchester Utd", "Nottingham Forest": "Nott'ham Forest",
               "AFC Bournemouth": "Bournemouth", "Brighton & Hove Albion": "Brighton",

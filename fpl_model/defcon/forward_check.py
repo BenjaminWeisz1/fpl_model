@@ -10,6 +10,7 @@ fixed-fit/fixed-feature forecast test, not a weekly-refit comparison. All paths
 resolve from this script. No network access or scheduler is involved.
 """
 from __future__ import annotations
+from fpl_model import paths
 
 import argparse
 from datetime import datetime, timezone
@@ -23,10 +24,10 @@ import shutil
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[2]
-DATA = ROOT / "data" / "current"
-EXPERIMENT = Path(__file__).resolve().parent.parents[1] / "data" / "validation" / "defcon_experiment_20261020"
-STUDY = ROOT / "data" / "validation" / "defcon_forward_20261020"
+ROOT = paths.ROOT
+DATA = paths.CURRENT
+EXPERIMENT = paths.VALIDATION / "defcon_experiment_20261020"
+STUDY = paths.VALIDATION / "defcon_forward_20261020"
 MATCH_KEY = ["Season", "Home", "Away"]
 PLAYER_KEY = ["Season", "Team", "Opponent", "Venue", "Player"]
 FEATURES = ["AvgPer90", "AvgRaw", "StdPer90", "MatchesPlayed", "Recent5AvgPer90",

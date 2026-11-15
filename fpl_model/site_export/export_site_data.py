@@ -41,6 +41,7 @@ teams.json (Team ratings and Fixtures pages):
               that opponent at that venue, from fixture_ticker.build_difficulty (no penalties, as the images)
 """
 from __future__ import annotations
+from fpl_model import paths
 
 import json
 import math
@@ -50,9 +51,9 @@ from pathlib import Path
 
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[2]
-DATA = ROOT / "data" / "current"
-OUT = ROOT / "site" / "data"
+ROOT = paths.ROOT
+DATA = paths.CURRENT
+OUT = paths.SITE / "data"
 from fpl_model.forecast_horizon import HORIZON, week_weights  # noqa: E402
 from save_gameweek_outputs import CURRENT_SEASON, snapshot_plan  # noqa: E402
 from fpl_model.minutes_penalties_cs.build_penalty_predictions import build_conversion_rates, resolve_names  # noqa: E402

@@ -4,6 +4,7 @@ Protocol: data/validation/set_piece_diagnostic_20261103/protocol.json. Diagnosti
 
     python diagnose_set_pieces.py      # needs validate_position_alpha.py run (its floor-0.025 log) for part C
 """
+from fpl_model import paths
 import json
 import sys
 from pathlib import Path
@@ -11,11 +12,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[2]
-DATA = ROOT / "data" / "current"
-MATCHES = ROOT / "data" / "raw" / "understat" / "matches"
-OUT = ROOT / "data" / "validation" / "set_piece_diagnostic_20261103"
-LOG = ROOT / "data" / "validation" / "position_alpha_20261103" / "log_a0.025.csv"
+ROOT = paths.ROOT
+DATA = paths.CURRENT
+MATCHES = paths.RAW / "understat" / "matches"
+OUT = paths.VALIDATION / "set_piece_diagnostic_20261103"
+LOG = paths.VALIDATION / "position_alpha_20261103" / "log_a0.025.csv"
 SET_PIECE = {"FromCorner", "SetPiece", "DirectFreekick"}
 GROUP = {"CB": "CB", "LB": "FB", "RB": "FB", "LWB": "FB", "RWB": "FB", "WB": "FB", "DM": "CM", "CM": "CM",
          "AM": "AW", "LM": "AW", "RM": "AW", "LW": "AW", "RW": "AW", "FW": "FW"}

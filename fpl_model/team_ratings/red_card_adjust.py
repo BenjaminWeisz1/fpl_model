@@ -25,6 +25,7 @@ penalty_reconcile).
     python red_card_adjust.py            # writes data/current/red_card_factors.csv and prints a check
     python red_card_adjust.py --apply    # also writes NPxG_Adj of every red-card match into match_results.csv
 """
+from fpl_model import paths
 import argparse
 import json
 import sys
@@ -37,10 +38,10 @@ from fpl_model.atomic_write import to_csv_atomic  # noqa: E402
 
 from fpl_model.fetch.fetch_fotmob_matches import FIRST_SEASON as FOTMOB_FIRST_SEASON, POSITIONS_OUT as FOTMOB_POSITIONS, SHOTS_OUT as FOTMOB_SHOTS  # noqa: E402
 
-ROOT = Path(__file__).resolve().parents[2]
-MATCHES = ROOT / "data" / "raw" / "understat" / "matches"
-DATA = ROOT / "data" / "current"
-OUT = DATA / "red_card_factors.csv"
+ROOT = paths.ROOT
+MATCHES = paths.RAW / "understat" / "matches"
+DATA = paths.CURRENT
+OUT = paths.CURRENT / "red_card_factors.csv"
 UP, DOWN = 0.8, 1.2   # the user's factors for the side with more / fewer players
 UP2, DOWN2 = None, None   # two-player differential (None = same as one)
 

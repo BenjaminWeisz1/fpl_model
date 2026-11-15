@@ -33,6 +33,7 @@ failed run deletes the previous run's table so a stale one can't be snapshotted.
 Run locally:
     python clean_solio_baselines.py [--gameweek N]
 """
+from fpl_model import paths
 import argparse
 import json
 import re
@@ -43,16 +44,16 @@ from pathlib import Path
 
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = paths.ROOT
 from fpl_model.atomic_write import to_csv_atomic  # noqa: E402
 from fpl_model.league_rates import current_season  # noqa: E402
 
-DATA = ROOT / "data" / "current"
-RAW = ROOT / "data" / "raw" / "solio"
+DATA = paths.CURRENT
+RAW = paths.RAW / "solio"
 SOURCE_NAME = "solio_baselines.csv"
 CAPTURE_NAME = "capture.json"
-OUT_FILE = DATA / "solio_baselines.csv"
-STATUS_FILE = DATA / "solio_status.json"
+OUT_FILE = paths.CURRENT / "solio_baselines.csv"
+STATUS_FILE = paths.CURRENT / "solio_status.json"
 
 RAW_COLUMNS = ["fpl_id", "fpl_code", "name", "position", "solio_team_id", "now_cost", "status",
                "pts90", "mins_per_match", "g90", "a90", "g_pct", "a_pct", "cs_pct", "bon90", "dc90"]

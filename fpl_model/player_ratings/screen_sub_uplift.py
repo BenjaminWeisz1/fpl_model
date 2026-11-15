@@ -11,15 +11,16 @@ early, starters playing 60-84. Start/sub from player_match_positions.csv (Unders
 Run locally:
     python screen_sub_uplift.py
 """
+from fpl_model import paths
 import json
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[2]
-DATA = ROOT / "data" / "current"
-OUT = ROOT / "data" / "validation" / "sub_uplift_20261028"
+ROOT = paths.ROOT
+DATA = paths.CURRENT
+OUT = paths.VALIDATION / "sub_uplift_20261028"
 KEY = ["Season", "Team", "Opponent", "Venue", "Player"]
 
 

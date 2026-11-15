@@ -2,6 +2,7 @@
 One factor per head, fitted on one FPL-era season's held-out rows, tested on the other. No production writes.
 Run: python -u -X utf8 scripts/defcon/evaluate_points_calibration.py
 """
+from fpl_model import paths
 import json
 import sys
 from pathlib import Path
@@ -12,10 +13,10 @@ from scipy.optimize import brentq
 from sklearn.metrics import log_loss
 
 HERE = Path(__file__).resolve().parent
-ROOT = HERE.parents[1]
+ROOT = paths.ROOT
 from fpl_model.defcon_scaling import nb_sf, prob_at_minutes
 
-OUT = HERE.parents[1] / "data" / "validation" / "defcon_overnight_20261031"
+OUT = paths.VALIDATION / "defcon_overnight_20261031"
 KEY = ["Season", "Player", "Team", "Opponent", "Venue"]
 HEADS = {"D": ("p_control", 10), "M": ("p_count", 12), "F": ("p_control", 12)}
 

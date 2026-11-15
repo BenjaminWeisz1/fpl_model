@@ -6,6 +6,7 @@ network runs. --probe makes only the four agreed lineup checks plus seasons meta
 --build-only needs no network. Exit 2 = incomplete, 1 = integrity/schema error;
 --weekly tolerates access/incomplete outcomes only. See SOFASCORE.md.
 """
+from fpl_model import paths
 import sys
 import argparse
 from collections import Counter, defaultdict
@@ -21,9 +22,9 @@ import requests
 
 from fpl_model.fetch.player_identity import Registry, read_csv, write_csv
 
-ROOT = Path(__file__).resolve().parents[2]
-RAW = ROOT / 'data/raw/sofascore'
-DATA = ROOT / 'data/current'
+ROOT = paths.ROOT
+RAW = paths.RAW / "sofascore"
+DATA = paths.CURRENT
 from fpl_model.league_rates import current_season  # noqa: E402
 
 CURRENT_SEASON = current_season()

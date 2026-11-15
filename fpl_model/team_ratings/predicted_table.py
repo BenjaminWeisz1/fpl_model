@@ -14,6 +14,7 @@ an expected value, not a simulation of how ratings would move.
 
     python -u -X utf8 scripts/team_ratings/predicted_table.py
 """
+from fpl_model import paths
 import sys
 from pathlib import Path
 
@@ -23,15 +24,15 @@ import requests
 from scipy.stats import poisson
 
 _HERE = Path(__file__).resolve().parent
-_ROOT = _HERE.parents[1]
-_DATA = _ROOT / "data" / "current"
+_ROOT = paths.ROOT
+_DATA = paths.CURRENT
 
 from fpl_model.league_rates import current_season, mean_npg, penalty_rates  # noqa: E402
 from fpl_model.fetch.team_name_map import to_fbref_name  # noqa: E402
 from fpl_model.team_ratings.update_team_ratings import home_advantage  # noqa: E402
 
 BASE_URL = "https://fantasy.premierleague.com/api"
-OUT_CSV = _DATA / "predicted_table.csv"
+OUT_CSV = paths.CURRENT / "predicted_table.csv"
 IMAGE = "team_ratings/predicted_table.png"
 MAX_GOALS = 15          # Poisson tail beyond this is < 1e-9 at these means
 

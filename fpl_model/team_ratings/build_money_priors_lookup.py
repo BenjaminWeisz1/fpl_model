@@ -14,14 +14,15 @@ DO NOT RERUN (CHANGELOG §200-§202): the source's 2017-2024 values were fitted 
 rows are now past-only (rebuild_money_priors_past_only.py), and rerunning this would bring the leak back.
 The source folder (Archive/) no longer exists anyway.
 """
+from fpl_model import paths
 import pandas as pd
 from pathlib import Path
 
 _PROJECT = Path(__file__).resolve().parents[3]
-_DATA = _PROJECT / "fpl_model" / "data" / "current"
+_DATA = paths.CURRENT
 
 SOURCE_FILE = _PROJECT / "Archive" / "all_matchlogs_with_money_pred.csv"
-OUT_FILE = _DATA / "money_priors_by_season.csv"
+OUT_FILE = paths.CURRENT / "money_priors_by_season.csv"
 
 
 def main():

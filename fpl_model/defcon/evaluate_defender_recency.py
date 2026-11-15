@@ -5,6 +5,7 @@ whose predictions must reproduce validation_no_std_ew_<S>.csv. Candidate: the sa
 training rows weighted 0.5^((S_last - season) / HALF_LIFE) in the GBM fit, the OOF predictions and the
 isotonic calibrator. No production writes. Run: python -u -X utf8 scripts/defcon/evaluate_defender_recency.py
 """
+from fpl_model import paths
 import os
 os.environ.setdefault("OMP_NUM_THREADS", "2")
 import gzip
@@ -25,8 +26,8 @@ from fpl_model.defcon.evaluate_defender_monotonic import metrics, bootstrap, pre
 from fpl_model.defcon.recent_defcon import feature_columns
 
 HERE = Path(__file__).resolve().parent
-FEAT = HERE.parents[1] / "data" / "validation" / "defcon_feature_experiment_20261020"
-OUT = HERE.parents[1] / "data" / "validation" / "defcon_recency_experiment_20261029"
+FEAT = paths.VALIDATION / "defcon_feature_experiment_20261020"
+OUT = paths.VALIDATION / "defcon_recency_experiment_20261029"
 OUT.mkdir(exist_ok=True)
 BASE_COLS = ["AvgPer90", "AvgRaw", "StdPer90", "MatchesPlayed", "Recent5AvgPer90", "Recent5AvgRaw", "PctAboveThreshold",
              "OpponentAvgStat", "TeamAvgStat", "VenueAvg", "IsHome", "Is_FPL_API", "Pos_CB", "Pos_FB", "Pos_WB", "Pos_LB", "Pos_RB"]

@@ -50,6 +50,7 @@ empty on FotMob rows.
 Pure CSV transform (no network); deterministic. Run locally:
     python build_position_crosswalk.py
 """
+from fpl_model import paths
 import difflib
 import re
 import sys
@@ -64,13 +65,13 @@ from fpl_model.atomic_write import to_csv_atomic  # noqa: E402
 from fpl_model.fetch.player_identity import Registry
 from fpl_model.fetch.fetch_fotmob_matches import FIRST_SEASON as FOTMOB_FIRST_SEASON, POSITIONS_OUT as FOTMOB_FILE
 
-_ROOT = Path(__file__).resolve().parents[2]
-_DATA = _ROOT / "data" / "current"
-PMS_FILE = _DATA / "player_match_stats.csv"
-UP_FILE = _DATA / "understat_match_positions.csv"
-PLAYERS_CURRENT = _DATA / "players_current.csv"
-OUT_ROWS = _DATA / "player_match_positions.csv"
-OUT_XWALK = _DATA / "understat_fpl_crosswalk.csv"
+_ROOT = paths.ROOT
+_DATA = paths.CURRENT
+PMS_FILE = paths.CURRENT / "player_match_stats.csv"
+UP_FILE = paths.CURRENT / "understat_match_positions.csv"
+PLAYERS_CURRENT = paths.CURRENT / "players_current.csv"
+OUT_ROWS = paths.CURRENT / "player_match_positions.csv"
+OUT_XWALK = paths.CURRENT / "understat_fpl_crosswalk.csv"
 
 # Accept a within-match name pair only at or above this similarity. Optimal
 # assignment runs first, then sub-threshold pairs are dropped, so a leftover

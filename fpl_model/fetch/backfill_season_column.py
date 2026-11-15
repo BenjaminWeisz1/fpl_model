@@ -12,11 +12,12 @@ Run this ONCE, before running fetch_gameweek_stats.py for the first time.
 Run locally:
     python backfill_season_column.py
 """
+from fpl_model import paths
 import pandas as pd
 from pathlib import Path
 
-_DATA = Path(__file__).resolve().parents[2] / "data" / "current"
-FILE = _DATA / "player_match_stats.csv"
+_DATA = paths.CURRENT
+FILE = paths.CURRENT / "player_match_stats.csv"
 
 # MatchID cutover point where the old fbref round-based scheme ends and the
 # 2025/26 FPL-API offset scheme begins -- matches the MATCHID_OFFSET originally

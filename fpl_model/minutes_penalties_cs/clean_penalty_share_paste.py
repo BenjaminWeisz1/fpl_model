@@ -28,6 +28,7 @@ in this folder, then run this script.
 Run locally:
     python clean_penalty_share_paste.py
 """
+from fpl_model import paths
 import pandas as pd
 import re
 import sys
@@ -35,9 +36,9 @@ from pathlib import Path
 
 from fpl_model.forecast_horizon import GAMEWEEKS, HORIZON  # noqa: E402  (the paste must cover the pipeline's window)
 
-_DATA = Path(__file__).resolve().parents[2] / "data" / "current"
-RAW_FILE = _DATA / "review_pk_share.xlsx"
-OUT_FILE = _DATA / "penalty_share.csv"
+_DATA = paths.CURRENT
+RAW_FILE = paths.CURRENT / "review_pk_share.xlsx"
+OUT_FILE = paths.CURRENT / "penalty_share.csv"
 
 MYSTERY_ROW_PATTERN = re.compile(r"^(\d+(\.\d+)?|-)$")
 

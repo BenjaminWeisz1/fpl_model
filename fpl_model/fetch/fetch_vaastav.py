@@ -11,6 +11,7 @@ holds the team names). Personal, non-commercial use; plain requests with a 1 s p
 Run locally:
     python fetch_vaastav.py
 """
+from fpl_model import paths
 import hashlib
 import json
 import time
@@ -18,7 +19,7 @@ from pathlib import Path
 
 import requests
 
-_RAW = Path(__file__).resolve().parents[2] / "data" / "raw" / "vaastav"
+_RAW = paths.RAW / "vaastav"
 BASE = "https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/master/data"
 SEASONS = [f"{y}-{str(y + 1)[2:]}" for y in range(2017, 2025)]
 FILES = ["gws/merged_gw.csv", "fixtures.csv", "players_raw.csv", "raw.json"]

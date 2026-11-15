@@ -5,6 +5,7 @@ Phases, in order:  rates  ->  grid  ->  select  ->  final  ->  confirm
 `select` reads 2018-2022 only. `confirm` reads 2023-2024. Nothing here reads 2025-26 errors.
 Logs and ratings go to the evidence folder; production files are never written.
 """
+from fpl_model import paths
 import json
 import os
 import subprocess
@@ -16,10 +17,10 @@ import pandas as pd
 
 from fpl_model.player_ratings.role_shares import LINE_RATES_FILE, LINES, load_starts, role_table
 
-ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / "data" / "validation" / "role_factors_20261101"
+ROOT = paths.ROOT
+OUT = paths.VALIDATION / "role_factors_20261101"
 BUILD = Path(__file__).with_name("build_player_ratings.py")
-BASE_LOG = ROOT / "data" / "validation" / "role_move_error_20261101" / "prematch_log.csv"
+BASE_LOG = paths.VALIDATION / "role_move_error_20261101" / "prematch_log.csv"
 GRID = [0, 0.1, 0.2, 0.3, 0.4, 0.6, 0.8, 1]
 KEYS = ["Season", "Team", "Opponent", "Venue", "Player"]
 ENV = {"npxG": ("GOAL_MODEL_ROLE_K_NPG_UP", "GOAL_MODEL_ROLE_K_NPG_DOWN"),

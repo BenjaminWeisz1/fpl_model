@@ -10,16 +10,17 @@ bootstrap on the difference from bin 0.
 Run locally (after the logged run):
     python diagnose_inactivity.py
 """
+from fpl_model import paths
 import json
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[2]
-DATA = ROOT / "data" / "current"
-DIR = ROOT / "data" / "validation" / "inactivity_shrink_20261029"
-LOG = DIR / "baseline_log.csv"
+ROOT = paths.ROOT
+DATA = paths.CURRENT
+DIR = paths.VALIDATION / "inactivity_shrink_20261029"
+LOG = paths.VALIDATION / "inactivity_shrink_20261029" / "baseline_log.csv"
 KEY = ["Season", "Team", "Opponent", "Venue", "Player"]
 TARGETS = {"npxG": ("npxg90", "pred_goals_90"), "xAG": ("xag90", "pred_ast_90")}
 POS = {"FW": "F", "W": "M", "AM": "M", "WM": "M", "CM": "M", "DM": "M", "WB": "D", "FB": "D", "CB": "D", "GK": "G"}

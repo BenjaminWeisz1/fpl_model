@@ -39,6 +39,7 @@ rows again, so the duplication cannot recur.
 
     python scripts/fetch/fix_mislabelled_season_rows.py [--dry-run]
 """
+from fpl_model import paths
 import shutil
 import sys
 import time
@@ -46,12 +47,12 @@ from pathlib import Path
 
 import pandas as pd
 
-_ROOT = Path(__file__).resolve().parents[2]
-_DATA = _ROOT / "data" / "current"
-_ARCHIVE = _ROOT / "data" / "archive"
+_ROOT = paths.ROOT
+_DATA = paths.CURRENT
+_ARCHIVE = paths.ARCHIVE
 
 CURRENT_SEASON = 2026  # bump manually each new season
-STATS_FILE = _DATA / "player_match_stats.csv"
+STATS_FILE = paths.CURRENT / "player_match_stats.csv"
 
 # A MatchID holding at most this many rows is a per-row id, not a gameweek id.
 # Real gameweek ids in the completed-season block hold ~300 rows each.

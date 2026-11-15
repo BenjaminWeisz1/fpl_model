@@ -4,6 +4,7 @@ Provider IDs are global aliases; legacy names are scoped by season and match tea
 Accepted Understat per-row assignments seed the registry without re-matching history.
 No FPL IDs are invented from names. CSV schemas and access workflow: SOFASCORE.md.
 """
+from fpl_model import paths
 import csv
 import hashlib
 import json
@@ -13,7 +14,7 @@ import sys
 
 from fpl_model.league_rates import current_season  # noqa: E402
 
-DATA = Path(__file__).resolve().parents[2] / 'data' / 'current'
+DATA = paths.CURRENT
 
 
 def read_csv(path):

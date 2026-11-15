@@ -16,6 +16,7 @@ segment's first row).
 Scores: MSE of match values, (prediction per 90 - actual per 90) x minutes / 90, summed; change = candidate / control
 - 1; player-cluster bootstrap, 2,000 draws, seed 42. Calibration = sum actual / sum predicted.
 """
+from fpl_model import paths
 import json
 import sys
 from pathlib import Path
@@ -23,9 +24,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[2]
-DATA = ROOT / "data" / "current"
-OUT = ROOT / "data" / "validation" / "position_rates_20261114"
+ROOT = paths.ROOT
+DATA = paths.CURRENT
+OUT = paths.VALIDATION / "position_rates_20261114"
 TARGETS = {"npxG": ("npxg90", "pred_goals_90", "NPG_Rating_Pre"), "xAG": ("xag90", "pred_ast_90", "Assist_Rating_Pre")}
 GROUP = {"CB": "CB", "FB": "FB", "WB": "FB", "DM": "CM", "CM": "CM", "AM": "AW", "W": "AW", "WM": "AW", "FW": "FW"}
 KEY = ["Player", "Team", "Opponent", "Venue", "MatchID", "Season"]

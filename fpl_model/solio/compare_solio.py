@@ -49,6 +49,7 @@ Run locally:
     python compare_solio.py --current            # data/current, before a snapshot exists
     python compare_solio.py --current --rounds 5 # only the first five rounds of our forecast
 """
+from fpl_model import paths
 import argparse
 import json
 import sys
@@ -57,14 +58,14 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = paths.ROOT
 from fpl_model.atomic_write import to_csv_atomic  # noqa: E402
 from fpl_model.defcon_scaling import points_mu90  # noqa: E402
 from fpl_model.league_rates import mean_npg, penalty_rates  # noqa: E402
 
-DATA = ROOT / "data" / "current"
-SNAPSHOTS = ROOT / "data" / "snapshots"
-OUT_ROOT = ROOT / "data" / "solio" / "comparisons"
+DATA = paths.CURRENT
+SNAPSHOTS = paths.SNAPSHOTS
+OUT_ROOT = paths.SOLIO / "comparisons"
 
 REGULAR_MINUTES = 60       # minutes a match on both sides for the "regulars" group
 MIN_XMINS_PER_MATCH = 18   # our side's floor for a per-90 rate, matching Solio's own cut-off (§236)

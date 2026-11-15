@@ -1,6 +1,7 @@
 """
 Run locally (after fetch_gameweek_stats.py):
 """
+from fpl_model import paths
 import sys
 import requests
 import pandas as pd
@@ -11,11 +12,11 @@ from fpl_model.fetch import penalty_reconcile
 BOOTSTRAP_URL = "https://fantasy.premierleague.com/api/bootstrap-static/"
 FIXTURES_URL = "https://fantasy.premierleague.com/api/fixtures/"
 
-_DATA = Path(__file__).resolve().parents[2] / "data" / "current"
-MATCH_RESULTS_FILE = _DATA / "match_results.csv"
-PLAYER_STATS_FILE = _DATA / "player_match_stats.csv"
-PENALTY_LOG_FILE = _DATA / "penalty_log.csv"
-FIXTURES_FILE = _DATA / "fixtures.csv"
+_DATA = paths.CURRENT
+MATCH_RESULTS_FILE = paths.CURRENT / "match_results.csv"
+PLAYER_STATS_FILE = paths.CURRENT / "player_match_stats.csv"
+PENALTY_LOG_FILE = paths.CURRENT / "penalty_log.csv"
+FIXTURES_FILE = paths.CURRENT / "fixtures.csv"
 
 from fpl_model.league_rates import current_season  # noqa: E402
 from fpl_model.atomic_write import to_csv_atomic  # noqa: E402

@@ -10,15 +10,16 @@ constant. Scored by MSE against conventional assists (Understat) and FPL assists
 Run locally:
     python compare_xa_sources.py
 """
+from fpl_model import paths
 import json
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[2]
-DATA = ROOT / "data" / "current"
-OUT = ROOT / "data" / "validation" / "xa_sources_20261029"
+ROOT = paths.ROOT
+DATA = paths.CURRENT
+OUT = paths.VALIDATION / "xa_sources_20261029"
 K = ["Season", "Team", "Opponent", "Venue"]
 MIN_PRIOR = 900
 N_BOOT, SEED = 5000, 42

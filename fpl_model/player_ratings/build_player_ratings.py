@@ -15,6 +15,7 @@ ratio computed directly from career history:
 Run locally:
     python build_player_ratings.py
 """
+from fpl_model import paths
 import sys
 import os
 from collections import deque, defaultdict, Counter
@@ -23,7 +24,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
-_DATA = Path(__file__).resolve().parents[2] / "data" / "current"
+_DATA = paths.CURRENT
 
 # ---- constants (from the original pipeline) ----
 minutes_constant = 500

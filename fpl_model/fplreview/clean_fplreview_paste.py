@@ -37,6 +37,7 @@ failed run deletes the previous run's projections so a stale table can't be snap
 Run locally:
     python clean_fplreview_paste.py [--gameweek N]
 """
+from fpl_model import paths
 import argparse
 import json
 import re
@@ -47,16 +48,16 @@ from pathlib import Path
 
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = paths.ROOT
 from fpl_model.atomic_write import to_csv_atomic  # noqa: E402
 from fpl_model.league_rates import current_season  # noqa: E402
 from fpl_model.forecast_horizon import HORIZON  # noqa: E402  (the pastes must cover the pipeline's window)
 
-DATA = ROOT / "data" / "current"
-RAW = ROOT / "data" / "raw" / "fplreview"
-OUT_FILE = DATA / "fplreview_projections.csv"
-STATUS_FILE = DATA / "fplreview_status.json"
-TEAM_FILE = DATA / "fplreview_team_strengths.csv"
+DATA = paths.CURRENT
+RAW = paths.RAW / "fplreview"
+OUT_FILE = paths.CURRENT / "fplreview_projections.csv"
+STATUS_FILE = paths.CURRENT / "fplreview_status.json"
+TEAM_FILE = paths.CURRENT / "fplreview_team_strengths.csv"
 
 # file stem -> output column; the stat name FPL Review prints above the header row
 STATS = {

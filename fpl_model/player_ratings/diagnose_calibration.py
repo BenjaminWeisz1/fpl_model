@@ -4,6 +4,7 @@ Diagnostic only; reads a GOAL_MODEL_PREMATCH_LOG log with the Opp_Factor and Is_
 
     python diagnose_calibration.py [log.csv]
 """
+from fpl_model import paths
 import json
 import sys
 import warnings
@@ -13,8 +14,8 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 
-ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / "data" / "validation" / "calibration_diag_20261030"
+ROOT = paths.ROOT
+OUT = paths.VALIDATION / "calibration_diag_20261030"
 LOG = Path(sys.argv[1]) if len(sys.argv) > 1 else OUT / "log.csv"
 TARGETS = {"npxG": ("npxg90", "pred_goals_90", "NPG_Rating_Pre"), "xAG": ("xag90", "pred_ast_90", "Assist_Rating_Pre")}
 N_BOOT, SEED = 200, 42

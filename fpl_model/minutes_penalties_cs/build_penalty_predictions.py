@@ -10,6 +10,7 @@ that's a bonus-points-facet concern, handled when we build that model.
 Run locally (after predict_fixture_goals.py):
     python build_penalty_predictions.py
 """
+from fpl_model import paths
 import sys
 
 import pandas as pd
@@ -18,18 +19,18 @@ from pathlib import Path
 from fpl_model.league_rates import check_minutes_round, penalty_rates, recorded_clock_scale  # noqa: E402
 from fpl_model.forecast_horizon import GAMEWEEKS  # noqa: E402  (the forecast window, set in one place)
 
-_DATA = Path(__file__).resolve().parents[2] / "data" / "current"
+_DATA = paths.CURRENT
 
 PEN_ATTEMPTS_PER_NPG, _ = penalty_rates()  # computed (§181)
 PTS_PER_GOAL = {"G": 10, "D": 6, "M": 5, "F": 4}
 
-FIXTURE_GOALS_FILE = _DATA / "fixture_goal_predictions.csv"
-PENALTY_SHARE_FILE = _DATA / "penalty_share.csv"
-PLAYERS_CURRENT_FILE = _DATA / "players_current.csv"
-PENALTY_LOG_FILE = _DATA / "penalty_log.csv"
-PLAYER_MATCH_STATS_FILE = _DATA / "player_match_stats.csv"
-MINUTES_PROBS_FILE = _DATA / "minutes_probabilities.csv"
-OUT_FILE = _DATA / "penalty_predictions.csv"
+FIXTURE_GOALS_FILE = paths.CURRENT / "fixture_goal_predictions.csv"
+PENALTY_SHARE_FILE = paths.CURRENT / "penalty_share.csv"
+PLAYERS_CURRENT_FILE = paths.CURRENT / "players_current.csv"
+PENALTY_LOG_FILE = paths.CURRENT / "penalty_log.csv"
+PLAYER_MATCH_STATS_FILE = paths.CURRENT / "player_match_stats.csv"
+MINUTES_PROBS_FILE = paths.CURRENT / "minutes_probabilities.csv"
+OUT_FILE = paths.CURRENT / "penalty_predictions.csv"
 
 
 def resolve_names(pen_share, players_current, name_col):

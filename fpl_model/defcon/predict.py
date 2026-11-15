@@ -1,3 +1,4 @@
+from fpl_model import paths
 import os
 import sys
 import gzip
@@ -30,7 +31,7 @@ from scipy.stats import chi2
 _SCRIPTS_DIR = Path(__file__).resolve().parents[1]
 from fpl_model.team_ratings.get_next_round import get_next_round
 
-_DATA = Path(__file__).resolve().parents[2] / "data" / "current"
+_DATA = paths.CURRENT
 from fpl_model.match_order import chrono_order
 from fpl_model.league_rates import current_season  # noqa: E402
 
@@ -310,7 +311,7 @@ SERVE_ROW_WEIGHTED = os.environ.get("DEFCON_ROW_WEIGHTED", "1") == "1"
 # which the user judged uninformative and overrode the pre-registered guardrail to
 # ship. DEFCON_UNDERSTAT_POS=0 restores the pre-§38 behaviour bit-for-bit.
 UNDERSTAT_POS = os.environ.get("DEFCON_UNDERSTAT_POS", "1") == "1"
-_POSITIONS_FILE = _DATA / "player_match_positions.csv"
+_POSITIONS_FILE = paths.CURRENT / "player_match_positions.csv"
 if UNDERSTAT_POS and _POSITIONS_FILE.exists():
     _pos_art = pd.read_csv(_POSITIONS_FILE, encoding="utf-8-sig", low_memory=False)
     _pos_art = _pos_art.dropna(subset=["Position_Resolved"])
@@ -1175,7 +1176,7 @@ class _CalibratedModel:
 # DEFCON_RF_N_JOBS overrides the RF fit parallelism (default -1 = all
 # cores; with random_state fixed, n_jobs is result-invariant).
 _CACHE_ENABLED = os.environ.get("DEFCON_MODEL_CACHE", "1") == "1"
-_CACHE_DIR = Path(__file__).resolve().parents[2] / "cache" / "defcon"
+_CACHE_DIR = paths.CACHE / "defcon"
 _PREDICT_SOURCE_MD5 = hashlib.md5(Path(__file__).read_bytes()).hexdigest()
 # The defender head's parameters and calibration live here, so an edit must retrain too (§189).
 _DEFENDER_SOURCE_MD5 = hashlib.md5((Path(__file__).parent / "defender_model.py").read_bytes()).hexdigest()

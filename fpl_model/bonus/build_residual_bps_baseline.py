@@ -26,6 +26,7 @@ BONUS_RESIDUAL_HISTORY=0 restores current-season rows only.
 Run locally:
     python build_residual_bps_baseline.py
 """
+from fpl_model import paths
 import json
 import os
 
@@ -36,11 +37,11 @@ from pathlib import Path
 from fpl_model.bonus.bps_rules import ASSIST_BPS, CBI_ONE_PER_THREE_SEASON, CLEAN_SHEET_BPS, GC_BPS, GOAL_BPS, MISS_PEN_BPS, PEN_GOAL_BPS, PEN_SAVE_BPS, SAVE_BPS
 from fpl_model.bonus import pass_bands
 
-_DATA = Path(__file__).resolve().parents[2] / "data" / "current"
+_DATA = paths.CURRENT
 
-STATS_FILE = _DATA / "player_match_stats.csv"  # consolidated file
-PLAYERS_CURRENT_FILE = _DATA / "players_current.csv"
-OUT_FILE = _DATA / "residual_bps_baseline.csv"
+STATS_FILE = paths.CURRENT / "player_match_stats.csv"  # consolidated file
+PLAYERS_CURRENT_FILE = paths.CURRENT / "players_current.csv"
+OUT_FILE = paths.CURRENT / "residual_bps_baseline.csv"
 
 LEGACY_ACCOUNTING = os.environ.get("BONUS_LEGACY_ACCOUNTING", "0") == "1"
 RESIDUAL_HISTORY = os.environ.get("BONUS_RESIDUAL_HISTORY", "1") == "1"  # §146: also fit on the previous season

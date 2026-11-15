@@ -7,6 +7,7 @@ How many matches should the starting rating count as in the goal/assist loop? (C
 Entrants: outfield players whose first logged PL match is in 2019 or later, scored on their first two logged
 seasons. Train = entrants 2019-2022, test = entrants 2023-2026. Production is never written.
 """
+from fpl_model import paths
 import json
 import os
 import subprocess
@@ -17,10 +18,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[2]
-DATA = ROOT / "data" / "current"
-OUT = ROOT / "data" / "validation" / "prior_k_20261029"
-OOT_PRIORS = ROOT / "data" / "validation" / "new_player_priors_20261028" / "oot_priors.csv"
+ROOT = paths.ROOT
+DATA = paths.CURRENT
+OUT = paths.VALIDATION / "prior_k_20261029"
+OOT_PRIORS = paths.VALIDATION / "new_player_priors_20261028" / "oot_priors.csv"
 GRID = [3, 5, 8, 12, 16, 22, 30, 40]
 TARGETS = {"npxG": ("npxg90", "pred_goals_90"), "xAG": ("xag90", "pred_ast_90")}
 

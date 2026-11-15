@@ -3,6 +3,7 @@
 No production writes or tuning beyond the four pre-registered schemas. Reuses
 the exact stored monotonic incumbent fits and identical training-row order.
 """
+from fpl_model import paths
 import os
 os.environ.setdefault("OMP_NUM_THREADS", "2")
 import gzip
@@ -20,7 +21,7 @@ from fpl_model.defcon.recent_defcon import attach_recent_rates, feature_columns
 from fpl_model.defcon import evaluate_defender_history as fitting
 from fpl_model.defcon.evaluate_defender_monotonic import OUT as OLD, DATA, freeze_control, load_scope, predict, metrics, bootstrap
 
-OUT = Path(__file__).resolve().parent.parents[1] / "data" / "validation" / "defcon_feature_experiment_20261020"
+OUT = paths.VALIDATION / "defcon_feature_experiment_20261020"
 BASE_COLS = ["AvgPer90", "AvgRaw", "StdPer90", "MatchesPlayed", "Recent5AvgPer90", "Recent5AvgRaw", "PctAboveThreshold",
              "OpponentAvgStat", "TeamAvgStat", "VenueAvg", "IsHome", "Is_FPL_API", "Pos_CB", "Pos_FB", "Pos_WB", "Pos_LB", "Pos_RB"]
 ARMS = ["no_std", "ew", "no_std_ew", "lean"]

@@ -21,6 +21,7 @@ label (wing-backs in a back three are "Left/Right Midfield") and its winger / wi
 formation, so neighbouring wide labels count as compatible; Second Striker is ambiguous; and the loosest name match
 (one shared token) was dropped after it paired Nicolas Pépé with Pepe Reina.
 """
+from fpl_model import paths
 import json
 import re
 import sys
@@ -30,10 +31,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[2]
-DATA = ROOT / "data" / "current"
-TM = ROOT / "data" / "raw" / "transfermarkt"
-OUT = ROOT / "data" / "validation" / "position_audit_20261113"
+ROOT = paths.ROOT
+DATA = paths.CURRENT
+TM = paths.RAW / "transfermarkt"
+OUT = paths.VALIDATION / "position_audit_20261113"
 
 MIN_STARTS = 15
 SS_MAX = 0.20

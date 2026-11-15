@@ -3,6 +3,7 @@
 Protocol: data/validation/xmins_scale_20261102/protocol.json. Reads archived forecasts and FPL event/N/live JSON
 saved in the folder given as argv[1]. Changes no data file.
 """
+from fpl_model import paths
 import json
 import sys
 from pathlib import Path
@@ -10,8 +11,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / "data" / "validation" / "xmins_scale_20261102"
+ROOT = paths.ROOT
+OUT = paths.VALIDATION / "xmins_scale_20261102"
 SNAPS = {8: "GW08/20261022T170038_665091Z_partall", 9: "GW09/20261030T112240_265815Z_partall"}
 # The arm as registered, kept so this test reproduces. 990 = 11 x 90; 1043 = mean team xMins total, GW9-13 of
 # minutes.csv on 2026-11-02. Production computes the scale weekly: recorded_clock_scale in build_simulation_features.py.

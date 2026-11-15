@@ -13,6 +13,7 @@ after) under data/validation/season_fix_20261028/:
 Run locally (after both logged runs):
     python validate_season_fix.py [--dir <run directory>]
 """
+from fpl_model import paths
 import argparse
 import json
 from pathlib import Path
@@ -20,8 +21,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[2]
-DIR = ROOT / "data" / "validation" / "season_fix_20261028"
+ROOT = paths.ROOT
+DIR = paths.VALIDATION / "season_fix_20261028"
 KEY = ["Player", "Team", "Opponent", "Venue", "MatchID", "Data_Source"]
 
 

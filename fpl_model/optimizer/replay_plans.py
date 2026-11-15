@@ -13,6 +13,7 @@ transfers carry over unchanged. The chip weeks must be exactly the ones fixed in
 
 With no folder it uses the GW folder solved most recently. The gameweeks come from that folder's projection.csv.
 """
+from fpl_model import paths
 import itertools
 import json
 import sys
@@ -24,7 +25,7 @@ from fpl_model.optimizer.render_plans_html import write_html
 
 from fpl_model.optimizer import chips as chip_rules
 
-_ROOT = Path(__file__).resolve().parents[2]
+_ROOT = paths.ROOT
 from fpl_model.forecast_horizon import TIME_DECAY as DECAY  # noqa: E402  (the solver's decay_base, declared once)
 FT_VALUE = 1.5
 HIT_COST = 4

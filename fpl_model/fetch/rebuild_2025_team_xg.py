@@ -14,14 +14,15 @@ data/raw/understat/ and in the §81 evidence folder.
 Run locally (writes a copy; --apply edits data/current/match_results.csv):
     python rebuild_2025_team_xg.py --out <path> | --apply
 """
+from fpl_model import paths
 import argparse
 from pathlib import Path
 
 import pandas as pd
 
-_DATA = Path(__file__).resolve().parents[2] / "data" / "current"
-MATCH_RESULTS_FILE = _DATA / "match_results.csv"
-PLAYER_STATS_FILE = _DATA / "player_match_stats.csv"
+_DATA = paths.CURRENT
+MATCH_RESULTS_FILE = paths.CURRENT / "match_results.csv"
+PLAYER_STATS_FILE = paths.CURRENT / "player_match_stats.csv"
 SEASON = 2025
 COLS = [f"{s}_{c}" for s in ("Home", "Away") for c in ("xG", "NPxG", "NPxG_Adj")]
 

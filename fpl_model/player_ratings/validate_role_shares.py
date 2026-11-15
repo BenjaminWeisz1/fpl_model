@@ -4,6 +4,7 @@ Protocol, frozen before any calibration was computed:
 data/validation/role_shares_20261101/protocol.json. Uses who started where only.
 Choose on seasons to 2023, score 2024-2026 once. Changes no production file.
 """
+from fpl_model import paths
 import json
 from pathlib import Path
 
@@ -13,7 +14,7 @@ from scipy.optimize import minimize_scalar
 
 from fpl_model.player_ratings.role_shares import LINES, load_starts, shares, weighted_counts
 
-OUT = Path(__file__).resolve().parents[2] / "data" / "validation" / "role_shares_20261101"
+OUT = paths.VALIDATION / "role_shares_20261101"
 HALF_LIVES = [2, 3, 4, 5, 6, 8, 10, 13]
 PRIORS = [0.01, 0.03, 0.1, 0.25, 0.5]
 BLENDS = [0.6, 0.8, 0.9, 0.95]

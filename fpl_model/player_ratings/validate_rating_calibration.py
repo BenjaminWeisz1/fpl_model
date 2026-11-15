@@ -1,6 +1,7 @@
 """Goal/assist calibration after the rating (CHANGELOG §156). Offline on a pre-match log; no production writes.
 python -u -X utf8 scripts/player_ratings/validate_rating_calibration.py
 """
+from fpl_model import paths
 import json
 import sys
 from pathlib import Path
@@ -10,12 +11,12 @@ import pandas as pd
 from sklearn.isotonic import IsotonicRegression
 
 HERE = Path(__file__).resolve().parent
-ROOT = HERE.parents[1]
-LOG = ROOT / "data" / "validation" / "prematch_bonus_history_20261030" / "player_ratings_prematch.csv"
+ROOT = paths.ROOT
+LOG = paths.VALIDATION / "prematch_bonus_history_20261030" / "player_ratings_prematch.csv"
 sys.argv = [sys.argv[0], str(LOG)]
 from fpl_model.player_ratings import validate_rating_shrink as S
 
-OUT = ROOT / "data" / "validation" / "rating_calibration_20261031"
+OUT = paths.VALIDATION / "rating_calibration_20261031"
 OUT.mkdir(exist_ok=True)
 
 

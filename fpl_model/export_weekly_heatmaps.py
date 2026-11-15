@@ -32,6 +32,7 @@ Outputs:
   (next_gw_predicted_scores.png is drawn in part 1 by scripts/team_ratings/predicted_scores.py)
 
 """
+from fpl_model import paths
 
 import argparse
 import os
@@ -51,7 +52,7 @@ from pathlib import Path
 from fpl_model.defcon_scaling import points_mu90, prob_at_minutes          # noqa: E402
 
 # ── Configuration ──────────────────────────────────────────────────────────────
-_OUT_DIR = Path(__file__).resolve().parents[1] / "images"
+_OUT_DIR = paths.IMAGES
 _TOP_N = 30                      # players per chart (all 20 teams shown)
 # Excel-style 3-colour scale: red (low) → yellow (middle) → green (high),
 # yellow anchored at the normalised midpoint (0.5).
@@ -78,16 +79,16 @@ _C_RANK     = "#999999"        # rank numbers
 _C_RULE     = "#BBBBBB"        # header separator rule
 _C_ROWLINE  = "#DDDDDD"        # meta-row separators
 
-_DATA = Path(__file__).resolve().parents[1] / "data" / "current"
-_TEAM_RATINGS    = _DATA / "team_ratings_current.csv"
-_PLAYER_RATINGS  = _DATA / "player_ratings.csv"
-_PREDICTED_PTS   = _DATA / "predicted_points.csv"
-_MINUTES         = _DATA / "minutes.csv"
-_PLAYERS_CURRENT = _DATA / "players_current.csv"
+_DATA = paths.CURRENT
+_TEAM_RATINGS    = paths.CURRENT / "team_ratings_current.csv"
+_PLAYER_RATINGS  = paths.CURRENT / "player_ratings.csv"
+_PREDICTED_PTS   = paths.CURRENT / "predicted_points.csv"
+_MINUTES         = paths.CURRENT / "minutes.csv"
+_PLAYERS_CURRENT = paths.CURRENT / "players_current.csv"
 ACTIVE_XMINS_PER_GW = 20  # charts show players averaging more than this per forecast gameweek
-_SIM_FEATURES    = _DATA / "simulation_features.csv"
-_PENALTIES       = _DATA / "penalty_predictions.csv"
-_FIXTURE_GOALS   = _DATA / "fixture_goal_predictions.csv"
+_SIM_FEATURES    = paths.CURRENT / "simulation_features.csv"
+_PENALTIES       = paths.CURRENT / "penalty_predictions.csv"
+_FIXTURE_GOALS   = paths.CURRENT / "fixture_goal_predictions.csv"
 
 # Which input files each part needs (checked up front in main()).
 _PART_INPUTS = {

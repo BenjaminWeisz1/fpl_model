@@ -1,6 +1,7 @@
 """
 Must run BEFORE fetch_fixtures_results.py
 """
+from fpl_model import paths
 import sys
 import requests
 import pandas as pd
@@ -12,9 +13,9 @@ BOOTSTRAP_URL = "https://fantasy.premierleague.com/api/bootstrap-static/"
 FIXTURES_URL = "https://fantasy.premierleague.com/api/fixtures/"
 LIVE_URL = "https://fantasy.premierleague.com/api/event/{event_id}/live/"
 
-_DATA = Path(__file__).resolve().parents[2] / "data" / "current"
-PLAYER_STATS_FILE = _DATA / "player_match_stats.csv"
-PENALTY_LOG_FILE = _DATA / "penalty_log.csv"
+_DATA = paths.CURRENT
+PLAYER_STATS_FILE = paths.CURRENT / "player_match_stats.csv"
+PENALTY_LOG_FILE = paths.CURRENT / "penalty_log.csv"
 
 from fpl_model.league_rates import current_season  # noqa: E402
 from fpl_model.atomic_write import to_csv_atomic  # noqa: E402

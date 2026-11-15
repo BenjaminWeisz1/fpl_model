@@ -17,13 +17,14 @@ Fitted on all 2025+ FPL-era rows (12,377 outfield player-matches; production_fit
 data/validation/fpl_only_assists_20261028/). Do not re-estimate without a new pre-registration.
 FPL_ONLY_ASSISTS=0 switches the component off.
 """
+from fpl_model import paths
 import json
 import os
 from pathlib import Path
 
 import numpy as np
 
-_DATA = Path(__file__).resolve().parents[2] / "data" / "current"
+_DATA = paths.CURRENT
 
 HISTORY = 38
 K = 10.0

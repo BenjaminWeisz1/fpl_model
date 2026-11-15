@@ -3,6 +3,7 @@
 Existing files are never replaced. A manifest records each file's SHA256, size and retrieval time. The source ends
 6 July 2026. Run: python -u -X utf8 scripts/fetch/fetch_transfermarkt.py
 """
+from fpl_model import paths
 import hashlib
 import json
 import time
@@ -14,7 +15,7 @@ import requests
 BASE = "https://pub-e682421888d945d684bcae8890b0ec20.r2.dev/data/"
 FILES = ["games.csv.gz", "appearances.csv.gz", "player_valuations.csv.gz", "players.csv.gz", "clubs.csv.gz", "game_lineups.csv.gz",
          "transfers.csv.gz"]  # transfers added 2026-11-09 (§212)
-OUT = Path(__file__).resolve().parents[2] / "data" / "raw" / "transfermarkt"
+OUT = paths.RAW / "transfermarkt"
 
 
 def main():

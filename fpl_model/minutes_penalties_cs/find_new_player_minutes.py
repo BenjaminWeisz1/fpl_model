@@ -1,8 +1,9 @@
+from fpl_model import paths
 import pandas as pd
 import numpy as np
 from pathlib import Path
 
-_DATA = Path(__file__).resolve().parents[2] / "data" / "current"
+_DATA = paths.CURRENT
 
 new_players_list = pd.read_csv(_DATA / 'new_players_2026.csv')
 player_match_stats = pd.read_csv(_DATA / 'player_match_stats.csv', encoding='utf-8-sig')

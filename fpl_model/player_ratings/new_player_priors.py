@@ -22,6 +22,7 @@ Shared by the validation (`validate_new_player_priors.py`) and the production wr
     Parameters are fitted by minimising the squared error of match output = prior x minutes/90
     over the arrivals' first-season PL matches, which reduces to per-player sufficient statistics.
 """
+from fpl_model import paths
 import json
 from pathlib import Path
 
@@ -31,9 +32,9 @@ from scipy.optimize import minimize
 
 from fpl_model.player_ratings import position_rates as _pr  # §246 (GOAL_MODEL_POSITION_RATES; default "file" changes nothing)
 
-ROOT = Path(__file__).resolve().parents[2]
-DATA = ROOT / "data" / "current"
-LEAGUE_CACHE = ROOT / "data" / "raw" / "understat" / "league"
+ROOT = paths.ROOT
+DATA = paths.CURRENT
+LEAGUE_CACHE = paths.RAW / "understat" / "league"
 
 AVG_CONCEDED = 1.32023
 UNDERSTAT_LEAGUE = {"La Liga": "La_liga", "Bundesliga": "Bundesliga", "Serie A": "Serie_A",

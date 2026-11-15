@@ -47,6 +47,7 @@ Run locally:
     python fetch_understat.py --limit 50      # cap new match downloads (testing)
     python fetch_understat.py --weekly        # current season only, tolerant of network errors
 """
+from fpl_model import paths
 import argparse
 import json
 import os
@@ -57,13 +58,13 @@ from pathlib import Path
 import pandas as pd
 import requests
 
-_ROOT = Path(__file__).resolve().parents[2]
-_DATA = _ROOT / "data" / "current"
-RAW_DIR = _ROOT / "data" / "raw" / "understat"
-LEAGUE_CACHE = RAW_DIR / "league"
-MATCH_CACHE = RAW_DIR / "matches"
-MATCH_RESULTS_FILE = _DATA / "match_results.csv"
-OUT_FILE = _DATA / "understat_match_positions.csv"
+_ROOT = paths.ROOT
+_DATA = paths.CURRENT
+RAW_DIR = paths.RAW / "understat"
+LEAGUE_CACHE = paths.RAW / "understat" / "league"
+MATCH_CACHE = paths.RAW / "understat" / "matches"
+MATCH_RESULTS_FILE = paths.CURRENT / "match_results.csv"
+OUT_FILE = paths.CURRENT / "understat_match_positions.csv"
 
 from fpl_model.league_rates import current_season  # noqa: E402
 

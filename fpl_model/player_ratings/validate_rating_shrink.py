@@ -3,6 +3,7 @@ Goal/assist ratings shrunk toward their position group at forecast time (CHANGEL
 
     python validate_rating_shrink.py [log.csv]
 """
+from fpl_model import paths
 import json
 import sys
 from pathlib import Path
@@ -10,8 +11,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / "data" / "validation" / "rating_shrink_20261030"
+ROOT = paths.ROOT
+OUT = paths.VALIDATION / "rating_shrink_20261030"
 LOG = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "data" / "validation" / "calibration_diag_20261030" / "log.csv"
 TARGETS = {"npxG": ("npxg90", "pred_goals_90", "NPG_Rating_Pre"), "xAG": ("xag90", "pred_ast_90", "Assist_Rating_Pre")}
 GROUP = {"CB": "DEF", "FB": "DEF", "WB": "DEF", "DM": "MID", "CM": "MID", "WM": "MID",

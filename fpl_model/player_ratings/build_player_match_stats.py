@@ -34,15 +34,16 @@ Column mapping:
 
 One-off, already run: refuses to run while player_match_stats.csv exists. Don't delete it to get past that.
 """
+from fpl_model import paths
 import pandas as pd
 from pathlib import Path
 
-_DATA = Path(__file__).resolve().parents[2] / "data" / "current"
-_RAW = Path(__file__).resolve().parents[2] / "data" / "raw"
+_DATA = paths.CURRENT
+_RAW = paths.RAW
 
-OLD_FILE = _RAW / "all_player_stats.csv"      # fbref, 2017-2024
-NEW_FILE = _RAW / "player_stats_2025_with_npg.csv"  # FPL-API, 2025/26+
-OUT_FILE = _DATA / "player_match_stats.csv"
+OLD_FILE = paths.RAW / "all_player_stats.csv"      # fbref, 2017-2024
+NEW_FILE = paths.RAW / "player_stats_2025_with_npg.csv"  # FPL-API, 2025/26+
+OUT_FILE = paths.CURRENT / "player_match_stats.csv"
 
 
 def main():

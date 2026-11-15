@@ -1,6 +1,7 @@
 """Defender experience bands on real FPL hits (CHANGELOG §192). Protocol: data/validation/defender_experience_20261102/protocol.json.
 Reads item 6's arm A predictions. No production writes. Run: python -u -X utf8 scripts/defcon/diagnose_defender_experience.py
 """
+from fpl_model import paths
 import json
 import sys
 from pathlib import Path
@@ -8,11 +9,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = paths.ROOT
 from fpl_model.defcon_scaling import DEFENDER_POINTS_FACTOR, nb_sf, prob_at_minutes
 
-SRC = ROOT / "data" / "validation" / "defcon_team_aggregates_20261102" / "predictions_D.csv.gz"
-OUT = ROOT / "data" / "validation" / "defender_experience_20261102"
+SRC = paths.VALIDATION / "defcon_team_aggregates_20261102" / "predictions_D.csv.gz"
+OUT = paths.VALIDATION / "defender_experience_20261102"
 KEY = ["Season", "Player", "Team", "Opponent", "Venue"]
 N_BOOT, SEED, THR = 5000, 175, 10
 

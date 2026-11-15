@@ -5,6 +5,7 @@ data/validation/role_move_error_20261101/protocol.json. Reads the pre-match log 
 GOAL_MODEL_PREMATCH_LOG=<log> python build_player_ratings.py
 Scores seasons 2018-2024 only; 2025-26 stays untouched. Changes no production file.
 """
+from fpl_model import paths
 import json
 from collections import Counter
 from pathlib import Path
@@ -12,10 +13,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[2]
-DATA = ROOT / "data" / "current"
-OUT = ROOT / "data" / "validation" / "role_move_error_20261101"
-LOG = OUT / "prematch_log.csv"
+ROOT = paths.ROOT
+DATA = paths.CURRENT
+OUT = paths.VALIDATION / "role_move_error_20261101"
+LOG = paths.VALIDATION / "role_move_error_20261101" / "prematch_log.csv"
 
 LINE = {"CB": "CB", "LB": "WD", "RB": "WD", "WB": "WD", "DM": "CM", "CM": "CM", "AM": "ATT",
         "LM": "ATT", "RM": "ATT", "LW": "ATT", "RW": "ATT", "FW": "FW"}

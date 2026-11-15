@@ -12,6 +12,7 @@ which only part 2 has, so part 1 uses the league penalty rate, as clean sheets a
 
     python -u -X utf8 scripts/team_ratings/predicted_scores.py
 """
+from fpl_model import paths
 import sys
 from pathlib import Path
 
@@ -19,7 +20,7 @@ import pandas as pd
 import requests
 
 _HERE = Path(__file__).resolve().parent
-_DATA = _HERE.parents[1] / "data" / "current"
+_DATA = paths.CURRENT
 
 from fpl_model.league_rates import current_season, mean_npg, penalty_rates  # noqa: E402
 from fpl_model.team_ratings.update_team_ratings import home_advantage  # noqa: E402

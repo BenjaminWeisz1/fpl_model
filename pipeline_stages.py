@@ -23,15 +23,16 @@ Stage dicts take:
     season_start_only  -- optional bool; skipped unless --preseason was passed
     accepts_gameweek   -- optional bool; receives --gameweek N when the run was given it
 """
+from fpl_model import paths
 import os
 import subprocess
 import sys
 import time
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+ROOT = paths.ROOT
 SCRIPTS = ROOT / "fpl_model"
-DATA = ROOT / "data" / "current"
+DATA = paths.CURRENT
 
 # Child Pythons write UTF-8 to their captured stdout/stderr pipes
 # (PYTHONIOENCODING affects only the child's stdio, not its file I/O), and

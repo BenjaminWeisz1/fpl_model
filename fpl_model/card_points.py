@@ -8,13 +8,14 @@ Since §195: starts and cameos get separate group rates, mixed by the player's r
 (§193; CARD_ROLE_SPLIT=0 reverts), and a player one yellow short of a ban before its cut-off gets
 x SUSPENSION_THETA on the yellow rate (§191; CARD_SUSPENSION=0 reverts). Reds are unchanged.
 """
+from fpl_model import paths
 import os
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-DATA = Path(__file__).resolve().parents[1] / "data" / "current"
+DATA = paths.CURRENT
 GROUP_OF = {"GK": "GK", "CB": "D", "LB": "D", "RB": "D", "WB": "D", "DM": "M", "CM": "M", "AM": "M", "LM": "M",
             "RM": "M", "LW": "M", "RW": "M", "FW": "F"}
 FPL_GROUP = {"G": "GK", "D": "D", "M": "M", "F": "F"}

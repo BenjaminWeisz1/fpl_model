@@ -5,6 +5,7 @@ Protocol, frozen before scoring: data/validation/position_alpha_20261103/protoco
     python validate_position_alpha.py run     # one pre-match log per floor (GOAL_MODEL_ALPHA); production untouched
     python validate_position_alpha.py score   # per-(group, target) floor on 2018-2023, test 2024-2026; results.json
 """
+from fpl_model import paths
 import json
 import os
 import subprocess
@@ -15,10 +16,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[2]
-DATA = ROOT / "data" / "current"
-OUT = ROOT / "data" / "validation" / "position_alpha_20261103"
-OOT_PRIORS = ROOT / "data" / "validation" / "new_player_priors_20261028" / "oot_priors.csv"
+ROOT = paths.ROOT
+DATA = paths.CURRENT
+OUT = paths.VALIDATION / "position_alpha_20261103"
+OOT_PRIORS = paths.VALIDATION / "new_player_priors_20261028" / "oot_priors.csv"
 GRID = ["0", "0.0083", "0.0125", "0.025", "0.05"]
 BASE = "0.025"
 TARGETS = {"npxG": ("npxg90", "pred_goals_90"), "xAG": ("xag90", "pred_ast_90")}

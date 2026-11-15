@@ -7,6 +7,7 @@ forests with step isotonic for midfielders and forwards, calibrated on 5-fold ou
 
 Run: python -u -X utf8 scripts/defcon/overnight_frames.py
 """
+from fpl_model import paths
 import os
 os.environ.setdefault("OMP_NUM_THREADS", "2")
 import ast
@@ -26,10 +27,10 @@ from sklearn.preprocessing import StandardScaler
 from fpl_model.defcon.defender_model import CenteredIsotonic, monotonic_params
 
 HERE = Path(__file__).resolve().parent
-ROOT = HERE.parents[1]
-OUT = HERE.parents[1] / "data" / "validation" / "defcon_overnight_20261031"
+ROOT = paths.ROOT
+OUT = paths.VALIDATION / "defcon_overnight_20261031"
 OUT.mkdir(exist_ok=True)
-FRAMES = OUT / "frames.pkl"
+FRAMES = paths.VALIDATION / "defcon_overnight_20261031" / "frames.pkl"
 RF_MF = dict(n_estimators=400, max_depth=10, min_samples_leaf=3, max_features="sqrt")
 RF_FWD = dict(n_estimators=200, max_depth=8, min_samples_leaf=5, max_features="log2")
 

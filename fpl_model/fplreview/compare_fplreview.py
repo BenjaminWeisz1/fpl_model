@@ -37,6 +37,7 @@ Run locally:
     python compare_fplreview.py --snapshot <folder>
     python compare_fplreview.py --current            # data/current, before a snapshot exists
 """
+from fpl_model import paths
 import argparse
 import json
 import sys
@@ -45,13 +46,13 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = paths.ROOT
 from fpl_model.atomic_write import to_csv_atomic  # noqa: E402
 from fpl_model.league_rates import mean_npg, penalty_rates  # noqa: E402
 
-DATA = ROOT / "data" / "current"
-SNAPSHOTS = ROOT / "data" / "snapshots"
-OUT_ROOT = ROOT / "data" / "fplreview" / "comparisons"
+DATA = paths.CURRENT
+SNAPSHOTS = paths.SNAPSHOTS
+OUT_ROOT = paths.FPLREVIEW / "comparisons"
 
 STATS = {  # ours column -> FPL Review column
     "TotalPts": "Points", "Goals": "Goals", "Assists": "Assists", "CS_Prob": "CleanSheet", "Defcon_Prob": "Defcon",

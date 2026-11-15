@@ -17,24 +17,25 @@ values untouched, so this is safe to re-run as you add more players.
 Run locally:
     python fill_transfer_team_ratings.py
 """
+from fpl_model import paths
 import pandas as pd
 from pathlib import Path
 
-_DATA = Path(__file__).resolve().parents[2] / "data" / "current"
+_DATA = paths.CURRENT
 
-TRANSFERS_FILE = _DATA / "transfers.csv"
+TRANSFERS_FILE = paths.CURRENT / "transfers.csv"
 TRANSFERS_PLAYER_COL = "Player"
 TRANSFERS_SEASON_COL = "Season"
 
-CURRENT_PLAYERS_FILE = _DATA / "players_current.csv"
+CURRENT_PLAYERS_FILE = paths.CURRENT / "players_current.csv"
 CURRENT_PLAYERS_NAME_COL = "Player"
 CURRENT_PLAYERS_TEAM_COL = "Team"
 
-PRESEASON_FILE = _DATA / "team_ratings_preseason_2026.csv"
+PRESEASON_FILE = paths.CURRENT / "team_ratings_preseason_2026.csv"
 PRESEASON_TEAM_COL = "Team"
 PRESEASON_ATTACK_COL = "Attack_Rating"
 
-CURRENT_FILE = _DATA / "team_ratings_current.csv"
+CURRENT_FILE = paths.CURRENT / "team_ratings_current.csv"
 CURRENT_TEAM_COL = "Team"
 CURRENT_ATTACK_COL = "Attack_Rating"
 

@@ -4,6 +4,7 @@ automatically disambiguating any players who share a raw web_name (e.g. two
 different players both named "Sangare" would otherwise collide in every
 downstream join keyed on Web_Name).
 """
+from fpl_model import paths
 import sys
 import requests
 import pandas as pd
@@ -13,10 +14,10 @@ from fpl_model.fetch.team_name_map import to_fbref_name
 from fpl_model.atomic_write import to_csv_atomic  # noqa: E402
 
 BOOTSTRAP_URL = "https://fantasy.premierleague.com/api/bootstrap-static/"
-_DATA = Path(__file__).resolve().parents[2] / "data" / "current"
-OUT_FILE = _DATA / "players_current.csv"
-OVERRIDES_FILE = _DATA / "web_name_overrides.csv"
-DEADLINES_FILE = _DATA / "gameweek_deadlines.csv"
+_DATA = paths.CURRENT
+OUT_FILE = paths.CURRENT / "players_current.csv"
+OVERRIDES_FILE = paths.CURRENT / "web_name_overrides.csv"
+DEADLINES_FILE = paths.CURRENT / "gameweek_deadlines.csv"
 
 POSITION_MAP = {1: "G", 2: "D", 3: "M", 4: "F"}
 
@@ -27,7 +28,7 @@ def write_deadlines(events, path=DEADLINES_FILE):
     to_csv_atomic(pd.DataFrame(rows), path, index=False, encoding="utf-8-sig")
 
 
-SET_PIECE_FILE = _DATA / "set_piece_orders.csv"
+SET_PIECE_FILE = paths.CURRENT / "set_piece_orders.csv"
 SET_PIECE_FIELDS = ["corners_and_indirect_freekicks_order", "direct_freekicks_order", "penalties_order"]
 
 
@@ -71,7 +72,7 @@ def append_set_piece_orders(data, path=SET_PIECE_FILE):
         print(f"WARNING: set-piece orders not saved: {exc!r}")
 
 
-CODES_FILE = _DATA / "fpl_player_codes.csv"
+CODES_FILE = paths.CURRENT / "fpl_player_codes.csv"
 
 
 def append_player_codes(data, path=CODES_FILE):

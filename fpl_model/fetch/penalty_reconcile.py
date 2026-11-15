@@ -18,6 +18,7 @@ Run locally (dry run prints the changes; --apply writes them):
 One-off (§80): add the xG column, filled from the then penalty-inclusive FPL-era npxG:
     python penalty_reconcile.py --migrate-xg --apply
 """
+from fpl_model import paths
 import argparse
 import json
 
@@ -27,10 +28,10 @@ from pathlib import Path
 
 from fpl_model.atomic_write import to_csv_atomic  # noqa: E402
 
-_DATA = Path(__file__).resolve().parents[2] / "data" / "current"
-PLAYER_STATS_FILE = _DATA / "player_match_stats.csv"
-MATCH_RESULTS_FILE = _DATA / "match_results.csv"
-PENALTY_LOG_FILE = _DATA / "penalty_log.csv"
+_DATA = paths.CURRENT
+PLAYER_STATS_FILE = paths.CURRENT / "player_match_stats.csv"
+MATCH_RESULTS_FILE = paths.CURRENT / "match_results.csv"
+PENALTY_LOG_FILE = paths.CURRENT / "penalty_log.csv"
 
 FIRST_FPL_SEASON = 2025
 PEN_XG_VALUE = 0.79

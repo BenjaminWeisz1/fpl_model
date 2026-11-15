@@ -4,6 +4,7 @@ Reuses production ingestion/features and saved incumbent models without running
 the pipeline or writing production outputs. Freezes the control before any edit
 to predict.py. Run with python -u -X utf8 scripts/defcon/evaluate_defender_monotonic.py.
 """
+from fpl_model import paths
 import os
 os.environ.setdefault("OMP_NUM_THREADS", "2")
 import ast
@@ -26,11 +27,11 @@ from sklearn.preprocessing import StandardScaler
 from fpl_model.defcon.defender_model import POSITIVE_EVIDENCE, monotonic_params
 
 HERE = Path(__file__).resolve().parent
-ROOT = HERE.parents[1]
-OUT = HERE.parents[1] / "data" / "validation" / "defcon_experiment_20261020"
-DATA = ROOT / "data" / "current"
+ROOT = paths.ROOT
+OUT = paths.VALIDATION / "defcon_experiment_20261020"
+DATA = paths.CURRENT
 OUT.mkdir(exist_ok=True)
-BASELINE = OUT / "baseline"
+BASELINE = paths.VALIDATION / "defcon_experiment_20261020" / "baseline"
 
 
 def digest(path):

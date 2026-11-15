@@ -8,6 +8,7 @@ simulation to consume directly.
 Run locally (after all the individual facet scripts):
     python build_simulation_features.py
 """
+from fpl_model import paths
 import os
 import sys
 
@@ -16,7 +17,7 @@ import numpy as np
 from scipy import stats
 from pathlib import Path
 
-_DATA = Path(__file__).resolve().parents[2] / "data" / "current"
+_DATA = paths.CURRENT
 
 from fpl_model.league_rates import RECORDED_TEAM_MINUTES, check_minutes_round, minute_bands, penalty_rates, recorded_clock_scale  # noqa: E402
 from fpl_model.team_ratings.update_team_ratings import home_advantage  # noqa: E402
@@ -27,19 +28,19 @@ PEN_ATTEMPTS_PER_NPG, PEN_CONVERSION = penalty_rates()
 OPP_BETA_NPG = float(os.environ.get("GOAL_MODEL_OPP_BETA_NPG", "0.7"))
 OPP_BETA_AST = float(os.environ.get("GOAL_MODEL_OPP_BETA_AST", "0.8"))
 
-MINUTES_PROBS_FILE = _DATA / "minutes_probabilities.csv"
-GOAL_ASSIST_FILE = _DATA / "player_goal_assist_ratings.csv"
-DEFCON_FILE = _DATA / "predictions_defensive.csv"
-PENALTY_FILE = _DATA / "penalty_predictions.csv"
-FIXTURE_GOALS_FILE = _DATA / "fixture_goal_predictions.csv"
-RESIDUAL_BPS_FILE = _DATA / "residual_bps_baseline.csv"
-RESIDUAL_DEFAULTS_FILE = _DATA / "residual_bps_position_defaults.csv"
-PLAYERS_CURRENT_FILE = _DATA / "players_current.csv"
-TEAM_RATINGS_FILE = _DATA / "team_ratings_current.csv"  # latest ratings, as predict_fixture_goals.py (§180)
-PASS_BAND_FILE = _DATA / "pass_band_rates.csv"
-FPL_ONLY_ASSISTS_FILE = _DATA / "fpl_only_assist_rates.csv"
+MINUTES_PROBS_FILE = paths.CURRENT / "minutes_probabilities.csv"
+GOAL_ASSIST_FILE = paths.CURRENT / "player_goal_assist_ratings.csv"
+DEFCON_FILE = paths.CURRENT / "predictions_defensive.csv"
+PENALTY_FILE = paths.CURRENT / "penalty_predictions.csv"
+FIXTURE_GOALS_FILE = paths.CURRENT / "fixture_goal_predictions.csv"
+RESIDUAL_BPS_FILE = paths.CURRENT / "residual_bps_baseline.csv"
+RESIDUAL_DEFAULTS_FILE = paths.CURRENT / "residual_bps_position_defaults.csv"
+PLAYERS_CURRENT_FILE = paths.CURRENT / "players_current.csv"
+TEAM_RATINGS_FILE = paths.CURRENT / "team_ratings_current.csv"  # latest ratings, as predict_fixture_goals.py (§180)
+PASS_BAND_FILE = paths.CURRENT / "pass_band_rates.csv"
+FPL_ONLY_ASSISTS_FILE = paths.CURRENT / "fpl_only_assist_rates.csv"
 
-OUT_FILE = _DATA / "simulation_features.csv"
+OUT_FILE = paths.CURRENT / "simulation_features.csv"
 
 from fpl_model.forecast_horizon import GAMEWEEKS  # noqa: E402  (the forecast window, set in one place)
 THRESHOLD = {"D": 10, "M": 12, "F": 12, "G": 0}

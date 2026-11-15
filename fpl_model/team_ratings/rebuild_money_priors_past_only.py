@@ -16,6 +16,7 @@ Run locally:
     python rebuild_money_priors_past_only.py            # dry run: prints the changes
     python rebuild_money_priors_past_only.py --apply
 """
+from fpl_model import paths
 import argparse
 import shutil
 import sys
@@ -26,9 +27,9 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
-_DATA = Path(__file__).resolve().parents[2] / "data" / "current"
-MONEY_FILE = _DATA / "money_priors_by_season.csv"
-HISTORY_FILE = _DATA / "historical_money.csv"
+_DATA = paths.CURRENT
+MONEY_FILE = paths.CURRENT / "money_priors_by_season.csv"
+HISTORY_FILE = paths.CURRENT / "historical_money.csv"
 FEATURES = ["Wages_pct", "Squad_Value_pct"]
 REBUILD = range(2017, 2026)
 CHECK = None  # was 2025 until §211; set a season here to verify instead of rewriting it

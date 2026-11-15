@@ -10,13 +10,14 @@ defcon history from player_match_stats.csv directly, not from transfers.csv.
 Run locally:s
     python merge_defcon_into_transfers.py
 """
+from fpl_model import paths
 import pandas as pd
 from pathlib import Path
 
-_DATA = Path(__file__).resolve().parents[2] / "data" / "current"
+_DATA = paths.CURRENT
 
-MAIN_TRANSFERS_FILE = _DATA / "transfers.csv"
-DEFCON_TRANSFERS_FILE = _DATA / "defcon_transfers.csv"  # the separate Player,Season,Pos,Minutes,Defcon file
+MAIN_TRANSFERS_FILE = paths.CURRENT / "transfers.csv"
+DEFCON_TRANSFERS_FILE = paths.CURRENT / "defcon_transfers.csv"  # the separate Player,Season,Pos,Minutes,Defcon file
 
 main = pd.read_csv(MAIN_TRANSFERS_FILE)
 defcon = pd.read_csv(DEFCON_TRANSFERS_FILE)

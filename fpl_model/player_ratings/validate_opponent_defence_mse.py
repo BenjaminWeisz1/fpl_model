@@ -10,6 +10,7 @@ build_player_ratings.py whose multiplier is the opponent's pre-match Defense_Rat
 Run locally (after the candidate's logged run):
     python validate_opponent_defence_mse.py
 """
+from fpl_model import paths
 import json
 from pathlib import Path
 
@@ -18,9 +19,9 @@ import pandas as pd
 
 from fpl_model.player_ratings.validate_opponent_lookup import N_BOOT, SEED, finals, mae, paired
 
-ROOT = Path(__file__).resolve().parents[2]
-DIR = ROOT / "data" / "validation" / "opponent_defence_mse_20261029"
-BASELINE = ROOT / "data" / "validation" / "inactivity_shrink_20261029" / "baseline_log.csv"
+ROOT = paths.ROOT
+DIR = paths.VALIDATION / "opponent_defence_mse_20261029"
+BASELINE = paths.VALIDATION / "inactivity_shrink_20261029" / "baseline_log.csv"
 TARGETS = {"npxG": ("npxg90", "pred_goals_90"), "xAG": ("xag90", "pred_ast_90")}
 NAMED = ["Haaland", "Awoniyi", "Watkins", "Isak", "C. Wilson", "Ekitiké", "Mateta", "Wood", "Gyökeres", "João Pedro"]
 

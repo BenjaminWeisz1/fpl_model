@@ -27,6 +27,7 @@ FotMob additions are audited in penalty_log_fotmob_additions.csv. Understat file
 Run locally (after fetch_fotmob_matches.py and build_position_crosswalk.py):
     python penalty_log_understat.py [--dry-run]
 """
+from fpl_model import paths
 import argparse
 import json
 from datetime import datetime, timezone
@@ -37,13 +38,13 @@ import pandas as pd
 from fpl_model.fetch import penalty_reconcile
 from fpl_model.fetch.fetch_fotmob_matches import FIRST_SEASON as FOTMOB_FIRST_SEASON, SHOTS_OUT as FOTMOB_SHOTS
 
-_ROOT = Path(__file__).resolve().parents[2]
-_DATA = _ROOT / "data" / "current"
-MATCH_CACHE = _ROOT / "data" / "raw" / "understat" / "matches"
-POSITIONS_FILE = _DATA / "understat_match_positions.csv"
-CROSSWALK_FILE = _DATA / "player_match_positions.csv"
-ADDITIONS_FILE = _DATA / "penalty_log_understat_additions.csv"
-FOTMOB_ADDITIONS_FILE = _DATA / "penalty_log_fotmob_additions.csv"
+_ROOT = paths.ROOT
+_DATA = paths.CURRENT
+MATCH_CACHE = paths.RAW / "understat" / "matches"
+POSITIONS_FILE = paths.CURRENT / "understat_match_positions.csv"
+CROSSWALK_FILE = paths.CURRENT / "player_match_positions.csv"
+ADDITIONS_FILE = paths.CURRENT / "penalty_log_understat_additions.csv"
+FOTMOB_ADDITIONS_FILE = paths.CURRENT / "penalty_log_fotmob_additions.csv"
 KEY = ["Season", "Team", "Opponent", "Venue", "Player", "Scored"]
 
 

@@ -21,6 +21,7 @@ plan folder as team.json, which replay_plans.py checks against.
 See apply_constraints; chips are fixed weeks, never picked by the solver (chips.py, §226). Exits 3 if no plan satisfies
 them.
 """
+from fpl_model import paths
 import argparse
 import json
 import sys
@@ -31,8 +32,8 @@ import pandas as pd
 import requests
 
 _HERE = Path(__file__).resolve().parent
-_ROOT = _HERE.parents[1]
-_DATA = _ROOT / "data" / "current"
+_ROOT = paths.ROOT
+_DATA = paths.CURRENT
 _SOLVER = _HERE / "open_fpl_solver"
 sys.path.insert(0, str(_SOLVER))  # vendored solver: imported as `dev.solver`, not part of the package
 
@@ -129,7 +130,7 @@ def check_team(team, fpl, projection):
     assert team["transfers"]["limit"] is not None and not active, f"Chip active {active}: fix it as a chip week instead."
 
 
-TEAM_FILE = _ROOT / "team_data.json"
+TEAM_FILE = paths.ROOT / "team_data.json"
 
 
 def team_saved_utc(team_file=TEAM_FILE):

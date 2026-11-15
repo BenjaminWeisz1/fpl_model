@@ -13,6 +13,7 @@ pre-registration. Pass bands are active only when Sofascore is usable
 (sofascore_status.json), the §64 accounting is in force and BONUS_PASS_BANDS is
 not 0; otherwise every stage falls back to the §64 model.
 """
+from fpl_model import paths
 import json
 import os
 from pathlib import Path
@@ -21,7 +22,7 @@ import numpy as np
 import pandas as pd
 from scipy import optimize
 
-_DATA = Path(__file__).resolve().parents[2] / "data" / "current"
+_DATA = paths.CURRENT
 
 BANDS = np.array([0, 2, 4, 6])
 HISTORY = 38

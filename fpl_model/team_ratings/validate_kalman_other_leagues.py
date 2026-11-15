@@ -11,6 +11,7 @@ arm was scored. `--check` prints data coverage and scores no arm.
     python -u -X utf8 scripts/team_ratings/validate_kalman_other_leagues.py --check
     python -u -X utf8 scripts/team_ratings/validate_kalman_other_leagues.py
 """
+from fpl_model import paths
 import argparse
 import hashlib
 import json
@@ -25,9 +26,9 @@ from fpl_model.team_ratings.evaluate_team_ratings_oot import CS_PEN_GOAL_MULT, l
 from fpl_model.team_ratings.kalman_team_ratings import add_match_indices, kalman_run
 from fpl_model.team_ratings.ratings_fast import fast_run, frozen_predict_fast
 
-ROOT = Path(__file__).resolve().parents[2]
-LEAGUE_DIR = ROOT / "data" / "raw" / "understat" / "league"
-OUT = ROOT / "data" / "validation" / "kalman_other_leagues_20261102"
+ROOT = paths.ROOT
+LEAGUE_DIR = paths.RAW / "understat" / "league"
+OUT = paths.VALIDATION / "kalman_other_leagues_20261102"
 
 LEAGUES = ("Bundesliga", "La_liga", "Ligue_1", "RFPL", "Serie_A")
 LEAGUE_CUTOFFS = tuple(range(2017, 2026))      # 2014-2016 are burn-in

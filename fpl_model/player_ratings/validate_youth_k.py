@@ -4,6 +4,7 @@ Separate prior weight for youth players in the goal/assist loop (CHANGELOG §126
     python validate_youth_k.py run     # one pre-match log per K_youth (GOAL_MODEL_PRIOR_K_YOUTH)
     python validate_youth_k.py score   # youth entrants: train/test MSE; all-rows guard -> results.json
 """
+from fpl_model import paths
 import json
 import os
 import subprocess
@@ -16,8 +17,8 @@ import pandas as pd
 
 from fpl_model.player_ratings.validate_prior_k import entrants, sq_errors, boot_diff, TARGETS  # noqa: E402
 
-ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / "data" / "validation" / "youth_k_20261030"
+ROOT = paths.ROOT
+OUT = paths.VALIDATION / "youth_k_20261030"
 GRID = ["2", "4", "6", "8", "10", "13", "16"]
 
 

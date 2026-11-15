@@ -3,6 +3,7 @@
 Walk-forward test, rate error at realized minutes. Test only; no production writes.
 Run: python -u -X utf8 scripts/assemble/validate_keeper_saves.py
 """
+from fpl_model import paths
 import json
 import sys
 from pathlib import Path
@@ -13,11 +14,11 @@ import statsmodels.api as sm
 from scipy.special import gammaln
 
 HERE = Path(__file__).resolve().parent
-ROOT = HERE.parents[1]
+ROOT = paths.ROOT
 from fpl_model.assemble.build_predicted_points import expected_points_per_three_saves  # noqa: E402
 
-DATA = ROOT / "data" / "current"
-OUT = ROOT / "data" / "validation" / "keeper_saves_20261101"
+DATA = paths.CURRENT
+OUT = paths.VALIDATION / "keeper_saves_20261101"
 OUT.mkdir(parents=True, exist_ok=True)
 KEY = ["Season", "Team", "Opponent", "Venue"]
 TEST = list(range(2019, 2025))

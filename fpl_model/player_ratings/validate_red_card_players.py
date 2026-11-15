@@ -7,6 +7,7 @@ Player-level red-card adjustment in the goal/assist loop (CHANGELOG §136): scor
 MSE of match npxG / xAG (weighted, as validate_opp_beta.py) on rows from matches without a red card, where the targets
 are identical in both runs; goalkeepers excluded. Rule: adopt unless either target's 2023-2026 MSE worsens by > 0.05%.
 """
+from fpl_model import paths
 import json
 import sys
 from pathlib import Path
@@ -16,8 +17,8 @@ import pandas as pd
 
 from fpl_model.player_ratings.validate_prior_k import boot_diff  # noqa: E402
 
-ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / "data" / "validation" / "red_card_20261030" / "player"
+ROOT = paths.ROOT
+OUT = paths.VALIDATION / "red_card_20261030" / "player"
 TARGETS = {"npxG": ("npxg90", "pred_goals_90"), "xAG": ("xag90", "pred_ast_90")}
 LIMIT = 0.0005
 

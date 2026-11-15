@@ -5,15 +5,16 @@ data/current/sofascore_missing_players.csv (the source's missingPlayers lists: w
 Reads data/raw/sofascore/matches/ only; no network; not a pipeline stage.
 Run: python -u -X utf8 scripts/fetch/export_sofascore_extra.py
 """
+from fpl_model import paths
 import json
 from collections import Counter
 from pathlib import Path
 
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[2]
-RAW = ROOT / "data" / "raw" / "sofascore" / "matches"
-DATA = ROOT / "data" / "current"
+ROOT = paths.ROOT
+RAW = paths.RAW / "sofascore" / "matches"
+DATA = paths.CURRENT
 SKIP = {"ratingVersions", "statisticsType"}
 
 

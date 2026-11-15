@@ -11,6 +11,7 @@ error versus extrapolating.
 Run locally:
     python build_minutes_probabilities.py
 """
+from fpl_model import paths
 import re
 import sys
 import pandas as pd
@@ -27,15 +28,15 @@ sys.stderr.reconfigure(errors="replace")
 from fpl_model.player_availability import status_conflicts  # noqa: E402
 from fpl_model.forecast_horizon import GAMEWEEKS  # noqa: E402  (the forecast window, set in one place)
 
-_DATA = Path(__file__).resolve().parents[2] / "data" / "current"
+_DATA = paths.CURRENT
 
-MINUTES_FILE = _DATA / "minutes.csv"
+MINUTES_FILE = paths.CURRENT / "minutes.csv"
 NAME_COL = "Name"
 
-LOOKUP_FILE = _DATA / "mins_lookup_table.csv"
-PLAYERS_CURRENT_FILE = _DATA / "players_current.csv"
+LOOKUP_FILE = paths.CURRENT / "mins_lookup_table.csv"
+PLAYERS_CURRENT_FILE = paths.CURRENT / "players_current.csv"
 
-OUT_FILE = _DATA / "minutes_probabilities.csv"
+OUT_FILE = paths.CURRENT / "minutes_probabilities.csv"
 
 
 def interpolate(xmins_series, lookup_x, lookup_y):

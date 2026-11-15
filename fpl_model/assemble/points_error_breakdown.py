@@ -6,6 +6,7 @@ Rows: the pre-match bonus hindcast, 2018-2024 (vaastav outcomes) and its 2025-26
 out-of-time probabilities, 2022-2026. Diagnostic only; no production writes.
 Run: python -u -X utf8 scripts/assemble/points_error_breakdown.py
 """
+from fpl_model import paths
 import json
 import sys
 from pathlib import Path
@@ -14,14 +15,14 @@ import numpy as np
 import pandas as pd
 from scipy.stats import poisson
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = paths.ROOT
 from fpl_model.defcon_scaling import nb_sf, prob_at_minutes  # noqa: E402
 
-DATA = ROOT / "data" / "current"
-VAL = ROOT / "data" / "validation"
-OUT = VAL / "points_error_20261031"
+DATA = paths.CURRENT
+VAL = paths.VALIDATION
+OUT = paths.VALIDATION / "points_error_20261031"
 OUT.mkdir(exist_ok=True)
-DEFCON = ROOT / "data" / "validation" / "defcon_overnight_20261031"
+DEFCON = paths.VALIDATION / "defcon_overnight_20261031"
 PTS_GOAL = {"G": 6, "D": 6, "M": 5, "F": 4}     # the rule in force in these seasons, so components sum to total_points
 CS = {"G": 4, "D": 4, "M": 1, "F": 0}
 PEN_RATE, PEN_CONV = 792 / 7734, 0.79

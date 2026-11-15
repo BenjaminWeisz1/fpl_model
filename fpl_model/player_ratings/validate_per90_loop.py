@@ -12,6 +12,7 @@ factor x realized minutes / 90, against actual match npxG (xAG likewise).
 Run locally (after the logged run):
     python validate_per90_loop.py
 """
+from fpl_model import paths
 import json
 from pathlib import Path
 
@@ -20,8 +21,8 @@ import pandas as pd
 
 from fpl_model.player_ratings.validate_opponent_lookup import paired
 
-ROOT = Path(__file__).resolve().parents[2]
-DIR = ROOT / "data" / "validation" / "per90_loop_20261028"
+ROOT = paths.ROOT
+DIR = paths.VALIDATION / "per90_loop_20261028"
 N_BOOT, SEED = 5000, 42
 BANDS = [0, 45, 70, 85, 200]
 BAND_LABELS = ["<=45", "46-70", "71-85", "86+"]

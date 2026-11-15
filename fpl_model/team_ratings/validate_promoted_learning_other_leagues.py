@@ -9,6 +9,7 @@ arm was scored.
 
     python -u -X utf8 scripts/team_ratings/validate_promoted_learning_other_leagues.py
 """
+from fpl_model import paths
 import hashlib
 import json
 import sys
@@ -22,8 +23,8 @@ from fpl_model.team_ratings.promoted_learning_team_ratings import M_GRID, N_GRID
 from fpl_model.team_ratings.ratings_fast import fast_run  # noqa: E402
 from fpl_model.team_ratings.validate_kalman_other_leagues import cs_ll, load_league, signal_prior_map, team_ll  # noqa: E402
 
-ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / "data" / "validation" / "promoted_learning_other_leagues_20261115"
+ROOT = paths.ROOT
+OUT = paths.VALIDATION / "promoted_learning_other_leagues_20261115"
 LEAGUES = ("Bundesliga", "La_liga", "Ligue_1", "RFPL", "Serie_A")
 SCORED = tuple(range(2015, 2026))      # 2014 = each frame's first season
 CUTOFFS = tuple(range(2017, 2026))     # held out

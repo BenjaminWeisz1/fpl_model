@@ -3,12 +3,13 @@
 Not wired into any pipeline stage. Lines match validate_role_move_error.py. Later steps should import this
 so training and forecasts share one calculation. Frozen settings come from validate_role_shares.py.
 """
+from fpl_model import paths
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-DATA = Path(__file__).resolve().parents[2] / "data" / "current"
+DATA = paths.CURRENT
 LINES = ["CB", "WD", "CM", "ATT", "FW"]
 LINE_OF = {"CB": 0, "LB": 1, "RB": 1, "WB": 1, "DM": 2, "CM": 2, "AM": 3, "LM": 3, "RM": 3, "LW": 3, "RW": 3, "FW": 4}
 
@@ -44,7 +45,7 @@ def shares(counts, prior):
 HALF_LIFE, PRIOR, RECENT_WEIGHT = 3, 0.1, 0.9
 
 
-LINE_RATES_FILE = DATA.parent / "validation" / "role_factors_20261101" / "line_rates.json"
+LINE_RATES_FILE = paths.VALIDATION / "role_factors_20261101" / "line_rates.json"
 
 
 def role_table():
