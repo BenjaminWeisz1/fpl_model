@@ -1,0 +1,1504 @@
+"""
+Defcon model stage: P(a player reaches FPL's defensive-contribution threshold) for every fixture in the forecast
+window, plus a fixture-neutral 90-minute probability per player.
+
+    python -m fpl_model.defcon.predict
+
+Reads player_match_stats.csv and friends from data/current, builds the training frames (features.py), validates the
+three heads out of time (evaluation.py), trains or loads them through the model cache (model_cache.py), then writes
+predictions_defensive.csv and defcon_average_probabilities.csv. See fpl_model/defcon/README.md.
+"""
+import warnings
+
+import numpy as np
+import pandas as pd
+from scipy import optimize as _optimize
+from scipy import stats as _stats
+from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
+from sklearn.metrics import log_loss, roc_auc_score
+
+from fpl_model import config, paths
+from fpl_model.defcon.defender_model import (
+    DEFAULT_FEATURE_MODE,
+    apply_level_factors,
+    level_adjust_features,
+    level_factors,
+    monotonic_params,
+    season_levels,
+)
+from fpl_model.defcon.evaluation import mech_gap, mech_lrt, report_metrics, score_validation
+from fpl_model.defcon.features import (
+    DEFENDER_DETAILED_POS,
+    MID_FWD_DETAILED_POS,
+    QUALIFYING_MINUTES_P90,
+    RAW_CAMEO_MIN,
+    avg_raw_qualifying,
+    estimate_std_and_pct,
+    get_pos_dummies,
+    is_defender_pos,
+    is_forward_pos,
+    is_midfielder_or_forward_pos,
+    pooled_prior_std,
+    recent5_qualifying_per90,
+    recent5_qualifying_raw,
+)
+from fpl_model.defcon.model_cache import prune_model_cache, tune_and_calibrate
+from fpl_model.defcon.opponent_model import match_order, opponent_factors, position_groups
+from fpl_model.defcon.recent_defcon import EW_HALF_LIFE, attach_recent_rates, feature_columns
+from fpl_model.forecast_horizon import GAMEWEEKS, HORIZON  # set in one place
+from fpl_model.league_rates import current_season
+from fpl_model.match_order import chrono_order
+from fpl_model.team_ratings.get_next_round import get_next_round
+
+warnings.filterwarnings("ignore")
+
+_DATA = paths.CURRENT
+
+CURRENT_SEASON = current_season()
+# The defender head's feature schema (§46: one exponentially weighted recent rate, no StdPer90). Its activity
+# features are expressed at the current league level (§106, defender_model.season_levels).
+DEFENDER_FEATURE_MODE = DEFAULT_FEATURE_MODE
+
+
+
+# ── Load data ──────────────────────────────────────────────────────────
+# Read the consolidated player_match_stats.csv (replaces the old player_matchlogs.csv).
+# CBI is now a native column. FPL_API-era Position is a mix: many rows carry a
+# native position (coarse D/M/F/G from the builder, or detailed fbref-style
+# codes like FW/CB/CM/W), and the rest are NULL and filled first from
+# players_current.csv (coarse D/M/F/G) and then from transfers.csv below --
+# see the transfers fallback block for the departed-player rule.
+matchlogs = pd.read_csv(_DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False)
+matchlogs["Chrono"] = chrono_order(matchlogs, _DATA)  # never MatchID: not chronological in 2026 GW1-2 (§188)
+players_current = pd.read_csv(_DATA / "players_current.csv", encoding="utf-8-sig")
+
+# Fill NULL Position (FPL_API rows) from players_current.csv
+_pos_lookup = dict(zip(players_current["Player"], players_current["Pos"]))
+matchlogs["Position"] = matchlogs["Position"].fillna(matchlogs["Player"].map(_pos_lookup))
+fixtures = pd.read_csv(_DATA / "fixtures.csv")
+# Restrict to the forecast window (forecast_horizon.HORIZON rounds) -- minutes_probabilities.csv
+# only covers GW1..GW<HORIZON>, so anything beyond that would silently fall back to unscaled 90-minute
+# probabilities in the minutes-scaling step below. Filtering here also avoids
+# wastefully scoring the rest of the season's fixtures we don't use.
+
+_next_round = get_next_round(_DATA, CURRENT_SEASON)
+fixtures = fixtures[(fixtures["Season"] == CURRENT_SEASON) & (fixtures["Round"] >= _next_round) & (fixtures["Round"] < _next_round + HORIZON)].reset_index(drop=True)
+print(f"Next round from match_results.csv: {_next_round}")
+print(f"Filtered fixtures to rounds {_next_round}-{_next_round + HORIZON - 1}: {len(fixtures)} fixtures")
+transfers = pd.read_csv(_DATA / "transfers.csv")
+
+# ── Transfers-based position fallback (departed players) ──────────────
+# players_current.csv only covers current squads, so FPL_API rows by players
+# who have since left the league (post-window departures, releases, loans)
+# keep NULL Position after the fill above. transfers.csv now covers every
+# such player (user-completed 2026-09-03): their position is the FIRST
+# token before the comma of their most recent arrival record at or before
+# the row's season (user rule: "the first position before a comma -- if
+# it's FW then it's forward"). GK first tokens match no position set, so
+# departed keepers stay excluded from all position datasets. fbref-era
+# rows always carry detailed positions and are never touched (verified
+# 2026-09-03: 0 fbref rows have NULL Position), so pre-2025 training data
+# is bit-for-bit unchanged -- only FPL-era validation rows and the
+# production training frame expand. Rows whose player has no transfers
+# record remain NULL and drop out of the position datasets exactly as
+# before.
+_pos_records = {}
+for _, _trow in transfers.dropna(subset=["Pos"]).iterrows():
+    _pos_records.setdefault(_trow["Player"], []).append(
+        (int(_trow["Season"]), str(_trow["Pos"]).split(",")[0].strip()))
+for _p in _pos_records:
+    _pos_records[_p].sort(key=lambda x: x[0])
+
+def _transfer_position(player, season):
+    """First position token of the player's most recent arrival record at
+    or before `season` (earliest record if only later arrivals exist)."""
+    recs = _pos_records.get(player)
+    if not recs:
+        return None
+    best = recs[0]
+    for s_arr, tok in recs:
+        if s_arr <= season:
+            best = (s_arr, tok)
+    return best[1]
+
+_null_pos_mask = matchlogs["Position"].isna()
+if _null_pos_mask.any():
+    _filled = 0
+    for _i in matchlogs.index[_null_pos_mask]:
+        _tok = _transfer_position(matchlogs.at[_i, "Player"], int(matchlogs.at[_i, "Season"]))
+        if _tok is not None:
+            matchlogs.at[_i, "Position"] = _tok
+            _filled += 1
+    print(f"Transfers position fallback: filled {_filled} of {int(_null_pos_mask.sum())} "
+          f"NULL-position rows ({int(matchlogs['Position'].isna().sum())} remain unclassifiable)")
+
+# ── Transfer priors: prior-league defensive evidence ──────────────────
+# transfers.csv's Defcon column (populated for new-to-league arrivals,
+# currently only the 2026 intake) seeds a debutant's history features with
+# their prior-league rate instead of an all-zero "rookie" vector -- so a
+# 28-year-old proven Bundesliga CB and a 17-year-old academy debutant no
+# longer present identical feature vectors. Keyed on (Player, arrival
+# season): a prior only ever applies to matches from its arrival season
+# onward, which keeps it leak-safe (a 2026 prior can never touch a 2025
+# or earlier match).
+
+# Credibility cap on the transfer prior (CHANGELOG §36). The prior weight
+# was k = Min_Old / 90 with no shrinkage, so a full Championship season
+# bought ~32 pseudo-matches -- more weight than two thirds of a Premier
+# League season, and a promoted-club player's PL form could not move his
+# career features (a 22-defcon match moved Bobby Thomas's AvgPer90 by 0.33).
+# Measured credibility on the 2026 arrival cohort (31 players with >= 3
+# qualifying PL matches): within-player per-match variance 12.36 divided by
+# prior-error variance 1.41 => k* = 8.8 pseudo-matches, i.e. the prior earns
+# about a third of the weight it was given. Capped at 10 -- the nearest round
+# number above the estimate, erring toward keeping prior weight, and still
+# leaving the prior dominant on a debut (its whole purpose, §10).
+PRIOR_MAX_K = 10.0
+
+
+def build_prior_lookup(transfers_df):
+    """(Player, arrival_season) -> {'per90': prior-league rate, 'matches':
+    prior weight in 90-minute-equivalent matches}."""
+    priors = {}
+    for _, row in transfers_df.iterrows():
+        if pd.isna(row["Min_Old"]) or pd.isna(row["Defcon"]) or row["Min_Old"] <= 0:
+            continue
+        k = row["Min_Old"] / 90.0
+        priors[(row["Player"], int(row["Season"]))] = {
+            "per90": row["Defcon"] * 90.0 / row["Min_Old"],
+            "matches": min(k, PRIOR_MAX_K),
+        }
+    return priors
+
+def prior_for_season(player, season):
+    """Most recent transfer prior whose arrival season <= the given season."""
+    best = None
+    for s_arr, v in _PRIORS_BY_PLAYER.get(player, []):
+        if s_arr <= season and (best is None or s_arr > best[0]):
+            best = (s_arr, v)
+    return best[1] if best else None
+
+# Clean team names (fixtures have trailing newlines)
+fixtures["Home"] = fixtures["Home"].str.strip()
+fixtures["Away"] = fixtures["Away"].str.strip()
+
+
+matchlogs["IsDefender"] = matchlogs["Position"].apply(is_defender_pos)
+matchlogs["IsMidfielderOrForward"] = matchlogs["Position"].apply(is_midfielder_or_forward_pos)
+matchlogs["IsForward"] = matchlogs["Position"].apply(is_forward_pos)
+
+# Transfer priors (built after the position helpers above are defined).
+_TRANSFER_PRIORS = build_prior_lookup(transfers)
+_PRIORS_BY_PLAYER = {}
+for (_p, _s), _v in _TRANSFER_PRIORS.items():
+    _PRIORS_BY_PLAYER.setdefault(_p, []).append((_s, _v))
+for _p in _PRIORS_BY_PLAYER:
+    _PRIORS_BY_PLAYER[_p].sort(key=lambda x: x[0])
+
+# ── FPL_API -> fbref stat-scale reconciliation ──────────────────────
+# FPL's native defensive stats are NOT on fbref's scale for the same
+# players. Paired same-player era comparison (players with >=5 qualifying
+# matches in both eras; ratio-of-sums of player mean per-90 rates; n=130
+# mid/fwd, n=85 defenders):
+#     mid/fwd CBI 0.736 | defender CBI 0.975 (continuous across the switch)
+#     Tkl 0.86-0.92 paired but ~0.97 unpaired (the paired set is aging
+#     crossover veterans; composition confound) | Recov: defenders 0.759,
+#     mid/fwd 0.864
+# This is the root cause of the mid/fwd 0-9 newcomer over-prediction: the
+# model trained mostly on fbref-scale stats kept predicting fbref-scale
+# rates for players whose current-season evidence sits on the lower FPL
+# scale -- the exact regime shift the falsifiable prior-mechanism test
+# ruled out. Tkl and defender CBI stay untouched (within noise); the two
+# clearly definitional gaps are rescaled onto the fbref scale that 8 of 10
+# training seasons -- and transfers.csv's prior-league Defcon rates -- are
+# on. (Mid/fwd CBI+Tkl+Recov reconstructs at x1.19, vs the x1.198 the
+# paired full-stat ratio requires.) Raw values in player_match_stats.csv
+# are NOT modified: build_residual_bps_baseline.py models FPL's actual BPS
+# scoring from FPL-native counts, so the reconciliation lives here, at the
+# defcon model's only ingestion point. Rows whose position is unknown
+# (departed players absent from players_current.csv) are left raw -- they
+# are already excluded from both position datasets below.
+_FPL_STAT_SCALE = {
+    "CBI":   {"def": 1.00, "midfwd": 1.36},  # inverses of 0.975 / 0.736
+    "Recov": {"def": 1.32, "midfwd": 1.16},  # inverses of 0.759 / 0.864
+}
+
+_fpl_src = matchlogs["Data_Source"] == "FPL_API"
+_def_fpl = _fpl_src & matchlogs["IsDefender"]
+_mid_fpl = _fpl_src & matchlogs["IsMidfielderOrForward"] & ~matchlogs["IsDefender"]
+for _stat, _factors in _FPL_STAT_SCALE.items():
+    matchlogs.loc[_def_fpl, _stat] = matchlogs.loc[_def_fpl, _stat] * _factors["def"]
+    matchlogs.loc[_mid_fpl, _stat] = matchlogs.loc[_mid_fpl, _stat] * _factors["midfwd"]
+print(f"FPL_API stat rescale (onto fbref scale): {int(_def_fpl.sum())} defender rows, "
+      f"{int(_mid_fpl.sum())} mid/fwd rows; "
+      f"{int((_fpl_src & ~_def_fpl & ~_mid_fpl).sum())} FPL rows without a position left raw")
+
+# Compute raw defensive stats -- CBI is a native column in player_match_stats.csv
+# for both sources (summed from fbref components, native for FPL_API), reconciled
+# onto one scale above, so no need to sum three separate columns here.
+matchlogs["DefStats_Def"] = matchlogs["CBI"] + matchlogs["Tkl"]
+matchlogs["DefStats_Mid"] = matchlogs["DefStats_Def"] + matchlogs["Recov"]
+
+# Per-90 normalization
+matchlogs["Per90_Def"] = np.where(matchlogs["Minutes"] > 0, matchlogs["DefStats_Def"] * 90 / matchlogs["Minutes"], 0)
+matchlogs["Per90_Mid"] = np.where(matchlogs["Minutes"] > 0, matchlogs["DefStats_Mid"] * 90 / matchlogs["Minutes"], 0)
+
+# Season comes from player_match_stats.csv's native Season column (fbref
+# 2017-2024, FPL_API 2025 and 2026). The old MatchID//380 derivation is
+# stale: it labelled ALL FPL_API rows 2025, which silently folded the
+# 2026/27 rounds 1-2 rows (natively Season 2026) into the 2025 validation
+# season, and FPL_API MatchIDs aren't one-per-match anyway (the 2025/26
+# season's ~11.5k rows share just 38 IDs -- one per gameweek).
+matchlogs["Season"] = matchlogs["Season"].astype(int)
+MAX_SEASON = int(matchlogs["Season"].max())
+RECENCY_DECAY = 0.8  # exponential decay factor per season
+
+# ── Detailed per-match position from Understat (CHANGELOG §38, AGENDA §4) ──
+# The Pos_* multi-hot dummies below are built from this column. Historically
+# they came from `Position`, which is detailed for fbref rows (2017-2024) but
+# only coarse D/M/F for FPL-era rows (2025+) -- so every FPL-era row, including
+# all Split A/B validation rows and every inference vector, had all-zero Pos_*
+# dummies while fbref training rows carried real ones (a train/serve split).
+# player_match_positions.csv (fpl_model/fetch/build_position_crosswalk.py) maps
+# Understat's per-match formation slot onto the same row identity, giving FPL-era
+# rows the detailed slot too. It is used ONLY for the dummies: IsDefender /
+# IsMidfielderOrForward / IsForward, the target and the dataset a row joins still
+# come from `Position`, so the ON/OFF comparison holds rows and targets fixed and
+# changes nothing but the position features. SHIPPED 2026-10-15 (§38): the default
+# is now ON -- the OOT test improved 5 of 6 head×split cells on both LL and AUC
+# (defender + mid/fwd on both splits, forward on the 29-hit Split A). The lone
+# breach was the forward head on the ~2-hit Split B (AUC noise on a micro-sample),
+# which the user judged uninformative and overrode the pre-registered guardrail to
+# ship. Since §197 FotMob's slots fill the matches Understat lacks.
+_POSITIONS_FILE = paths.CURRENT / "player_match_positions.csv"
+if _POSITIONS_FILE.exists():
+    _pos_art = pd.read_csv(_POSITIONS_FILE, encoding="utf-8-sig", low_memory=False)
+    _pos_art = _pos_art.dropna(subset=["Position_Resolved"])
+    _resolved_lookup = {
+        (int(s), t, o, v, p): r
+        for s, t, o, v, p, r in zip(_pos_art["Season"], _pos_art["Team"],
+                                    _pos_art["Opponent"], _pos_art["Venue"],
+                                    _pos_art["Player"], _pos_art["Position_Resolved"])
+    }
+    _keys = list(zip(matchlogs["Season"], matchlogs["Team"], matchlogs["Opponent"],
+                     matchlogs["Venue"], matchlogs["Player"]))
+    _detailed = pd.Series([_resolved_lookup.get(k) for k in _keys], index=matchlogs.index)
+    matchlogs["Position_Detailed"] = _detailed.fillna(matchlogs["Position"])
+    _fpl_era = matchlogs["Season"] >= 2025
+    _got = int((_fpl_era & matchlogs["Position_Detailed"].notna()).sum())
+    print(f"Understat detailed positions ON: {_got}/{int(_fpl_era.sum())} FPL-era rows "
+          f"({_got / max(int(_fpl_era.sum()), 1):.1%}) carry a resolved slot for the Pos_* dummies")
+else:
+    print(f"WARNING: {_POSITIONS_FILE.name} is missing -- "
+          f"falling back to coarse Position (run build_position_crosswalk.py).")
+    matchlogs["Position_Detailed"] = matchlogs["Position"]
+
+# ── Pre-compute recency-weighted seasonal aggregates ──────────────────
+def compute_season_aggregates(pos_mask, stat_col, per90_col):
+    """Pre-compute per-season aggregates for opponent, team, and venue.
+    All three now use per90_col -- previously opponent/team used raw stat_col,
+    which confounded them with average minutes played (a team whose players
+    got subbed off early would show an artificially low TeamAvgStat purely
+    from minutes, not true defensive intensity).
+
+    That per-90 switch also inherited per-90's cameo exposure, so the rows are
+    now filtered to full appearances (>= 60') like every other per-90 feature:
+    a 1-minute substitute with 2 defensive actions extrapolates to 180 per 90,
+    and exactly one such row (Latibeaudiere vs Nott'ham Forest) moved Coventry's
+    TeamAvgStat from 8.50 to 14.79 -- against a league mean near 8.8 -- which put
+    six Coventry defenders in the top six of the defcon chart, one of whom had
+    cleared the threshold in 0 of 4 appearances (CHANGELOG §36)."""
+    subset = matchlogs[pos_mask]
+    subset = subset[subset["Minutes"] >= QUALIFYING_MINUTES_P90]
+
+    # Per-season aggregates (all per-90, for consistency)
+    opp_by_season = subset.groupby(["Season", "Opponent"])[per90_col].mean().reset_index()
+    team_by_season = subset.groupby(["Season", "Team"])[per90_col].mean().reset_index()
+    venue_by_season = subset.groupby(["Season", "Venue"])[per90_col].mean().reset_index()
+
+    # Build cumulative recency-weighted averages for each season boundary
+    # For prediction at season S, use data from seasons 0..S-1
+    all_seasons = sorted(subset["Season"].unique())
+    prior_opp = {}   # {season: {team: weighted_avg}}
+    prior_team = {}
+    prior_venue = {}
+
+    for idx, s in enumerate(all_seasons):
+        if idx == 0:
+            prior_opp[s] = {}
+            prior_team[s] = {}
+            prior_venue[s] = {}
+            continue
+
+        prev_seasons = all_seasons[:idx]
+
+        # Opponent aggregates (recency-weighted, normalized)
+        opp_agg = {}
+        opp_weights = {}
+        for ps in prev_seasons:
+            w = RECENCY_DECAY ** (s - 1 - ps)
+            for _, row in opp_by_season[opp_by_season["Season"] == ps].iterrows():
+                key = row["Opponent"]
+                opp_agg[key] = opp_agg.get(key, 0.0) + w * row[per90_col]
+                opp_weights[key] = opp_weights.get(key, 0.0) + w
+        for key in opp_agg:
+            opp_agg[key] /= opp_weights[key]
+        prior_opp[s] = opp_agg
+
+        # Team aggregates
+        team_agg = {}
+        team_weights = {}
+        for ps in prev_seasons:
+            w = RECENCY_DECAY ** (s - 1 - ps)
+            for _, row in team_by_season[team_by_season["Season"] == ps].iterrows():
+                key = row["Team"]
+                team_agg[key] = team_agg.get(key, 0.0) + w * row[per90_col]
+                team_weights[key] = team_weights.get(key, 0.0) + w
+        for key in team_agg:
+            team_agg[key] /= team_weights[key]
+        prior_team[s] = team_agg
+
+        # Venue aggregates
+        venue_agg = {}
+        venue_weights = {}
+        for ps in prev_seasons:
+            w = RECENCY_DECAY ** (s - 1 - ps)
+            for _, row in venue_by_season[venue_by_season["Season"] == ps].iterrows():
+                key = row["Venue"]
+                venue_agg[key] = venue_agg.get(key, 0.0) + w * row[per90_col]
+                venue_weights[key] = venue_weights.get(key, 0.0) + w
+        for key in venue_agg:
+            venue_agg[key] /= venue_weights[key]
+        prior_venue[s] = venue_agg
+
+    # Final aggregates (all seasons) for prediction-time use. Since §195 each
+    # season's mean is also weighted by its row count, so a partial current
+    # season counts for the matches it has, not a full season's vote (§190,
+    # arm C). Training columns above are unchanged.
+    opp_by_season["_n"] = subset.groupby(["Season", "Opponent"])[per90_col].size().values
+    team_by_season["_n"] = subset.groupby(["Season", "Team"])[per90_col].size().values
+    venue_by_season["_n"] = subset.groupby(["Season", "Venue"])[per90_col].size().values
+    final_opp = {}
+    final_opp_weights = {}
+    final_team = {}
+    final_team_weights = {}
+    final_venue = {}
+    final_venue_weights = {}
+    for ps in all_seasons:
+        w0 = RECENCY_DECAY ** (MAX_SEASON - ps)
+        for _, row in opp_by_season[opp_by_season["Season"] == ps].iterrows():
+            key = row["Opponent"]
+            w = w0 * row["_n"]
+            final_opp[key] = final_opp.get(key, 0.0) + w * row[per90_col]
+            final_opp_weights[key] = final_opp_weights.get(key, 0.0) + w
+        for _, row in team_by_season[team_by_season["Season"] == ps].iterrows():
+            key = row["Team"]
+            w = w0 * row["_n"]
+            final_team[key] = final_team.get(key, 0.0) + w * row[per90_col]
+            final_team_weights[key] = final_team_weights.get(key, 0.0) + w
+        for _, row in venue_by_season[venue_by_season["Season"] == ps].iterrows():
+            key = row["Venue"]
+            w = w0 * row["_n"]
+            final_venue[key] = final_venue.get(key, 0.0) + w * row[per90_col]
+            final_venue_weights[key] = final_venue_weights.get(key, 0.0) + w
+    for key in final_opp:
+        final_opp[key] /= final_opp_weights[key]
+    for key in final_team:
+        final_team[key] /= final_team_weights[key]
+    for key in final_venue:
+        final_venue[key] /= final_venue_weights[key]
+
+    return prior_opp, prior_team, prior_venue, final_opp, final_team, final_venue
+
+print("Computing temporal opponent/team/venue aggregates...")
+def_agg = compute_season_aggregates(matchlogs["IsDefender"], "DefStats_Def", "Per90_Def")
+mid_agg = compute_season_aggregates(matchlogs["IsMidfielderOrForward"], "DefStats_Mid", "Per90_Mid")
+def_prior_opp, def_prior_team, def_prior_venue, def_final_opp, def_final_team, def_final_venue = def_agg
+mid_prior_opp, mid_prior_team, mid_prior_venue, mid_final_opp, mid_final_team, mid_final_venue = mid_agg
+# Forward-only aggregates for the forward-specific model: a forward's
+# opponent/team/venue context drawn from how forwards perform, not the
+# mid-dominated pooled population.
+fwd_agg = compute_season_aggregates(matchlogs["IsForward"], "DefStats_Mid", "Per90_Mid")
+fwd_prior_opp, fwd_prior_team, fwd_prior_venue, fwd_final_opp, fwd_final_team, fwd_final_venue = fwd_agg
+
+# ── Player career aggregates (pure) + prior std/pct estimators ────────
+# Computed BEFORE build_dataset because prior-seeded rows borrow StdPer90 /
+# PctAboveThreshold estimates from players with similar in-dataset rates.
+# "Pure" = in-dataset only (no prior blending), so the estimator reflects
+# actual PL behaviour.
+
+
+
+def precompute_player_features(pos_mask, stat_col, per90_col, threshold, detailed_positions,
+                               priors=None, prior_season=None, std_pct_estimator=None):
+    """Career-wide player features. With priors=None this is the pure
+    in-dataset version (feeds the nearest-neighbour std/pct estimator).
+    With priors set, aggregates are blended with each player's transfer
+    prior exactly as build_dataset blends per-row history, keeping
+    inference vectors consistent with training vectors."""
+    subset = matchlogs[pos_mask].sort_values(["Player", "Chrono"])
+    grouped = subset.groupby("Player")
+    QUALIFYING_MINUTES = 60
+    qualifying_grouped = subset[subset["Minutes"] >= QUALIFYING_MINUTES].groupby("Player")
+
+    all_players = grouped.size().index
+    raw_qualifying_grouped = subset[subset["Minutes"] >= RAW_CAMEO_MIN].groupby("Player")
+    n_rq = raw_qualifying_grouped.size().reindex(all_players).fillna(0).astype(float)
+    sum_rq = raw_qualifying_grouped[stat_col].sum().reindex(all_players).fillna(0.0)
+    n_q = qualifying_grouped.size().reindex(all_players).fillna(0).astype(float)
+    sum_q = qualifying_grouped[per90_col].sum().reindex(all_players).fillna(0.0)
+    hits_q = qualifying_grouped[per90_col].apply(lambda x: (x >= threshold).sum()).reindex(all_players).fillna(0).astype(float)
+    std_q = qualifying_grouped[per90_col].std().reindex(all_players)
+    qual_vals = {p: g.tolist() for p, g in qualifying_grouped[per90_col]}
+    recent5_per90_direct = {p: recent5_qualifying_per90(g, per90_col)
+                            for p, g in grouped}
+    recent5_raw_direct = {p: recent5_qualifying_raw(g, stat_col) for p, g in grouped}
+    # §38: the Pos_* dummies use the detailed Understat slot when the switch is
+    # on (identical to Position when off), so a player who has shifted role is
+    # served on their most recent actual formation slot, not coarse D/M/F.
+    most_recent_detailed_pos = grouped["Position_Detailed"].last()
+
+    features = {}
+    for player in all_players:
+        prior = prior_for_season(player, prior_season) if priors is not None else None
+        if prior is not None:
+            k = prior["matches"]
+            prior_per90 = prior["per90"]
+            est_std, est_pct = std_pct_estimator(prior_per90)
+        else:
+            k = prior_per90 = est_std = est_pct = 0.0
+        nq, sq, hq = float(n_q[player]), float(sum_q[player]), float(hits_q[player])
+        nrq, srq = float(n_rq[player]), float(sum_rq[player])
+        sd = std_q[player]
+        sd = 0.0 if pd.isna(sd) else float(sd)
+        # Prior-blended players pool the prior's k pseudo-matches with their
+        # qualifying PL per-90s instead of using the PL-only std (same
+        # formula as build_dataset -- see pooled_prior_std).
+        if prior is not None:
+            std_p90 = pooled_prior_std(est_std, k, prior_per90, qual_vals.get(player, []))
+        else:
+            std_p90 = sd if nq > 1 else 0.0
+        tot = nq + k
+        avg_per90_val = (sq + k * prior_per90) / tot if tot > 0 else 0.0
+        # Too few non-cameo matches in the last 5 -> fall back to the career
+        # rate rather than to a cameo-driven number (same rule as AvgRaw).
+        r5p_direct = recent5_per90_direct[player]
+        r5p = (avg_per90_val if r5p_direct is None or pd.isna(r5p_direct)
+               else float(r5p_direct))
+        # AvgRaw counts non-cameo matches only; Recent5AvgRaw falls back to
+        # it when the last-5 window is mostly cameos or holds too few
+        # non-cameo matches (see the helpers).
+        avg_raw_val = avg_raw_qualifying(srq, nrq, k, prior_per90)
+        r5r_direct = recent5_raw_direct[player]
+        r5r = r5r_direct if r5r_direct is not None else avg_raw_val
+        features[player] = {
+            "AvgPer90": avg_per90_val,
+            "AvgRaw": avg_raw_val,
+            "StdPer90": std_p90,
+            "MatchesPlayed": tot,
+            "Recent5AvgPer90": r5p, "Recent5AvgRaw": r5r,
+            "PctAboveThreshold": (hq + k * est_pct) / tot if tot > 0 else 0.0,
+            "Is_FPL_API": 1,  # inference: all future fixtures are FPL_API data
+            **get_pos_dummies(most_recent_detailed_pos[player], detailed_positions),
+        }
+    return features
+
+
+
+def_player_feats_pure = precompute_player_features(matchlogs["IsDefender"], "DefStats_Def", "Per90_Def", 10, DEFENDER_DETAILED_POS)
+mid_player_feats_pure = precompute_player_features(matchlogs["IsMidfielderOrForward"], "DefStats_Mid", "Per90_Mid", 12, MID_FWD_DETAILED_POS)
+def_std_estimator = estimate_std_and_pct(def_player_feats_pure)
+mid_std_estimator = estimate_std_and_pct(mid_player_feats_pure)
+fwd_player_feats_pure = precompute_player_features(matchlogs["IsForward"], "DefStats_Mid", "Per90_Mid", 12, MID_FWD_DETAILED_POS)
+fwd_std_estimator = estimate_std_and_pct(fwd_player_feats_pure)
+
+# ── Build player-match feature dataset ────────────────────────────────
+def build_dataset(df, pos_cols, stat_col, per90_col, threshold, prior_opp, prior_team, prior_venue, detailed_positions,
+                  use_priors=True, std_pct_estimator=None):
+    """Build labeled dataset with temporal opponent/team/venue features.
+
+    With use_priors=True, rows from a player's prior-league arrival season
+    onward blend their (possibly empty) league history with the transfer
+    prior as k pseudo-matches at the prior-league rate -- the same
+    empirical-Bayes shrinkage the inference tiers apply, keeping training
+    vectors and serving vectors consistent. StdPer90 for prior-carrying
+    rows is the pooled std of the combined sample (see pooled_prior_std),
+    not the PL-only std. AvgRaw/Recent5AvgRaw count only non-cameo matches
+    (Minutes >= RAW_CAMEO_MIN; see avg_raw_qualifying /
+    recent5_qualifying_raw)."""
+    mask = df[pos_cols[0]].copy()
+    for col in pos_cols[1:]:
+        mask = mask | df[col]
+    subset = df[mask & (df["Minutes"] >= 1)].copy()
+    subset = subset.sort_values(["Player", "Chrono"]).reset_index(drop=True)
+
+    records = []
+    for player, grp in subset.groupby("Player"):
+        grp = grp.sort_values("Chrono").reset_index(drop=True)
+
+        for i in range(len(grp)):
+            row = grp.iloc[i]
+            per90_stat = row[per90_col]
+            raw_stat = row[stat_col]
+            # A match only counts as a genuine "hit" if the player played at
+            # least 60 minutes -- otherwise a couple of actions in a brief
+            # cameo (e.g. 2 actions in 13 minutes) gets extrapolated via
+            # per-90 math into a false threshold-crossing that wouldn't hold
+            # up over a full match. This applies both to the training target
+            # and to the PctAboveThreshold feature below.
+            QUALIFYING_MINUTES = 60
+            target = 1 if (per90_stat >= threshold and row["Minutes"] >= QUALIFYING_MINUTES) else 0
+            row_season = int(row["Season"])
+
+            # Player-level historical features (strict temporal windowing).
+            # Transfer priors: from a player's prior-league arrival season
+            # onward, league history is blended with the prior as k
+            # pseudo-matches at the prior-league rate (k = Min_Old / 90), so
+            # a proven arrival's debut row carries real evidence instead of
+            # an all-zero vector indistinguishable from an academy unknown.
+            prev = grp.iloc[:i]
+            prior = prior_for_season(player, row_season) if use_priors else None
+            if prior is not None:
+                k = prior["matches"]
+                prior_per90 = prior["per90"]
+                est_std, est_pct = std_pct_estimator(prior_per90)
+            if len(prev) == 0:
+                if prior is not None:
+                    avg_per90 = avg_raw = recent_avg_per90 = recent_avg_raw = prior_per90
+                    # n_q = 0: the pooled std IS est_std -- the combined
+                    # sample is just the k pseudo-matches.
+                    std_per90 = pooled_prior_std(est_std, k, prior_per90, [])
+                    matches_played = k
+                    pct_above = est_pct
+                else:
+                    avg_per90 = avg_raw = std_per90 = 0
+                    matches_played = 0
+                    recent_avg_per90 = recent_avg_raw = pct_above = 0
+            else:
+                # AvgPer90/StdPer90 use only qualifying (>=60 min) matches --
+                # same fix as PctAboveThreshold, extended here. A simple mean of
+                # per-match per-90 rates is vulnerable to short-cameo extrapolation
+                # noise (e.g. 1 minute played, 3 actions -> extrapolated to 270
+                # per-90), which can dominate the average even though it
+                # represents a tiny fraction of true playing time. AvgRaw and
+                # Recent5AvgRaw have the OPPOSITE cameo failure: raw per-match
+                # volume is proportional to minutes, so a cameo's near-zero raw
+                # total drags a per-match raw mean DOWNWARD. They therefore use
+                # only non-cameo matches (Minutes >= RAW_CAMEO_MIN), and a
+                # last-5 window that is mostly cameos (or too short to hold
+                # >= 2 non-cameo matches) falls back to the cameo-filtered
+                # AvgRaw instead of collapsing to a zero- or
+                # one-match "recent" average.
+                prev_qualifying = prev[prev["Minutes"] >= QUALIFYING_MINUTES]
+                prev_raw_qualifying = prev[prev["Minutes"] >= RAW_CAMEO_MIN]
+                recent5_per90_direct = recent5_qualifying_per90(prev, per90_col)
+                recent5_raw_direct = recent5_qualifying_raw(prev, stat_col)
+                if prior is not None:
+                    # Empirical-Bayes shrinkage toward the prior-league rate,
+                    # in exactly the form the inference tiers use.
+                    n_q = len(prev_qualifying)
+                    sum_q = prev_qualifying[per90_col].sum() if n_q > 0 else 0.0
+                    hits_q = (prev_qualifying[per90_col] >= threshold).sum() if n_q > 0 else 0
+                    matches_played = n_q + k
+                    avg_per90 = (sum_q + k * prior_per90) / matches_played
+                    avg_raw = avg_raw_qualifying(prev_raw_qualifying[stat_col].sum(),
+                                                 len(prev_raw_qualifying), k, prior_per90)
+                    pct_above = (hits_q + k * est_pct) / matches_played
+                    # Pooled std of the prior's k pseudo-matches plus the
+                    # qualifying PL per-90s; n_q = 0/1 and degenerate
+                    # small-k cases are handled inside pooled_prior_std.
+                    std_per90 = pooled_prior_std(est_std, k, prior_per90,
+                                                 prev_qualifying[per90_col].tolist())
+                else:
+                    avg_per90 = prev_qualifying[per90_col].mean() if len(prev_qualifying) > 0 else 0
+                    avg_per90 = 0 if pd.isna(avg_per90) else avg_per90
+                    avg_raw = avg_raw_qualifying(prev_raw_qualifying[stat_col].sum(),
+                                                 len(prev_raw_qualifying))
+                    std_per90 = prev_qualifying[per90_col].std() if len(prev_qualifying) > 1 else 0
+                    std_per90 = 0 if pd.isna(std_per90) else std_per90
+                    matches_played = len(prev_qualifying)
+                    pct_above = (prev_qualifying[per90_col] >= threshold).mean() if len(prev_qualifying) > 0 else 0
+                # Recent5AvgRaw: mean over the non-cameo matches among the
+                # last 5; a mostly-cameo window or one with too few
+                # non-cameo matches falls back to the cameo-filtered AvgRaw.
+                # Recent5AvgPer90 follows the same rule against the >= 60'
+                # qualifying bar, falling back to AvgPer90.
+                recent_avg_raw = recent5_raw_direct if recent5_raw_direct is not None else avg_raw
+                recent_avg_per90 = (recent5_per90_direct
+                                    if recent5_per90_direct is not None
+                                    else avg_per90)
+
+            # Temporal opponent/team/venue features (no data leak)
+            lookup_season = row_season  # use prior_opp[season] = data before this season
+            opp_lookup = prior_opp.get(lookup_season, {})
+            team_lookup = prior_team.get(lookup_season, {})
+            venue_lookup = prior_venue.get(lookup_season, {})
+
+            records.append({
+                "MatchID": row["MatchID"], "Chrono": row["Chrono"], "Player": player,
+                "Team": row["Team"], "Opponent": row["Opponent"],
+                "Venue": row["Venue"], "Minutes": row["Minutes"],
+                "Season": row_season,
+                "RawStat": raw_stat, "Per90Stat": per90_stat, "Target": target,
+                "AvgPer90": avg_per90, "AvgRaw": avg_raw, "StdPer90": std_per90,
+                "MatchesPlayed": matches_played,
+                "Recent5AvgPer90": recent_avg_per90, "Recent5AvgRaw": recent_avg_raw,
+                "PctAboveThreshold": pct_above,
+                "OpponentAvgStat": opp_lookup.get(row["Opponent"], avg_per90),
+                "TeamAvgStat": team_lookup.get(row["Team"], avg_per90),
+                "VenueAvg": venue_lookup.get(row["Venue"], avg_per90),
+                "IsHome": 1 if row["Venue"] == "Home" else 0,
+                "Is_FPL_API": 1 if row["Data_Source"] == "FPL_API" else 0,
+                # Row-level forward flag (NOT a feature -- absent from every
+                # FEATURE_COLS list): lets the shared mid/fwd dataset be
+                # sliced into its forward rows for the forward-model
+                # head-to-head evaluation.
+                "IsForward": 1 if is_forward_pos(row["Position"]) else 0,
+                **get_pos_dummies(row["Position_Detailed"], detailed_positions),
+            })
+
+    return pd.DataFrame(records)
+
+print("Building defender dataset...")
+df_def = build_dataset(matchlogs, ["IsDefender"], "DefStats_Def", "Per90_Def", 10,
+                       def_prior_opp, def_prior_team, def_prior_venue, DEFENDER_DETAILED_POS,
+                       std_pct_estimator=def_std_estimator)
+print(f"  Defender records: {len(df_def)}")
+df_def["RecentEWPer90"], def_recent_lookup = attach_recent_rates(df_def, _PRIORS_BY_PLAYER, MAX_SEASON)
+DEF_LEVELS = season_levels(df_def)
+_plain, _ew, def_level_latest = level_factors(df_def, DEF_LEVELS, MAX_SEASON, EW_HALF_LIFE)
+df_def = apply_level_factors(df_def, _plain, _ew)
+print(f"  §106 level adjustment ON: levels {({k: round(v, 3) for k, v in DEF_LEVELS.items()})}; "
+      f"row factors {np.quantile(_plain, 0.05):.3f}-{np.quantile(_plain, 0.95):.3f} (5-95%)")
+
+print("Building midfielder+forward dataset...")
+df_mid = build_dataset(matchlogs, ["IsMidfielderOrForward"], "DefStats_Mid", "Per90_Mid", 12,
+                       mid_prior_opp, mid_prior_team, mid_prior_venue, MID_FWD_DETAILED_POS,
+                       std_pct_estimator=mid_std_estimator)
+print(f"  Midfielder+Forward records: {len(df_mid)}")
+
+# Forward-specific dataset: same target definition (CBI+Tkl+Recov per-90
+# >= 12 with >= 60 min) but forward rows only -- the shared mid/fwd model
+# can separate forwards from mids only through their stats and Is_FPL_API
+# (coarse F/M positions match no detailed position dummy), which is the
+# suspected mechanism behind the forward over-prediction (artifact mean
+# forward probability 0.0602 vs 0.0282 observed on the model-label scale,
+# 2026-09-02 probe).
+print("Building forward dataset...")
+df_fwd = build_dataset(matchlogs, ["IsForward"], "DefStats_Mid", "Per90_Mid", 12,
+                       fwd_prior_opp, fwd_prior_team, fwd_prior_venue, MID_FWD_DETAILED_POS,
+                       std_pct_estimator=fwd_std_estimator)
+print(f"  Forward records: {len(df_fwd)}")
+
+# §149: opponent factor for the defender and mid/fwd heads (the §150 midfield count head was reversed and removed).
+_matches = match_order(_DATA)
+df_def["OppFactor"], def_opp_latest = opponent_factors(df_def, "D", _matches)
+df_mid["OppFactor"], mid_opp_latest = opponent_factors(df_mid, "M", _matches)
+print(f"  §149 OppFactor ON: defender 5-95% {np.quantile(df_def['OppFactor'], .05):.3f}-{np.quantile(df_def['OppFactor'], .95):.3f}, "
+      f"mid/fwd {np.quantile(df_mid['OppFactor'], .05):.3f}-{np.quantile(df_mid['OppFactor'], .95):.3f}")
+
+print(f"\nDefender target rate: {df_def['Target'].mean():.3f}")
+print(f"Midfielder+Forward target rate: {df_mid['Target'].mean():.3f}")
+print(f"Forward target rate: {df_fwd['Target'].mean():.3f}")
+
+BASE_FEATURE_COLS = [
+    "AvgPer90", "AvgRaw", "StdPer90", "MatchesPlayed",
+    "Recent5AvgPer90", "Recent5AvgRaw", "PctAboveThreshold",
+    "OpponentAvgStat", "TeamAvgStat", "VenueAvg", "IsHome", "Is_FPL_API"
+]
+LEGACY_DEF_FEATURE_COLS = BASE_FEATURE_COLS + [f"Pos_{c}" for c in DEFENDER_DETAILED_POS]
+DEF_FEATURE_COLS = feature_columns(LEGACY_DEF_FEATURE_COLS, DEFENDER_FEATURE_MODE)
+MID_FEATURE_COLS = BASE_FEATURE_COLS + [f"Pos_{c}" for c in MID_FWD_DETAILED_POS]
+# The forward model shares the mid/fwd schema (same 10 detailed-position
+# dummies -- within the forward dataset they separate pure-FW rows from
+# hybrid W/FW or AM/FW rows).
+FWD_FEATURE_COLS = list(MID_FEATURE_COLS)
+DEF_FEATURE_COLS = [c for c in DEF_FEATURE_COLS if c != "OpponentAvgStat"] + ["OppFactor"]
+MID_FEATURE_COLS = [c for c in MID_FEATURE_COLS if c != "OpponentAvgStat"] + ["OppFactor"]
+
+# ── Out-of-time validation ────────────────────────────────────────────
+# Train on all seasons except the most recent; evaluate on the most recent.
+# This mirrors real-world deployment (train on history, predict the future)
+# and gives an honest estimate of generalisation performance.
+
+
+
+# ── Hyperparameter grids and model configs ──────────────────────────
+# Tuning grids for RandomizedSearchCV. Defaults below are the locked-in
+# §19 production picks (2026-09-03 tuned run). DEFCON_TUNE=0 is the
+# weekly-run default since 2026-09-04; set DEFCON_TUNE=1 to re-run the
+# full ~5h search (9 tunings per run, 30 candidates × 5 folds each).
+RF_PARAM_GRID = {
+    "n_estimators": [200, 300, 400, 500],
+    "max_depth": [6, 8, 10, None],
+    "min_samples_leaf": [1, 3, 5],
+    "max_features": ["sqrt", "log2", None],
+}
+_MODEL_CONFIGS = {
+    # Shared mid/forward: identical pick in all three §19 tuning calls
+    # (Split A, Split B, production). Serves mids always; forwards when
+    # FORWARD_MODEL_SHIPPED is off.
+    "RF_MF": (RandomForestClassifier, RF_PARAM_GRID,
+              {"n_estimators": 400, "max_depth": 10, "min_samples_leaf": 3,
+               "max_features": "sqrt", "n_jobs": 1}),
+    # Forward-only: production-frame tuned pick. Different optimum from
+    # RF_MF because the forward dataset is ~4x smaller with a ~4x lower
+    # target rate. Serves forwards when FORWARD_MODEL_SHIPPED is on.
+    "RF_FWD": (RandomForestClassifier, RF_PARAM_GRID,
+               {"n_estimators": 200, "max_depth": 8, "min_samples_leaf": 5,
+                "max_features": "log2", "n_jobs": 1}),
+}
+_DO_TUNE = config.get("DEFCON_TUNE")
+
+# Validated replacement for the defender head (CHANGELOG §41). Increasing
+# activity evidence cannot reduce P(hit), holding all other features fixed.
+# The candidate's configuration is locked; DEFCON_TUNE does not search it.
+_MODEL_CONFIGS["HGB_MONOTONIC"] = (
+    HistGradientBoostingClassifier, {}, monotonic_params(DEF_FEATURE_COLS)
+)
+_DEFENDER_MODEL_NAME = "HGB_MONOTONIC"
+
+
+
+def evaluate_oot(X_train, y_train, X_val, y_val, feature_cols, label, model_name):
+    """Train on earlier seasons, evaluate on the most recent season.
+    Reports log loss, AUC, Brier score, expected calibration error, and a
+    MatchesPlayed-stratified reliability check (evidence-dependent
+    calibration -- i.e. whether compression toward the mean is really gone,
+    not just invisible in the aggregate ECE). Returns (calibrated model,
+    scaler, reliability summary) so ablation arms can reuse the identically
+    trained model."""
+    model_cls, param_grid, default_params = _MODEL_CONFIGS[model_name]
+    calibrated, scaler, _best_params = tune_and_calibrate(
+        X_train, y_train, model_cls, param_grid, label,
+        do_tune=_DO_TUNE, default_params=default_params,
+    )
+
+    # Wrapper handles scaling internally; pass raw validation features.
+    proba = calibrated.predict_proba(X_val)[:, 1]
+    summary = report_metrics(proba, y_val, X_val, feature_cols, label)
+
+    # Feature importances from the production base model
+    base = calibrated.base_model
+    if hasattr(base, 'feature_importances_'):
+        imp = base.feature_importances_
+        fi = sorted(zip(feature_cols, imp), key=lambda x: -x[1])
+        print("\n  Top 10 features:")
+        for name, w in fi[:10]:
+            print(f"    {name:<24s} {w:.4f} ({w / sum(imp) * 100:.1f}%)")
+    print()
+    return calibrated, scaler, summary
+
+
+
+print("\n" + "=" * 60)
+print("OUT-OF-TIME VALIDATION")
+print("=" * 60)
+
+# Two splits, two questions:
+#
+# A) Last COMPLETE season (Season 2025): full-powered calibration reference.
+#    No transfer priors exist for pre-2026 arrivals, so prior blending cannot
+#    move anything here -- this doubles as the no-prior control: the newcomer
+#    (0-9 MatchesPlayed) over-prediction should persist in this split.
+#
+# B) Current season (Season 2026, rounds 1-2 so far): the only season where
+#    Defcon priors exist, hence the only place the prior mechanism can act.
+#    Scored with priors ON (production config) and priors OFF (ablation)
+#    using the SAME trained model -- training rows are identical under both
+#    configs (no priors exist for seasons <= 2025), so any difference is
+#    purely the prior-seeded validation features. Falsifiable prediction if
+#    missing prior evidence really is the mechanism: the 0-9 bucket gap and
+#    the LRT shrink from OFF to ON. Caveat: only ~2 rounds of data, so this
+#    split is low-powered by construction.
+_SEASON_CURRENT = int(df_def["Season"].max())   # 2026 -- partial season
+_SEASON_LAST_FULL = _SEASON_CURRENT - 1         # 2025 -- last complete season
+
+print(f"\n--- Split A: train <{_SEASON_LAST_FULL}, validate Season {_SEASON_LAST_FULL} "
+      f"(full-season reference / no-prior control) ---")
+evaluate_oot(
+    df_def[df_def["Season"] < _SEASON_LAST_FULL][DEF_FEATURE_COLS].values,
+    df_def[df_def["Season"] < _SEASON_LAST_FULL]["Target"].values,
+    df_def[df_def["Season"] == _SEASON_LAST_FULL][DEF_FEATURE_COLS].values,
+    df_def[df_def["Season"] == _SEASON_LAST_FULL]["Target"].values,
+    DEF_FEATURE_COLS, f"Defender (Season {_SEASON_LAST_FULL})", _DEFENDER_MODEL_NAME,
+)
+mid_model_a, mid_scaler_a, _sum_mid_a = evaluate_oot(
+    df_mid[df_mid["Season"] < _SEASON_LAST_FULL][MID_FEATURE_COLS].values,
+    df_mid[df_mid["Season"] < _SEASON_LAST_FULL]["Target"].values,
+    df_mid[df_mid["Season"] == _SEASON_LAST_FULL][MID_FEATURE_COLS].values,
+    df_mid[df_mid["Season"] == _SEASON_LAST_FULL]["Target"].values,
+    MID_FEATURE_COLS, f"Midfielder/Forward (Season {_SEASON_LAST_FULL})", "RF_MF",
+)
+_val_mid_only_a = df_mid[
+    (df_mid["Season"] == _SEASON_LAST_FULL) & (df_mid["IsForward"] == 0)
+]
+score_validation(
+    mid_model_a,
+    _val_mid_only_a[MID_FEATURE_COLS].values, _val_mid_only_a["Target"].values,
+    MID_FEATURE_COLS, f"Midfielder-only (Season {_SEASON_LAST_FULL})",
+)
+
+# Forward-only model under the identical split protocol.
+fwd_model_a, fwd_scaler_a, _sum_fwd_a = evaluate_oot(
+    df_fwd[df_fwd["Season"] < _SEASON_LAST_FULL][FWD_FEATURE_COLS].values,
+    df_fwd[df_fwd["Season"] < _SEASON_LAST_FULL]["Target"].values,
+    df_fwd[df_fwd["Season"] == _SEASON_LAST_FULL][FWD_FEATURE_COLS].values,
+    df_fwd[df_fwd["Season"] == _SEASON_LAST_FULL]["Target"].values,
+    FWD_FEATURE_COLS, f"Forward-only (Season {_SEASON_LAST_FULL})", "RF_FWD",
+)
+
+# Head-to-head: the SHARED mid/fwd Split A model scored on the same 2025
+# forward matches, using its own pipeline's features (mid/fwd-blended
+# history + mid/fwd opponent/team/venue aggregates). Rows and targets are
+# identical to the forward model's validation frame; only the feature
+# pipeline and the model differ. This comparison decides which model
+# serves forwards (see FORWARD_MODEL_SHIPPED).
+_val_fwd_shared = df_mid[(df_mid["Season"] == _SEASON_LAST_FULL) & (df_mid["IsForward"] == 1)]
+_sum_fwd_shared = score_validation(
+    mid_model_a,
+    _val_fwd_shared[MID_FEATURE_COLS].values, _val_fwd_shared["Target"].values,
+    MID_FEATURE_COLS, f"SHARED mid/fwd model on forward rows (Season {_SEASON_LAST_FULL})")
+
+_df_fwd_val_a = df_fwd[df_fwd["Season"] == _SEASON_LAST_FULL]
+_y_fwd_a = _df_fwd_val_a["Target"].values
+_p_fwd_own = fwd_model_a.predict_proba(_df_fwd_val_a[FWD_FEATURE_COLS].values)[:, 1]
+_p_fwd_shr = mid_model_a.predict_proba(_val_fwd_shared[MID_FEATURE_COLS].values)[:, 1]
+_ll_fwd_own = log_loss(_y_fwd_a, _p_fwd_own)
+_ll_fwd_shr = log_loss(_val_fwd_shared["Target"].values, _p_fwd_shr)
+_auc_fwd_own = roc_auc_score(_y_fwd_a, _p_fwd_own)
+_auc_fwd_shr = roc_auc_score(_val_fwd_shared["Target"].values, _p_fwd_shr)
+print("\n" + "=" * 60)
+print(f"FORWARD MODEL HEAD-TO-HEAD (Split A, Season {_SEASON_LAST_FULL} forward rows)")
+print("=" * 60)
+print(f"  validation rows: {len(_y_fwd_a)} (forward frame) / {len(_val_fwd_shared)} (shared frame), "
+      f"hits: {int(_y_fwd_a.sum())} / {int(_val_fwd_shared['Target'].sum())}")
+print(f"  forward-only model: LL {_ll_fwd_own:.4f} | AUC {_auc_fwd_own:.4f} | "
+      f"mean pred {_p_fwd_own.mean():.4f} | observed {_y_fwd_a.mean():.4f}")
+print(f"  shared mid/fwd    : LL {_ll_fwd_shr:.4f} | AUC {_auc_fwd_shr:.4f} | "
+      f"mean pred {_p_fwd_shr.mean():.4f}")
+# Pre-registered decision rule (2026-09-03, before the first run): ship the
+# forward model iff its forward-only Split A log loss beats the shared
+# model's by > 0.002 AND its AUC is not more than 0.02 lower. At ~30
+# validation positives, margins under 0.002 are indistinguishable from
+# noise, so a near-tie keeps the simpler incumbent.
+_fwd_ships = (_ll_fwd_own < _ll_fwd_shr - 0.002) and (_auc_fwd_own > _auc_fwd_shr - 0.02)
+print(f"  decision rule: LL better by > 0.002 and AUC not > 0.02 lower -> "
+      f"{'SHIP forward model' if _fwd_ships else 'KEEP shared model'}")
+
+print(f"\n--- Split B: train <{_SEASON_CURRENT}, validate Season {_SEASON_CURRENT} "
+      f"(prior-mechanism test: priors ON vs OFF) ---")
+_train_b_def = df_def[df_def["Season"] < _SEASON_CURRENT]
+_val_b_on_def = df_def[df_def["Season"] >= _SEASON_CURRENT].copy()
+_train_b_mid = df_mid[df_mid["Season"] < _SEASON_CURRENT]
+_val_b_on_mid = df_mid[df_mid["Season"] >= _SEASON_CURRENT].copy()
+
+def_model_b, def_scaler_b, _sum_def_on = evaluate_oot(
+    _train_b_def[DEF_FEATURE_COLS].values, _train_b_def["Target"].values,
+    _val_b_on_def[DEF_FEATURE_COLS].values, _val_b_on_def["Target"].values,
+    DEF_FEATURE_COLS, f"Defender (Season {_SEASON_CURRENT}, priors ON)", _DEFENDER_MODEL_NAME,
+)
+mid_model_b, mid_scaler_b, _sum_mid_on = evaluate_oot(
+    _train_b_mid[MID_FEATURE_COLS].values, _train_b_mid["Target"].values,
+    _val_b_on_mid[MID_FEATURE_COLS].values, _val_b_on_mid["Target"].values,
+    MID_FEATURE_COLS, f"Midfielder/Forward (Season {_SEASON_CURRENT}, priors ON)", "RF_MF",
+)
+fwd_model_b, fwd_scaler_b, _sum_fwd_on = evaluate_oot(
+    df_fwd[df_fwd["Season"] < _SEASON_CURRENT][FWD_FEATURE_COLS].values,
+    df_fwd[df_fwd["Season"] < _SEASON_CURRENT]["Target"].values,
+    df_fwd[df_fwd["Season"] >= _SEASON_CURRENT][FWD_FEATURE_COLS].values,
+    df_fwd[df_fwd["Season"] >= _SEASON_CURRENT]["Target"].values,
+    FWD_FEATURE_COLS, f"Forward-only (Season {_SEASON_CURRENT}, priors ON)", "RF_FWD",
+)
+# Shared model on the same 2026 forward rows -- a few rounds of data only,
+# so this is directional context, not a decision input.
+_val_fwd_b_shared = df_mid[(df_mid["Season"] >= _SEASON_CURRENT) & (df_mid["IsForward"] == 1)]
+score_validation(
+    mid_model_b,
+    _val_fwd_b_shared[MID_FEATURE_COLS].values, _val_fwd_b_shared["Target"].values,
+    MID_FEATURE_COLS, f"SHARED mid/fwd model on forward rows (Season {_SEASON_CURRENT})")
+
+# Ablation arm: rebuild the current-season rows of prior-carrying players
+# with use_priors=False. Rebuilding only these players is exact -- per-row
+# history features depend solely on the player's own rows, and the
+# opponent/team/venue lookups are the same precomputed globals.
+_prior_players = {p for p in matchlogs["Player"].unique()
+                  if prior_for_season(p, _SEASON_CURRENT) is not None}
+print(f"\nPlayers carrying a transfer prior: {len(_prior_players)}")
+
+def _no_prior_val_rows(pos_cols, stat_col, per90_col, threshold,
+                       prior_opp, prior_team, prior_venue, detailed_positions):
+    """Current-season validation rows for prior-carrying players, rebuilt
+    without prior blending (the ablation arm)."""
+    subset_logs = matchlogs[matchlogs["Player"].isin(_prior_players)]
+    if not _prior_players or len(subset_logs) == 0:
+        return pd.DataFrame()
+    built = build_dataset(subset_logs, pos_cols, stat_col, per90_col, threshold,
+                          prior_opp, prior_team, prior_venue, detailed_positions,
+                          use_priors=False)
+    if pos_cols == ["IsDefender"] and "RecentEWPer90" in DEF_FEATURE_COLS:
+        built["RecentEWPer90"], _ = attach_recent_rates(built, {}, MAX_SEASON)
+    if pos_cols == ["IsDefender"]:
+        _bp, _be, _ = level_factors(built, DEF_LEVELS, MAX_SEASON, EW_HALF_LIFE)
+        built = apply_level_factors(built, _bp, _be)
+    _keys = ["Season", "Team", "Opponent", "Venue", "Player"]
+    _src = df_def if pos_cols == ["IsDefender"] else df_mid
+    built = built.merge(_src[_keys + ["OppFactor"]], on=_keys, how="left", validate="many_to_one")
+    return built[built["Season"] >= _SEASON_CURRENT]
+
+_off_def = _no_prior_val_rows(["IsDefender"], "DefStats_Def", "Per90_Def", 10,
+                              def_prior_opp, def_prior_team, def_prior_venue, DEFENDER_DETAILED_POS)
+_off_mid = _no_prior_val_rows(["IsMidfielderOrForward"], "DefStats_Mid", "Per90_Mid", 12,
+                              mid_prior_opp, mid_prior_team, mid_prior_venue, MID_FWD_DETAILED_POS)
+
+_val_b_off_def = pd.concat(
+    [_val_b_on_def[~_val_b_on_def["Player"].isin(_prior_players)], _off_def], ignore_index=True)
+_val_b_off_mid = pd.concat(
+    [_val_b_on_mid[~_val_b_on_mid["Player"].isin(_prior_players)], _off_mid], ignore_index=True)
+
+_sum_def_off = score_validation(def_model_b,
+                                _val_b_off_def[DEF_FEATURE_COLS].values, _val_b_off_def["Target"].values,
+                                DEF_FEATURE_COLS, f"Defender (Season {_SEASON_CURRENT}, priors OFF -- ablation)")
+_sum_mid_off = score_validation(mid_model_b,
+                                _val_b_off_mid[MID_FEATURE_COLS].values, _val_b_off_mid["Target"].values,
+                                MID_FEATURE_COLS, f"Midfielder/Forward (Season {_SEASON_CURRENT}, priors OFF -- ablation)")
+
+
+print("\n" + "=" * 60)
+print("PRIOR-MECHANISM CHECK (falsifiable test)")
+print("=" * 60)
+print("Prediction if missing prior-league evidence is the real mechanism:")
+print("0-9 gap and LRT shrink from priors OFF to priors ON in the Season "
+      f"{_SEASON_CURRENT} split, while Split A keeps its gap (no priors exist there).")
+for _label, _s_on, _s_off in [("Defender", _sum_def_on, _sum_def_off),
+                              ("Midfielder/Forward", _sum_mid_on, _sum_mid_off)]:
+    print(f"\n  {_label}, Season {_SEASON_CURRENT} validation:")
+    print(f"    priors OFF: {mech_gap(_s_off)} | {mech_lrt(_s_off)}")
+    print(f"    priors ON:  {mech_gap(_s_on)} | {mech_lrt(_s_on)}")
+
+# Micro-report: the prior-carrying rows themselves -- did prior seeding move
+# their predictions toward their observed outcomes, and did high-weight
+# priors migrate them out of the 0-9 bucket?
+print("\nPrior-carrying rows only (did prior seeding move predictions toward outcomes?):")
+for _label, _val_on, _off, _model, _cols in [
+    ("Defender", _val_b_on_def, _off_def, def_model_b, DEF_FEATURE_COLS),
+    ("Midfielder/Forward", _val_b_on_mid, _off_mid, mid_model_b, MID_FEATURE_COLS),
+]:
+    if len(_off) == 0:
+        print(f"\n  {_label}: no prior-carrying rows in the Season {_SEASON_CURRENT} validation set.")
+        continue
+    on_k = _val_on[_val_on["Player"].isin(_prior_players)].set_index(["Player", "MatchID"]).sort_index()
+    off_k = _off.set_index(["Player", "MatchID"]).sort_index()
+    common = on_k.index.intersection(off_k.index)
+    on_k, off_k = on_k.loc[common], off_k.loc[common]
+    p_on = _model.predict_proba(on_k[_cols].values)[:, 1]
+    p_off = _model.predict_proba(off_k[_cols].values)[:, 1]
+    yv = on_k["Target"].values
+    print(f"\n  {_label}: {len(common)} prior-carrying validation rows")
+    print(f"    mean prediction, priors OFF: {p_off.mean():.4f}")
+    print(f"    mean prediction, priors ON:  {p_on.mean():.4f}")
+    print(f"    observed target rate:        {yv.mean():.4f}")
+    print(f"    rows moved DOWN by the prior: {int((p_on < p_off).sum())} / {len(common)}")
+    _bins = [-0.5, 9.5, 29.5, 79.5, 149.5, np.inf]
+    _labs = ["0-9", "10-29", "30-79", "80-149", "150+"]
+    b_on = pd.cut(on_k["MatchesPlayed"], _bins, labels=_labs)
+    b_off = pd.cut(off_k["MatchesPlayed"], _bins, labels=_labs)
+    parts = [f"{lab}: {int((b_off == lab).sum())} -> {int((b_on == lab).sum())}"
+             for lab in _labs if (b_off == lab).sum() or (b_on == lab).sum()]
+    print(f"    MatchesPlayed buckets OFF -> ON: {' | '.join(parts)}")
+
+# ── Promoted team adjustments ─────────────────────────────────────────
+PROMOTED_TEAMS = {"Hull City", "Coventry City", "Ipswich Town"}
+PROMOTED_DEF_RATIO = 1.067
+
+def_team_global_base = np.mean(list(def_final_team.values()))
+mid_team_global_base = np.mean(list(mid_final_team.values()))
+fwd_team_global_base = np.mean(list(fwd_final_team.values()))
+
+for team in PROMOTED_TEAMS:
+    if team not in def_final_team:
+        def_final_team[team] = def_team_global_base * PROMOTED_DEF_RATIO
+    if team not in mid_final_team:
+        mid_final_team[team] = mid_team_global_base
+    if team not in fwd_final_team:
+        fwd_final_team[team] = fwd_team_global_base
+
+for team in PROMOTED_TEAMS:
+    if team not in def_final_opp:
+        def_final_opp[team] = np.mean(list(def_final_opp.values())) / PROMOTED_DEF_RATIO
+    if team not in mid_final_opp:
+        mid_final_opp[team] = np.mean(list(mid_final_opp.values()))
+    if team not in fwd_final_opp:
+        fwd_final_opp[team] = np.mean(list(fwd_final_opp.values()))
+
+# ── Train models ──────────────────────────────────────────────────────
+
+def train_and_evaluate(df, label, model_name, feature_cols):
+    """Train the specified model with optional hyperparameter tuning, then
+    calibrate with cross_val_predict + isotonic regression. Returns
+    (CalibratedModel, scaler, model_name)."""
+    X = df[feature_cols].values
+    y = df["Target"].values
+    model_cls, param_grid, default_params = _MODEL_CONFIGS[model_name]
+    calibrated, scaler, _best_params = tune_and_calibrate(
+        X, y, model_cls, param_grid, label,
+        do_tune=_DO_TUNE, default_params=default_params,
+    )
+    return calibrated, scaler, model_name
+
+print("\n" + "=" * 60)
+print("TRAINING MODELS")
+print("=" * 60)
+
+def_model, def_scaler, def_model_name = train_and_evaluate(df_def, "Defender", _DEFENDER_MODEL_NAME, DEF_FEATURE_COLS)
+mid_model, mid_scaler, mid_model_name = train_and_evaluate(df_mid, "Midfielder/Forward", "RF_MF", MID_FEATURE_COLS)
+# Forward production model -- trained unconditionally so the weekly
+# head-to-head stays honest and the serving switch can be flipped without
+# code changes (see FORWARD_MODEL_SHIPPED).
+fwd_model, fwd_scaler, fwd_model_name = train_and_evaluate(df_fwd, "Forward", "RF_FWD", FWD_FEATURE_COLS)
+
+# All nine trainings (six validation-battery + three production) are
+# done; entries left over from earlier runs used superseded training
+# frames and can never be hit again -- prune them now.
+prune_model_cache()
+
+# ── Build player profiles for prediction ──────────────────────────────
+print("\n" + "=" * 60)
+print("GENERATING PREDICTIONS FOR FUTURE FIXTURES")
+print("=" * 60)
+
+# Career aggregates blended with each player's transfer prior as of the
+# current season -- the same formulas build_dataset applies to training
+# rows, so an arrival who has already played presents prior + those
+# matches and the inference vector stays consistent with training.
+# AvgPer90/StdPer90/PctAboveThreshold/MatchesPlayed rest on qualifying
+# (>=60 min) matches only (a mean of per-match per-90 rates is skewed by
+# short-cameo extrapolation noise: 1 minute played, 3 actions -> 270
+# per-90); AvgRaw/Recent5AvgRaw count only non-cameo matches
+# (Minutes >= RAW_CAMEO_MIN -- raw per-match volume is proportional to
+# minutes, so cameo raws bias a per-match mean downward), with the
+# Recent5 fallback to AvgRaw when the window is mostly cameos or holds
+# too few non-cameo matches.
+def_player_feats = precompute_player_features(
+    matchlogs["IsDefender"], "DefStats_Def", "Per90_Def", 10, DEFENDER_DETAILED_POS,
+    priors=True, prior_season=MAX_SEASON, std_pct_estimator=def_std_estimator)
+mid_player_feats = precompute_player_features(
+    matchlogs["IsMidfielderOrForward"], "DefStats_Mid", "Per90_Mid", 12, MID_FWD_DETAILED_POS,
+    priors=True, prior_season=MAX_SEASON, std_pct_estimator=mid_std_estimator)
+fwd_player_feats = precompute_player_features(
+    matchlogs["IsForward"], "DefStats_Mid", "Per90_Mid", 12, MID_FWD_DETAILED_POS,
+    priors=True, prior_season=MAX_SEASON, std_pct_estimator=fwd_std_estimator)
+print(f"Pre-computed defender features: {len(def_player_feats)} players")
+print(f"Pre-computed mid/fwd features: {len(mid_player_feats)} players")
+print(f"Pre-computed forward features: {len(fwd_player_feats)} players")
+
+# Match players (exact match only)
+matchlog_players = set(matchlogs["Player"].unique())
+current_players = set(players_current["Player"].unique())
+matched = current_players & matchlog_players
+print(f"Players with matchlog history: {len(matched)} / {len(current_players)}")
+player_map = {p: p for p in matched}
+
+# ── Transfer-based features ──────────────────────────────────────────
+# Season-aware fallback for squad players with NO matchlog rows at all:
+# seed features from their transfer prior for the current season (the same
+# prior-seeding build_dataset applies to debut rows). Arrivals who have
+# already played are covered by the prior-blended matchlog tier above --
+# this fires only for players yet to appear in the data.
+def build_transfer_lookup(season):
+    lookup = {}
+    for player in set(transfers["Player"].unique()):
+        prior = prior_for_season(player, season)
+        if prior is not None:
+            lookup[player] = prior
+    return lookup
+
+def_transfer_lookup = build_transfer_lookup(CURRENT_SEASON)
+mid_transfer_lookup = def_transfer_lookup  # prior rate/weight are position-agnostic
+
+# Std/pct estimators were already computed from the pure (unblended) feature
+# frames before build_dataset -- no duplicate definitions here.
+
+print(f"Transfer players (defender model): {len(def_transfer_lookup)}")
+print(f"Transfer players (mid/fwd model): {len(mid_transfer_lookup)}")
+
+# ── Generate predictions (batch mode) ────────────────────────────────
+# Position dummies default to all-zero for youth/no-history and transfer-tier
+# players -- we have no reliable detailed-position evidence for either group
+# (transfers.csv only has coarse D/M/F, not detailed tactical positions), so
+# rather than guess, these players simply get no position-specific signal from
+# this feature -- same as their situation before this feature existed.
+DEF_DEFAULTS = {"AvgPer90": 8.0, "AvgRaw": 7.0, "StdPer90": 4.0, "MatchesPlayed": 0,
+                "Recent5AvgPer90": 8.0, "Recent5AvgRaw": 7.0, "PctAboveThreshold": 0.3,
+                "Is_FPL_API": 1,
+                **{f"Pos_{c}": 0 for c in DEFENDER_DETAILED_POS}}
+MID_DEFAULTS = {"AvgPer90": 9.0, "AvgRaw": 8.0, "StdPer90": 4.0, "MatchesPlayed": 0,
+                "Recent5AvgPer90": 9.0, "Recent5AvgRaw": 8.0, "PctAboveThreshold": 0.25,
+                "Is_FPL_API": 1,
+                **{f"Pos_{c}": 0 for c in MID_FWD_DETAILED_POS}}
+# Forward-calibrated youth defaults (only used when the forward model
+# serves): the mid/fwd defaults above describe the POOLED mid+forward
+# population (target rate ~0.25); a no-history forward presented with
+# those values would look like an extreme high-rate outlier to a model
+# trained on forwards only. Rounded from the fbref-era forward population
+# (2026-09-03 probe): qualifying per-90 mean 5.38 (player-level AvgPer90
+# mean 5.69), std 3.20 (player-level StdPer90 mean 2.83), non-cameo raw
+# mean 4.14, hit rate 0.0424.
+FWD_DEFAULTS = {"AvgPer90": 5.5, "AvgRaw": 4.0, "StdPer90": 3.0, "MatchesPlayed": 0,
+                "Recent5AvgPer90": 5.5, "Recent5AvgRaw": 4.0, "PctAboveThreshold": 0.04,
+                "Is_FPL_API": 1,
+                **{f"Pos_{c}": 0 for c in MID_FWD_DETAILED_POS}}
+
+# Serving switch for the forward-specific model: when on, forwards resolve
+# through the forward pipeline (forward-only history features, forward
+# aggregates, forward prior estimator, forward youth defaults); mids always
+# keep the shared mid/fwd model. DECIDED 2026-09-03 by the pre-registered
+# Split A head-to-head rule (see the FORWARD MODEL HEAD-TO-HEAD section and
+# CHANGELOG §16): forward-only LL 0.0901 vs shared-on-forward 0.1244 (rule
+# needs > 0.002) and AUC 0.7095 vs 0.5762 (floor was -0.02) -> SHIPPED, with
+# mean pred 0.0164 vs observed 0.0195 (the shared model over-predicted
+# forwards ~2x: 0.0379). Split B (Season 2026) agrees in direction. The
+# comparison re-runs every execution so the decision can be revisited as
+# data accumulates.
+
+def make_transfer_features(per90, approx_matches, estimator, detailed_positions):
+    est_std, est_pct = estimator(per90)
+    # Tier 2 (no PL matches yet): the pooled std degenerates to est_std.
+    return {"AvgPer90": per90, "AvgRaw": per90,
+            "StdPer90": pooled_prior_std(est_std, approx_matches, per90, []),
+            "MatchesPlayed": approx_matches, "Recent5AvgPer90": per90,
+            "Recent5AvgRaw": per90, "PctAboveThreshold": est_pct,
+            "Is_FPL_API": 1,
+            **{f"Pos_{c}": 0 for c in detailed_positions}}
+
+def_opp_global = np.mean(list(def_final_opp.values()))
+def_team_global = np.mean(list(def_final_team.values()))
+mid_opp_global = np.mean(list(mid_final_opp.values()))
+mid_team_global = np.mean(list(mid_final_team.values()))
+fwd_opp_global = np.mean(list(fwd_final_opp.values()))
+fwd_team_global = np.mean(list(fwd_final_team.values()))
+def_venue_global = np.mean(list(def_final_venue.values()))
+mid_venue_global = np.mean(list(mid_final_venue.values()))
+fwd_venue_global = np.mean(list(fwd_final_venue.values()))
+
+
+def _serve_group(feat, head):
+    cols = ("Pos_CB", "Pos_FB", "Pos_WB", "Pos_LB", "Pos_RB", "Pos_DM", "Pos_CM")
+    return position_groups(pd.DataFrame([{c: feat.get(c, 0) for c in cols}]), head)[0]
+
+
+def _serve_opp(latest, head, feat, opponent):
+    """The opponent's factor after its last match; 1 for a team not yet seen."""
+    return latest.get((opponent, _serve_group(feat, head)), 1.0)
+
+
+def _predict_mid(frame):
+    return mid_model.predict_proba(frame[MID_FEATURE_COLS].values)[:, 1]
+
+
+pred_rows = []
+fixture_teams = []
+for _, fixture in fixtures.iterrows():
+    fixture_teams.append((fixture["MatchID"], fixture["Home"], fixture["Away"], "Home"))
+    fixture_teams.append((fixture["MatchID"], fixture["Away"], fixture["Home"], "Away"))
+
+# Include D, M, and F players
+dmf_players = players_current[players_current["Pos"].isin(["D", "M", "F"])].copy()
+
+for match_id, team, opponent, venue in fixture_teams:
+    team_plys = dmf_players[dmf_players["Team"] == team]
+    for _, prow in team_plys.iterrows():
+        player_name = prow["Player"]
+        pos = prow["Pos"]
+        ml_name = player_map.get(player_name)
+
+        if pos == "D":
+            if ml_name and ml_name in def_player_feats:
+                feat = def_player_feats[ml_name]
+                has_history = True
+                feat = level_adjust_features(feat, def_level_latest.get(ml_name, (1.0, 1.0)))
+            elif player_name in def_transfer_lookup:
+                t = def_transfer_lookup[player_name]
+                feat = make_transfer_features(t["per90"], t["matches"], def_std_estimator, DEFENDER_DETAILED_POS)
+                has_history = True
+            else:
+                feat = DEF_DEFAULTS
+                has_history = False
+            opp_val = def_final_opp.get(opponent, def_opp_global)
+            team_val = def_final_team.get(team, def_team_global)
+            venue_val = def_final_venue.get(venue, def_venue_global)
+            if "RecentEWPer90" in DEF_FEATURE_COLS:
+                feat = {**feat, "RecentEWPer90": def_recent_lookup.get(player_name, feat["AvgPer90"])}
+                if player_name in def_level_latest:
+                    feat = {**feat, "RecentEWPer90": feat["RecentEWPer90"] * def_level_latest[player_name][1]}
+            pred_rows.append({
+                "MatchID": match_id, "Player": player_name, "Team": team,
+                "Opponent": opponent, "Venue": venue, "Pos": pos,
+                "Threshold": 10, "StatDescription": "CBI+Tackles", "HasHistory": has_history,
+                **feat, "OpponentAvgStat": opp_val, "TeamAvgStat": team_val,
+                "VenueAvg": venue_val, "IsHome": 1 if venue == "Home" else 0, "_model": "def",
+                "OppFactor": _serve_opp(def_opp_latest, "D", feat, opponent),
+            })
+        elif pos == "F":
+            # Forward-specific serving path (forward-only history features,
+            # forward aggregates, forward prior estimator and youth
+            # defaults) -- see the forward head-to-head above.
+            if ml_name and ml_name in fwd_player_feats:
+                feat = fwd_player_feats[ml_name]
+                has_history = True
+            elif player_name in mid_transfer_lookup:
+                t = mid_transfer_lookup[player_name]
+                feat = make_transfer_features(t["per90"], t["matches"], fwd_std_estimator, MID_FWD_DETAILED_POS)
+                has_history = True
+            else:
+                feat = FWD_DEFAULTS
+                has_history = False
+            opp_val = fwd_final_opp.get(opponent, fwd_opp_global)
+            team_val = fwd_final_team.get(team, fwd_team_global)
+            venue_val = fwd_final_venue.get(venue, fwd_venue_global)
+            pred_rows.append({
+                "MatchID": match_id, "Player": player_name, "Team": team,
+                "Opponent": opponent, "Venue": venue, "Pos": pos,
+                "Threshold": 12, "StatDescription": "CBI+Tackles+Recoveries", "HasHistory": has_history,
+                **feat, "OpponentAvgStat": opp_val, "TeamAvgStat": team_val,
+                "VenueAvg": venue_val, "IsHome": 1 if venue == "Home" else 0, "_model": "fwd",
+            })
+        elif pos == "M":
+            if ml_name and ml_name in mid_player_feats:
+                feat = mid_player_feats[ml_name]
+                has_history = True
+            elif player_name in mid_transfer_lookup:
+                t = mid_transfer_lookup[player_name]
+                feat = make_transfer_features(t["per90"], t["matches"], mid_std_estimator, MID_FWD_DETAILED_POS)
+                has_history = True
+            else:
+                feat = MID_DEFAULTS
+                has_history = False
+            opp_val = mid_final_opp.get(opponent, mid_opp_global)
+            team_val = mid_final_team.get(team, mid_team_global)
+            venue_val = mid_final_venue.get(venue, mid_venue_global)
+            pred_rows.append({
+                "MatchID": match_id, "Player": player_name, "Team": team,
+                "Opponent": opponent, "Venue": venue, "Pos": pos,
+                "Threshold": 12, "StatDescription": "CBI+Tackles+Recoveries", "HasHistory": has_history,
+                **feat, "OpponentAvgStat": opp_val, "TeamAvgStat": team_val,
+                "VenueAvg": venue_val, "IsHome": 1 if venue == "Home" else 0, "_model": "mid",
+                "OppFactor": _serve_opp(mid_opp_latest, "M", feat, opponent),
+            })
+
+pred_df = pd.DataFrame(pred_rows)
+print(f"Total prediction rows: {len(pred_df)}")
+
+# Batch predict -- CalibratedModel handles scaling internally.
+def_mask = pred_df["_model"] == "def"
+if def_mask.any():
+    X_def = pred_df.loc[def_mask, DEF_FEATURE_COLS].values
+    pred_df.loc[def_mask, "Probability"] = def_model.predict_proba(X_def)[:, 1]
+
+mid_mask = pred_df["_model"] == "mid"
+if mid_mask.any():
+    pred_df.loc[mid_mask, "Probability"] = _predict_mid(pred_df.loc[mid_mask])
+
+fwd_mask = pred_df["_model"] == "fwd"
+if fwd_mask.any():
+    X_fwd = pred_df.loc[fwd_mask, FWD_FEATURE_COLS].values
+    pred_df.loc[fwd_mask, "Probability"] = fwd_model.predict_proba(X_fwd)[:, 1]
+
+results = pred_df.drop(columns=["_model"]).copy()
+results["Probability_at_90min"] = results["Probability"].round(4)
+
+# ── Scale each player's probability to their ACTUAL expected minutes ──
+# The model above predicts P(reach threshold | 90 minutes). To use this for
+# a player with partial expected minutes, we invert the probability back to
+# an implied mean defcon rate via the same NB(r=3*mu, p=0.75) relationship
+# used for the original DC/90 threshold-probability formula, scale that
+# mean by xMins/90, then recompute the probability at the scaled mean.
+
+
+def _nb_sf(mu, k, p=0.75):
+    r = 3 * mu
+    r = max(r, 1e-9)
+    return 1 - _stats.nbinom.cdf(k, r, p)
+
+def _invert_mu(prob, k, lo=1e-6, hi=60):
+    """Solve for mu such that _nb_sf(mu, k) == prob."""
+    if prob <= 1e-9:
+        return 0.0
+    if prob >= 1 - 1e-9:
+        return hi  # degenerate case, effectively "very high rate"
+    def f(mu):
+        return _nb_sf(mu, k) - prob
+    try:
+        return _optimize.brentq(f, lo, hi)
+    except ValueError:
+        # prob is outside what's achievable in [lo, hi] -- clip to nearest end
+        return lo if f(lo) < 0 else hi
+
+
+GW_COL = "Round"
+
+minutes_probs = pd.read_csv(_DATA / "minutes_probabilities.csv", encoding="utf-8-sig")
+minutes_lookup = {}
+for _, mrow in minutes_probs.iterrows():
+    # minutes_probabilities.csv is last week's (part 2 refreshes it), so it may cover fewer rounds
+    # than the window after a horizon change; those rounds fall back to the 90-minute probability.
+    for gw in GAMEWEEKS:
+        if f"xMins_GW{gw}" in mrow:
+            minutes_lookup[(mrow["Player"], gw)] = mrow[f"xMins_GW{gw}"]
+
+# minutes_probabilities.csv's "Player" column holds Web_Name values
+player_to_webname = dict(zip(players_current["Player"], players_current["Web_Name"]))
+
+# `results` never actually carries a "Round" column -- derive
+# it from MatchID via `fixtures`.
+# GW = Round offset to 1..HORIZON
+matchid_to_gw = dict(zip(fixtures["MatchID"], fixtures["Round"] - fixtures["Round"].min() + 1))
+
+def _scale_row(row):
+    threshold = row["Threshold"]
+    prob_90 = row["Probability_at_90min"]
+    gw = matchid_to_gw.get(row["MatchID"])
+    web_name = player_to_webname.get(row["Player"])
+    xmins = minutes_lookup.get((web_name, gw)) if web_name else None
+    if xmins is None:
+        return prob_90  # no minutes forecast available -- fall back to unscaled
+    mu90 = _invert_mu(prob_90, threshold - 1)
+    mu_scaled = mu90 * (xmins / 90.0)
+    return _nb_sf(mu_scaled, threshold - 1)
+
+results["Probability"] = results.apply(_scale_row, axis=1).round(4)
+results = results.sort_values(["MatchID", "Team", "Player"]).reset_index(drop=True)
+
+# ── Save results ──────────────────────────────────────────────────────
+results.to_csv(_DATA / "predictions_defensive.csv", index=False)
+print("\nPredictions saved to predictions_defensive.csv")
+print(f"Total predictions: {len(results)}")
+print("\nSample predictions:")
+print(results.head(20).to_string(index=False))
+
+print("\n--- Summary ---")
+for p in ["D", "M", "F"]:
+    sub = results[results["Pos"] == p]
+    print(f"  {p}: {len(sub)} predictions, mean probability {sub['Probability'].mean():.4f}")
+print(f"Players with history: {results['HasHistory'].sum()} / {len(results)}")
+
+print("\n--- Data Source Breakdown (unique D/M/F players) ---")
+ml_set = set(matchlogs["Player"].unique())
+tr_set = set(transfers["Player"].unique())
+dmf_current = players_current[players_current["Pos"].isin(["D", "M", "F"])]
+n_ml, n_tr, n_youth = 0, 0, 0
+for p in dmf_current["Player"].unique():
+    if p in ml_set:
+        n_ml += 1
+    elif p in tr_set:
+        n_tr += 1
+    else:
+        n_youth += 1
+print(f"  Matchlog history: {n_ml}")
+print(f"  Transfer data only: {n_tr}")
+print(f"  Youth/defaults (no data): {n_youth}")
+print(f"  Total unique D/M/F players: {n_ml + n_tr + n_youth}")
+
+# ── Average-opponent 90-minute defcon (player_ratings.csv artifact) ────
+# A fixture-neutral defcon probability for the weekly player_ratings.csv
+# export (assembled by fpl_model/player_ratings/export_player_ratings.py):
+# P(defcon >= threshold | full 90-minute match vs an average opponent).
+# The model's raw probability IS the 90-minute probability -- training
+# targets are defined at 90 minutes, and the NB minutes machinery above
+# only scales DOWN to expected minutes -- so no minutes scaling happens
+# here. Fixture context is neutralised as follows:
+#   - OpponentAvgStat -> population mean across the 20 current teams
+#   - TeamAvgStat     -> the player's own team's value (unchanged)
+#   - VenueAvg/IsHome -> the model runs twice per player (Home and Away)
+#     and the two probabilities are averaged, so no venue bias leaks in
+# Per-player evidence features resolve through the same three tiers as the
+# fixture loop above (matchlog history / transfer prior / youth defaults);
+# keep the two loops in sync if the tiers ever change.
+print("\n" + "=" * 60)
+print("AVERAGE-OPPONENT 90-MIN DEFCON (player_ratings artifact)")
+print("=" * 60)
+
+_current_teams = sorted(players_current["Team"].unique())
+def_opp_pop = float(np.mean([def_final_opp.get(t, def_opp_global) for t in _current_teams]))
+mid_opp_pop = float(np.mean([mid_final_opp.get(t, mid_opp_global) for t in _current_teams]))
+fwd_opp_pop = float(np.mean([fwd_final_opp.get(t, fwd_opp_global) for t in _current_teams]))
+print(f"Population-mean OpponentAvgStat across {len(_current_teams)} current teams: "
+      f"defender {def_opp_pop:.3f}, mid/fwd {mid_opp_pop:.3f}, forward {fwd_opp_pop:.3f}")
+
+avg_rows = []
+for _, prow in dmf_players.drop_duplicates(subset=["Player"]).iterrows():
+    player_name = prow["Player"]
+    pos = prow["Pos"]
+    team = prow["Team"]
+    ml_name = player_map.get(player_name)
+    if pos == "D":
+        if ml_name and ml_name in def_player_feats:
+            feat = def_player_feats[ml_name]
+            feat = level_adjust_features(feat, def_level_latest.get(ml_name, (1.0, 1.0)))
+        elif player_name in def_transfer_lookup:
+            t = def_transfer_lookup[player_name]
+            feat = make_transfer_features(t["per90"], t["matches"], def_std_estimator, DEFENDER_DETAILED_POS)
+        else:
+            feat = DEF_DEFAULTS
+        if "RecentEWPer90" in DEF_FEATURE_COLS:
+            feat = {**feat, "RecentEWPer90": def_recent_lookup.get(player_name, feat["AvgPer90"])}
+            if player_name in def_level_latest:
+                feat = {**feat, "RecentEWPer90": feat["RecentEWPer90"] * def_level_latest[player_name][1]}
+        team_val = def_final_team.get(team, def_team_global)
+        for venue in ("Home", "Away"):
+            avg_rows.append({**feat, "Player": player_name, "Pos": pos,
+                             "OpponentAvgStat": def_opp_pop, "TeamAvgStat": team_val,
+                             "VenueAvg": def_final_venue.get(venue, def_venue_global),
+                             "IsHome": 1 if venue == "Home" else 0, "_model": "def", "OppFactor": 1.0})
+    elif pos == "F":
+        # Forward-specific artifact path -- mirrors the fixture loop's
+        # forward tiers (keep the two loops in sync).
+        if ml_name and ml_name in fwd_player_feats:
+            feat = fwd_player_feats[ml_name]
+        elif player_name in mid_transfer_lookup:
+            t = mid_transfer_lookup[player_name]
+            feat = make_transfer_features(t["per90"], t["matches"], fwd_std_estimator, MID_FWD_DETAILED_POS)
+        else:
+            feat = FWD_DEFAULTS
+        team_val = fwd_final_team.get(team, fwd_team_global)
+        for venue in ("Home", "Away"):
+            avg_rows.append({**feat, "Player": player_name, "Pos": pos,
+                             "OpponentAvgStat": fwd_opp_pop, "TeamAvgStat": team_val,
+                             "VenueAvg": fwd_final_venue.get(venue, fwd_venue_global),
+                             "IsHome": 1 if venue == "Home" else 0, "_model": "fwd"})
+    elif pos == "M":
+        if ml_name and ml_name in mid_player_feats:
+            feat = mid_player_feats[ml_name]
+        elif player_name in mid_transfer_lookup:
+            t = mid_transfer_lookup[player_name]
+            feat = make_transfer_features(t["per90"], t["matches"], mid_std_estimator, MID_FWD_DETAILED_POS)
+        else:
+            feat = MID_DEFAULTS
+        team_val = mid_final_team.get(team, mid_team_global)
+        for venue in ("Home", "Away"):
+            avg_rows.append({**feat, "Player": player_name, "Pos": pos,
+                             "OpponentAvgStat": mid_opp_pop, "TeamAvgStat": team_val,
+                             "VenueAvg": mid_final_venue.get(venue, mid_venue_global),
+                             "IsHome": 1 if venue == "Home" else 0, "_model": "mid", "OppFactor": 1.0})
+
+avg_df = pd.DataFrame(avg_rows)
+def_mask = avg_df["_model"] == "def"
+if def_mask.any():
+    X = avg_df.loc[def_mask, DEF_FEATURE_COLS].values
+    avg_df.loc[def_mask, "Probability"] = def_model.predict_proba(X)[:, 1]
+fwd_mask = avg_df["_model"] == "fwd"
+if fwd_mask.any():
+    X = avg_df.loc[fwd_mask, FWD_FEATURE_COLS].values
+    avg_df.loc[fwd_mask, "Probability"] = fwd_model.predict_proba(X)[:, 1]
+mid_mask = avg_df["_model"] == "mid"
+if mid_mask.any():
+    avg_df.loc[mid_mask, "Probability"] = _predict_mid(avg_df.loc[mid_mask])
+
+avg_out = (avg_df.groupby(["Player", "Pos"], as_index=False)["Probability"].mean()
+           .rename(columns={"Probability": "Defcon"}))
+avg_out["Defcon"] = avg_out["Defcon"].round(4)
+avg_out = avg_out.sort_values(["Pos", "Player"]).reset_index(drop=True)
+avg_out.to_csv(_DATA / "defcon_average_probabilities.csv", index=False)
+print(f"\nWrote {len(avg_out)} players to defcon_average_probabilities.csv")
+print("Mean Defcon by position:")
+print(avg_out.groupby("Pos")["Defcon"].agg(["count", "mean"]).round(4).to_string())

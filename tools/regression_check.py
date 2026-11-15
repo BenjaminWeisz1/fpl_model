@@ -138,7 +138,9 @@ def _stage_list(box: Path) -> list[dict]:
 
 def _clean_env() -> dict:
     env = {k: v for k, v in os.environ.items() if not k.startswith(SWITCH_PREFIXES)}
-    env.update(PYTHONIOENCODING="utf-8", PYTHONHASHSEED="0", MPLBACKEND="Agg")
+    # Two forest workers instead of every core: each worker copies the training data, and a full-core
+    # retrain ran the machine out of memory twice. Forest results do not depend on n_jobs.
+    env.update(PYTHONIOENCODING="utf-8", PYTHONHASHSEED="0", MPLBACKEND="Agg", DEFCON_RF_N_JOBS="2")
     return env
 
 
@@ -187,7 +189,10 @@ def run(label: str | None, ref: str | None) -> None:
             sys.exit(f"Stage {stage['label']} points outside the sandbox: {script}")
         t0 = time.time()
         with open(logs / f"{i:02d}_{script.stem}.log", "w", encoding="utf-8") as log:
-            code = subprocess.call([sys.executable, "-u", "-X", "utf8", str(script), *stage["args"]],
+            # package modules run as `python -m` from the sandbox root, as pipeline_stages.py runs them
+            target = (["-m", ".".join(script.relative_to(box).with_suffix("").parts)]
+                      if script.is_relative_to(box / "fpl_model") else [str(script)])
+            code = subprocess.call([sys.executable, "-u", "-X", "utf8", *target, *stage["args"]],
                                    cwd=box, env=_clean_env(), stdout=log, stderr=subprocess.STDOUT)
         print(f"  {i:02d} {stage['label']}: exit {code}, {time.time() - t0:.0f} s")
         if code:

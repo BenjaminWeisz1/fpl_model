@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fpl_model"
+version = "0.1.0"
+description = "Fantasy Premier League points prediction: team ratings, player ratings, defensive contributions, bonus and a transfer optimizer."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pandas==2.2.3",
+    "numpy==2.2.1",
+    "scikit-learn==1.6.0",
+    "scipy==1.14.1",
+    "statsmodels==0.14.4",
+    "matplotlib==3.10.0",
+    "seaborn==0.13.2",
+    "requests==2.32.5",
+    "highspy==1.15.1",
+    "fuzzywuzzy==0.18.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff==0.8.4"]
+
+[tool.setuptools.packages.find]
+include = ["fpl_model*"]
+
+[tool.pytest.ini_options]
+# The repo root goes on sys.path so `import fpl_model` works without installing the package.
+pythonpath = ["."]
+testpaths = ["fpl_model", "tests"]
+python_files = ["test_*.py"]
+addopts = "-q"
+markers = ["needs_data: reads the local data/ folder; skipped when it is absent (CI)"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = ["fpl_model/optimizer/open_fpl_solver"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "I", "UP", "SIM"]
+ignore = [
+    "E501",   # long lines: data-science code with long column lists and f-strings reads better unwrapped
+    "B905",   # zip() without strict=: zips here pair columns of one frame; strict=False everywhere is noise
+]
+
+[tool.ruff.lint.per-file-ignores]
+# research/ is the record of past experiments, rerun as written (several are scheduled re-checks). Only ruff's safe
+# fixes were applied there; the style rules below would need hand edits to scripts whose results are already reported.
+"research/**" = ["B007", "B023", "E402", "E701", "E702", "E712", "E731", "E741", "F841", "SIM102", "SIM105", "SIM115",
+                 "UP031", "UP038"]
