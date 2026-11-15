@@ -1,4 +1,4 @@
-from fpl_model import paths
+from fpl_model import config, paths
 import os
 import sys
 import gzip
@@ -18,9 +18,9 @@ import sklearn
 from sklearn.model_selection import (
     cross_val_score, cross_val_predict, StratifiedKFold, RandomizedSearchCV,
 )
-from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier, HistGradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingClassifier
 from fpl_model.defcon.defender_model import monotonic_params, DEFAULT_FEATURE_MODE, season_levels, level_factors, apply_level_factors, level_adjust_features, CenteredIsotonic
-from fpl_model.defcon.opponent_model import CountHead, add_rate_columns, match_order, opponent_factors, position_groups, serving_rate
+from fpl_model.defcon.opponent_model import match_order, opponent_factors, position_groups
 from fpl_model.defcon.recent_defcon import attach_recent_rates, feature_columns, EW_HALF_LIFE
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
@@ -36,21 +36,15 @@ from fpl_model.match_order import chrono_order
 from fpl_model.league_rates import current_season  # noqa: E402
 
 CURRENT_SEASON = current_season()
-DEFENDER_FEATURE_MODE = (
-    os.environ.get("DEFCON_DEFENDER_FEATURES", DEFAULT_FEATURE_MODE)
-    if os.environ.get("DEFCON_MONOTONIC_DEF", "1") == "1" else "baseline"
-)
-# §106: defender activity features at the current league level (defender_model.season_levels).
-# Validated with the no_std_ew schema only; DEFCON_LEVEL_ADJUST=0 restores the §46 features.
-DEFCON_LEVEL_ADJUST = (os.environ.get("DEFCON_LEVEL_ADJUST", "1") == "1"
-                       and DEFENDER_FEATURE_MODE == "no_std_ew")
-# §107: the defender head's calibrator interpolates between isotonic block centres instead of
-# returning steps (which gave many defenders identical probabilities). 0 restores plain isotonic.
-DEFCON_CENTERED_ISOTONIC = os.environ.get("DEFCON_CENTERED_ISOTONIC", "1") == "1"
+# The defender head's feature schema (§46: one exponentially weighted recent rate, no StdPer90). Its activity
+# features are expressed at the current league level (§106, defender_model.season_levels).
+DEFENDER_FEATURE_MODE = DEFAULT_FEATURE_MODE
 
 
 def _centered_calibration(label):
-    return DEFCON_CENTERED_ISOTONIC and label.startswith("Defender")
+    """§107: the defender head's calibrator interpolates between isotonic block centres instead of returning steps
+    (which gave many defenders identical probabilities)."""
+    return label.startswith("Defender")
 
 # ── Load data ──────────────────────────────────────────────────────────
 # Read the consolidated player_match_stats.csv (replaces the old player_matchlogs.csv).
@@ -144,8 +138,7 @@ if _null_pos_mask.any():
 # about a third of the weight it was given. Capped at 10 -- the nearest round
 # number above the estimate, erring toward keeping prior weight, and still
 # leaving the prior dominant on a debut (its whole purpose, §10).
-# DEFCON_PRIOR_MAX_K=0 restores the uncapped behaviour.
-PRIOR_MAX_K = float(os.environ.get("DEFCON_PRIOR_MAX_K", "10"))
+PRIOR_MAX_K = 10.0
 
 
 def build_prior_lookup(transfers_df):
@@ -158,7 +151,7 @@ def build_prior_lookup(transfers_df):
         k = row["Min_Old"] / 90.0
         priors[(row["Player"], int(row["Season"]))] = {
             "per90": row["Defcon"] * 90.0 / row["Min_Old"],
-            "matches": min(k, PRIOR_MAX_K) if PRIOR_MAX_K > 0 else k,
+            "matches": min(k, PRIOR_MAX_K),
         }
     return priors
 
@@ -287,11 +280,6 @@ MAX_SEASON = int(matchlogs["Season"].max())
 RECENCY_DECAY = 0.8  # exponential decay factor per season
 # The >= 60 minute bar every per-90 feature in this model uses.
 QUALIFYING_MINUTES_P90 = 60
-# Cameo filter for the opponent/team/venue per-90 aggregates (CHANGELOG §36).
-# DEFCON_AGG_CAMEO=0 restores the unfiltered behaviour.
-AGG_CAMEO_FILTERED = os.environ.get("DEFCON_AGG_CAMEO", "1") == "1"
-# Serving team/venue/opponent averages weight each season by its row count (§190, §195).
-SERVE_ROW_WEIGHTED = os.environ.get("DEFCON_ROW_WEIGHTED", "1") == "1"
 
 # ── Detailed per-match position from Understat (CHANGELOG §38, AGENDA §4) ──
 # The Pos_* multi-hot dummies below are built from this column. Historically
@@ -309,10 +297,9 @@ SERVE_ROW_WEIGHTED = os.environ.get("DEFCON_ROW_WEIGHTED", "1") == "1"
 # (defender + mid/fwd on both splits, forward on the 29-hit Split A). The lone
 # breach was the forward head on the ~2-hit Split B (AUC noise on a micro-sample),
 # which the user judged uninformative and overrode the pre-registered guardrail to
-# ship. DEFCON_UNDERSTAT_POS=0 restores the pre-§38 behaviour bit-for-bit.
-UNDERSTAT_POS = os.environ.get("DEFCON_UNDERSTAT_POS", "1") == "1"
+# ship. Since §197 FotMob's slots fill the matches Understat lacks.
 _POSITIONS_FILE = paths.CURRENT / "player_match_positions.csv"
-if UNDERSTAT_POS and _POSITIONS_FILE.exists():
+if _POSITIONS_FILE.exists():
     _pos_art = pd.read_csv(_POSITIONS_FILE, encoding="utf-8-sig", low_memory=False)
     _pos_art = _pos_art.dropna(subset=["Position_Resolved"])
     _resolved_lookup = {
@@ -329,11 +316,9 @@ if UNDERSTAT_POS and _POSITIONS_FILE.exists():
     _got = int((_fpl_era & matchlogs["Position_Detailed"].notna()).sum())
     print(f"Understat detailed positions ON: {_got}/{int(_fpl_era.sum())} FPL-era rows "
           f"({_got / max(int(_fpl_era.sum()), 1):.1%}) carry a resolved slot for the Pos_* dummies")
-elif UNDERSTAT_POS:
-    print(f"WARNING: DEFCON_UNDERSTAT_POS=1 but {_POSITIONS_FILE.name} is missing -- "
-          f"falling back to coarse Position (run build_position_crosswalk.py).")
-    matchlogs["Position_Detailed"] = matchlogs["Position"]
 else:
+    print(f"WARNING: {_POSITIONS_FILE.name} is missing -- "
+          f"falling back to coarse Position (run build_position_crosswalk.py).")
     matchlogs["Position_Detailed"] = matchlogs["Position"]
 
 # ── Pre-compute recency-weighted seasonal aggregates ──────────────────
@@ -352,8 +337,7 @@ def compute_season_aggregates(pos_mask, stat_col, per90_col):
     six Coventry defenders in the top six of the defcon chart, one of whom had
     cleared the threshold in 0 of 4 appearances (CHANGELOG §36)."""
     subset = matchlogs[pos_mask]
-    if AGG_CAMEO_FILTERED:
-        subset = subset[subset["Minutes"] >= QUALIFYING_MINUTES_P90]
+    subset = subset[subset["Minutes"] >= QUALIFYING_MINUTES_P90]
 
     # Per-season aggregates (all per-90, for consistency)
     opp_by_season = subset.groupby(["Season", "Opponent"])[per90_col].mean().reset_index()
@@ -418,12 +402,10 @@ def compute_season_aggregates(pos_mask, stat_col, per90_col):
     # Final aggregates (all seasons) for prediction-time use. Since §195 each
     # season's mean is also weighted by its row count, so a partial current
     # season counts for the matches it has, not a full season's vote (§190,
-    # arm C). Training columns above are unchanged. DEFCON_ROW_WEIGHTED=0 reverts.
-    if SERVE_ROW_WEIGHTED:
-        n_col = "_n"
-        opp_by_season[n_col] = subset.groupby(["Season", "Opponent"])[per90_col].size().values
-        team_by_season[n_col] = subset.groupby(["Season", "Team"])[per90_col].size().values
-        venue_by_season[n_col] = subset.groupby(["Season", "Venue"])[per90_col].size().values
+    # arm C). Training columns above are unchanged.
+    opp_by_season["_n"] = subset.groupby(["Season", "Opponent"])[per90_col].size().values
+    team_by_season["_n"] = subset.groupby(["Season", "Team"])[per90_col].size().values
+    venue_by_season["_n"] = subset.groupby(["Season", "Venue"])[per90_col].size().values
     final_opp = {}
     final_opp_weights = {}
     final_team = {}
@@ -434,17 +416,17 @@ def compute_season_aggregates(pos_mask, stat_col, per90_col):
         w0 = RECENCY_DECAY ** (MAX_SEASON - ps)
         for _, row in opp_by_season[opp_by_season["Season"] == ps].iterrows():
             key = row["Opponent"]
-            w = w0 * (row["_n"] if SERVE_ROW_WEIGHTED else 1.0)
+            w = w0 * row["_n"]
             final_opp[key] = final_opp.get(key, 0.0) + w * row[per90_col]
             final_opp_weights[key] = final_opp_weights.get(key, 0.0) + w
         for _, row in team_by_season[team_by_season["Season"] == ps].iterrows():
             key = row["Team"]
-            w = w0 * (row["_n"] if SERVE_ROW_WEIGHTED else 1.0)
+            w = w0 * row["_n"]
             final_team[key] = final_team.get(key, 0.0) + w * row[per90_col]
             final_team_weights[key] = final_team_weights.get(key, 0.0) + w
         for _, row in venue_by_season[venue_by_season["Season"] == ps].iterrows():
             key = row["Venue"]
-            w = w0 * (row["_n"] if SERVE_ROW_WEIGHTED else 1.0)
+            w = w0 * row["_n"]
             final_venue[key] = final_venue.get(key, 0.0) + w * row[per90_col]
             final_venue_weights[key] = final_venue_weights.get(key, 0.0) + w
     for key in final_opp:
@@ -519,8 +501,7 @@ def pooled_prior_std(est_std, k, prior_per90, pl_values):
 # with the threshold (45 was cancelled mid-sweep), so 15 -- the gentlest
 # filter -- shipped even though the no-filter incumbent edged it on OOT log
 # loss (+0.0026 sum); the trade buys unbiased per-match raw volume for bench
-# players (CHANGELOG §15). Override via the DEFCON_RAW_CAMEO_MIN env var to
-# re-test as data accumulates (0 reproduces the pre-§15 behaviour exactly).
+# players (CHANGELOG §15). Re-test as data accumulates (0 reproduces the pre-§15 behaviour exactly).
 # Edge cases (same discipline as pooled_prior_std):
 #   - no non-cameo match + prior    -> AvgRaw = prior rate (the blend
 #     degenerates to the k pseudo-matches; also covers debut rows)
@@ -534,11 +515,11 @@ def pooled_prior_std(est_std, k, prior_per90, pl_values):
 #     2-3 career matches mix one full match with cameos) -> same fallback;
 #     a full 5-match window with <= 2 cameos always keeps >= 3 qualifying
 #     matches, so this only bites short windows
-RAW_CAMEO_MIN = int(os.environ.get("DEFCON_RAW_CAMEO_MIN", "15"))
+RAW_CAMEO_MIN = 15
 RECENT5_CAMEO_LIMIT = 3
 RECENT5_MIN_QUALIFYING = 2
 # Recent5AvgPer90 was ONE OF TWO per-90 features with no cameo filter (the
-# opponent/team/venue aggregates were the other -- see AGG_CAMEO_FILTERED), and it
+# opponent/team/venue aggregates were the other -- see compute_season_aggregates), and it
 # suffered exactly the extrapolation failure the comment above describes:
 # 40% of defender last-5 windows contain a sub-60' match, and ~84% of
 # windows above 14 per 90 were bench cameos rather than form. The model
@@ -547,8 +528,6 @@ RECENT5_MIN_QUALIFYING = 2
 # cameo-filtered relationship keeps rising (0.459 -> 0.468 observed, and
 # 0.507 -> 0.611 among starters). The feature now uses the same >= 60'
 # qualifying bar as every other per-90 feature (CHANGELOG §36).
-# DEFCON_RECENT5_CAMEO=0 restores the unfiltered behaviour.
-RECENT5_PER90_FILTERED = os.environ.get("DEFCON_RECENT5_CAMEO", "1") == "1"
 
 
 def avg_raw_qualifying(sum_raw_q, n_raw_q, k=0.0, prior_per90=0.0):
@@ -587,8 +566,6 @@ def recent5_qualifying_per90(df, per90_col):
     the player's career AvgPer90, mirroring how Recent5AvgRaw falls back to
     AvgRaw. Cameo per-90s are extrapolation noise (3 actions in 1 minute ->
     270 per-90) and belong in no per-90 feature."""
-    if not RECENT5_PER90_FILTERED:
-        return float(df.tail(5)[per90_col].mean())
     last5 = df.tail(5)
     qual = last5[last5["Minutes"] >= QUALIFYING_MINUTES_P90][per90_col]
     if len(qual) < RECENT5_MIN_QUALIFYING:
@@ -850,17 +827,12 @@ df_def = build_dataset(matchlogs, ["IsDefender"], "DefStats_Def", "Per90_Def", 1
                        def_prior_opp, def_prior_team, def_prior_venue, DEFENDER_DETAILED_POS,
                        std_pct_estimator=def_std_estimator)
 print(f"  Defender records: {len(df_def)}")
-if DEFENDER_FEATURE_MODE in {"ew", "no_std_ew", "lean"}:
-    df_def["RecentEWPer90"], def_recent_lookup = attach_recent_rates(df_def, _PRIORS_BY_PLAYER, MAX_SEASON)
-else:
-    def_recent_lookup = {}
-def_level_latest = {}
-if DEFCON_LEVEL_ADJUST:
-    DEF_LEVELS = season_levels(df_def)
-    _plain, _ew, def_level_latest = level_factors(df_def, DEF_LEVELS, MAX_SEASON, EW_HALF_LIFE)
-    df_def = apply_level_factors(df_def, _plain, _ew)
-    print(f"  §106 level adjustment ON: levels {({k: round(v, 3) for k, v in DEF_LEVELS.items()})}; "
-          f"row factors {np.quantile(_plain, 0.05):.3f}-{np.quantile(_plain, 0.95):.3f} (5-95%)")
+df_def["RecentEWPer90"], def_recent_lookup = attach_recent_rates(df_def, _PRIORS_BY_PLAYER, MAX_SEASON)
+DEF_LEVELS = season_levels(df_def)
+_plain, _ew, def_level_latest = level_factors(df_def, DEF_LEVELS, MAX_SEASON, EW_HALF_LIFE)
+df_def = apply_level_factors(df_def, _plain, _ew)
+print(f"  §106 level adjustment ON: levels {({k: round(v, 3) for k, v in DEF_LEVELS.items()})}; "
+      f"row factors {np.quantile(_plain, 0.05):.3f}-{np.quantile(_plain, 0.95):.3f} (5-95%)")
 
 print("Building midfielder+forward dataset...")
 df_mid = build_dataset(matchlogs, ["IsMidfielderOrForward"], "DefStats_Mid", "Per90_Mid", 12,
@@ -881,18 +853,12 @@ df_fwd = build_dataset(matchlogs, ["IsForward"], "DefStats_Mid", "Per90_Mid", 12
                        std_pct_estimator=fwd_std_estimator)
 print(f"  Forward records: {len(df_fwd)}")
 
-# §149: opponent factor for the defender and mid/fwd heads. §150: the count head is off by default; DEFCON_MID_MODEL=count serves it.
-OPP_FACTOR_ON = os.environ.get("DEFCON_OPP_FACTOR", "1") == "1"
-MID_COUNT_ON = OPP_FACTOR_ON and os.environ.get("DEFCON_MID_MODEL", "rf") == "count"  # §150: forest by default
-def_opp_latest, mid_opp_latest, mid_rate_latest, mid_rate_bases = {}, {}, {}, {}
-if OPP_FACTOR_ON:
-    _matches = match_order(_DATA)
-    df_def["OppFactor"], def_opp_latest = opponent_factors(df_def, "D", _matches)
-    df_mid["OppFactor"], mid_opp_latest = opponent_factors(df_mid, "M", _matches)
-    print(f"  §149 OppFactor ON: defender 5-95% {np.quantile(df_def['OppFactor'], .05):.3f}-{np.quantile(df_def['OppFactor'], .95):.3f}, "
-          f"mid/fwd {np.quantile(df_mid['OppFactor'], .05):.3f}-{np.quantile(df_mid['OppFactor'], .95):.3f}")
-if MID_COUNT_ON:
-    df_mid, mid_rate_latest, mid_rate_bases = add_rate_columns(df_mid)
+# §149: opponent factor for the defender and mid/fwd heads (the §150 midfield count head was reversed and removed).
+_matches = match_order(_DATA)
+df_def["OppFactor"], def_opp_latest = opponent_factors(df_def, "D", _matches)
+df_mid["OppFactor"], mid_opp_latest = opponent_factors(df_mid, "M", _matches)
+print(f"  §149 OppFactor ON: defender 5-95% {np.quantile(df_def['OppFactor'], .05):.3f}-{np.quantile(df_def['OppFactor'], .95):.3f}, "
+      f"mid/fwd {np.quantile(df_mid['OppFactor'], .05):.3f}-{np.quantile(df_mid['OppFactor'], .95):.3f}")
 
 print(f"\nDefender target rate: {df_def['Target'].mean():.3f}")
 print(f"Midfielder+Forward target rate: {df_mid['Target'].mean():.3f}")
@@ -910,9 +876,8 @@ MID_FEATURE_COLS = BASE_FEATURE_COLS + [f"Pos_{c}" for c in MID_FWD_DETAILED_POS
 # dummies -- within the forward dataset they separate pure-FW rows from
 # hybrid W/FW or AM/FW rows).
 FWD_FEATURE_COLS = list(MID_FEATURE_COLS)
-if OPP_FACTOR_ON:
-    DEF_FEATURE_COLS = [c for c in DEF_FEATURE_COLS if c != "OpponentAvgStat"] + ["OppFactor"]
-    MID_FEATURE_COLS = [c for c in MID_FEATURE_COLS if c != "OpponentAvgStat"] + ["OppFactor"]
+DEF_FEATURE_COLS = [c for c in DEF_FEATURE_COLS if c != "OpponentAvgStat"] + ["OppFactor"]
+MID_FEATURE_COLS = [c for c in MID_FEATURE_COLS if c != "OpponentAvgStat"] + ["OppFactor"]
 
 # ── Out-of-time validation ────────────────────────────────────────────
 # Train on all seasons except the most recent; evaluate on the most recent.
@@ -1087,12 +1052,6 @@ def _report_metrics(proba, y_val, X_val, feature_cols, label):
 # §19 production picks (2026-09-03 tuned run). DEFCON_TUNE=0 is the
 # weekly-run default since 2026-09-04; set DEFCON_TUNE=1 to re-run the
 # full ~5h search (9 tunings per run, 30 candidates × 5 folds each).
-GBM_PARAM_GRID = {
-    "n_estimators": [100, 200, 300, 400],
-    "max_depth": [3, 4, 5, 6],
-    "learning_rate": [0.05, 0.1, 0.15],
-    "subsample": [0.7, 0.8, 0.9, 1.0],
-}
 RF_PARAM_GRID = {
     "n_estimators": [200, 300, 400, 500],
     "max_depth": [6, 8, 10, None],
@@ -1100,10 +1059,6 @@ RF_PARAM_GRID = {
     "max_features": ["sqrt", "log2", None],
 }
 _MODEL_CONFIGS = {
-    # Defender: production-frame tuned pick (2026-09-03, §19).
-    "GBM": (GradientBoostingClassifier, GBM_PARAM_GRID,
-            {"n_estimators": 300, "max_depth": 4, "learning_rate": 0.05,
-             "subsample": 0.7}),
     # Shared mid/forward: identical pick in all three §19 tuning calls
     # (Split A, Split B, production). Serves mids always; forwards when
     # FORWARD_MODEL_SHIPPED is off.
@@ -1117,7 +1072,7 @@ _MODEL_CONFIGS = {
                {"n_estimators": 200, "max_depth": 8, "min_samples_leaf": 5,
                 "max_features": "log2", "n_jobs": 1}),
 }
-_DO_TUNE = os.environ.get("DEFCON_TUNE", "0") == "1"
+_DO_TUNE = config.get("DEFCON_TUNE")
 
 # Validated replacement for the defender head (CHANGELOG §41). Increasing
 # activity evidence cannot reduce P(hit), holding all other features fixed.
@@ -1125,9 +1080,7 @@ _DO_TUNE = os.environ.get("DEFCON_TUNE", "0") == "1"
 _MODEL_CONFIGS["HGB_MONOTONIC"] = (
     HistGradientBoostingClassifier, {}, monotonic_params(DEF_FEATURE_COLS)
 )
-_DEFENDER_MODEL_NAME = (
-    "HGB_MONOTONIC" if os.environ.get("DEFCON_MONOTONIC_DEF", "1") == "1" else "GBM"
-)
+_DEFENDER_MODEL_NAME = "HGB_MONOTONIC"
 
 
 # ── Calibration wrapper ──────────────────────────────────────────────
@@ -1175,15 +1128,12 @@ class _CalibratedModel:
 # DEFCON_MODEL_CACHE=0 disables the cache entirely (forced retrain);
 # DEFCON_RF_N_JOBS overrides the RF fit parallelism (default -1 = all
 # cores; with random_state fixed, n_jobs is result-invariant).
-_CACHE_ENABLED = os.environ.get("DEFCON_MODEL_CACHE", "1") == "1"
+_CACHE_ENABLED = config.get("DEFCON_MODEL_CACHE")
 _CACHE_DIR = paths.CACHE / "defcon"
 _PREDICT_SOURCE_MD5 = hashlib.md5(Path(__file__).read_bytes()).hexdigest()
 # The defender head's parameters and calibration live here, so an edit must retrain too (§189).
 _DEFENDER_SOURCE_MD5 = hashlib.md5((Path(__file__).parent / "defender_model.py").read_bytes()).hexdigest()
-try:
-    _RF_N_JOBS = int(os.environ.get("DEFCON_RF_N_JOBS", "-1"))
-except ValueError:
-    _RF_N_JOBS = -1
+_RF_N_JOBS = config.get("DEFCON_RF_N_JOBS")
 _CACHE_USED_KEYS = set()
 _CACHE_INITIALISED = False
 
@@ -1575,13 +1525,12 @@ def _no_prior_val_rows(pos_cols, stat_col, per90_col, threshold,
                           use_priors=False)
     if pos_cols == ["IsDefender"] and "RecentEWPer90" in DEF_FEATURE_COLS:
         built["RecentEWPer90"], _ = attach_recent_rates(built, {}, MAX_SEASON)
-    if pos_cols == ["IsDefender"] and DEFCON_LEVEL_ADJUST:
+    if pos_cols == ["IsDefender"]:
         _bp, _be, _ = level_factors(built, DEF_LEVELS, MAX_SEASON, EW_HALF_LIFE)
         built = apply_level_factors(built, _bp, _be)
-    if OPP_FACTOR_ON:
-        _keys = ["Season", "Team", "Opponent", "Venue", "Player"]
-        _src = df_def if pos_cols == ["IsDefender"] else df_mid
-        built = built.merge(_src[_keys + ["OppFactor"]], on=_keys, how="left", validate="many_to_one")
+    _keys = ["Season", "Team", "Opponent", "Venue", "Player"]
+    _src = df_def if pos_cols == ["IsDefender"] else df_mid
+    built = built.merge(_src[_keys + ["OppFactor"]], on=_keys, how="left", validate="many_to_one")
     return built[built["Season"] >= _SEASON_CURRENT]
 
 _off_def = _no_prior_val_rows(["IsDefender"], "DefStats_Def", "Per90_Def", 10,
@@ -1704,18 +1653,6 @@ mid_model, mid_scaler, mid_model_name = train_and_evaluate(df_mid, "Midfielder/F
 # code changes (see FORWARD_MODEL_SHIPPED).
 fwd_model, fwd_scaler, fwd_model_name = train_and_evaluate(df_fwd, "Forward", "RF_FWD", FWD_FEATURE_COLS)
 
-# §150: the count head serves midfielders; the forest above still trains for the validation battery and the
-# forward head-to-head. Out-of-time check on the two recent seasons, printed so serving stays honest.
-mid_count = None
-if MID_COUNT_ON:
-    _mid_pos = [f"Pos_{c}" for c in MID_FWD_DETAILED_POS]
-    for _year in (_SEASON_LAST_FULL, _SEASON_CURRENT):
-        _tr, _va = df_mid[df_mid["Season"] < _year], df_mid[(df_mid["Season"] == _year) & (df_mid["IsForward"] == 0)]
-        _pc = CountHead(_mid_pos).fit(_tr).predict(_va)
-        print(f"Midfield count head, held-out {_year}: LL {log_loss(_va['Target'].values, _pc):.4f} | "
-              f"AUC {roc_auc_score(_va['Target'].values, _pc):.4f} | mean {_pc.mean():.4f} vs {_va['Target'].mean():.4f}")
-    mid_count = CountHead(_mid_pos).fit(df_mid)
-
 # All nine trainings (six validation-battery + three production) are
 # done; entries left over from earlier runs used superseded training
 # frames and can never be hit again -- prune them now.
@@ -1818,8 +1755,7 @@ FWD_DEFAULTS = {"AvgPer90": 5.5, "AvgRaw": 4.0, "StdPer90": 3.0, "MatchesPlayed"
 # mean pred 0.0164 vs observed 0.0195 (the shared model over-predicted
 # forwards ~2x: 0.0379). Split B (Season 2026) agrees in direction. The
 # comparison re-runs every execution so the decision can be revisited as
-# data accumulates. Override via DEFCON_FWD_MODEL=1/0.
-FORWARD_MODEL_SHIPPED = os.environ.get("DEFCON_FWD_MODEL", "1") == "1"
+# data accumulates.
 
 def make_transfer_features(per90, approx_matches, estimator, detailed_positions):
     est_std, est_pct = estimator(per90)
@@ -1852,15 +1788,8 @@ def _serve_opp(latest, head, feat, opponent):
     return latest.get((opponent, _serve_group(feat, head)), 1.0)
 
 
-def _serve_rate(player, feat):
-    if not MID_COUNT_ON:
-        return {}
-    rate, full = serving_rate(player, mid_rate_latest, mid_rate_bases[(_serve_group(feat, "M"), MAX_SEASON)])
-    return {"SmoothRate": rate, "Full60Share": full}
-
-
 def _predict_mid(frame):
-    return mid_count.predict(frame) if MID_COUNT_ON else mid_model.predict_proba(frame[MID_FEATURE_COLS].values)[:, 1]
+    return mid_model.predict_proba(frame[MID_FEATURE_COLS].values)[:, 1]
 
 
 pred_rows = []
@@ -1882,8 +1811,7 @@ for match_id, team, opponent, venue in fixture_teams:
         if pos == "D":
             if ml_name and ml_name in def_player_feats:
                 feat = def_player_feats[ml_name]; has_history = True
-                if DEFCON_LEVEL_ADJUST:
-                    feat = level_adjust_features(feat, def_level_latest.get(ml_name, (1.0, 1.0)))
+                feat = level_adjust_features(feat, def_level_latest.get(ml_name, (1.0, 1.0)))
             elif player_name in def_transfer_lookup:
                 t = def_transfer_lookup[player_name]
                 feat = make_transfer_features(t["per90"], t["matches"], def_std_estimator, DEFENDER_DETAILED_POS)
@@ -1895,7 +1823,7 @@ for match_id, team, opponent, venue in fixture_teams:
             venue_val = def_final_venue.get(venue, def_venue_global)
             if "RecentEWPer90" in DEF_FEATURE_COLS:
                 feat = {**feat, "RecentEWPer90": def_recent_lookup.get(player_name, feat["AvgPer90"])}
-                if DEFCON_LEVEL_ADJUST and player_name in def_level_latest:
+                if player_name in def_level_latest:
                     feat = {**feat, "RecentEWPer90": feat["RecentEWPer90"] * def_level_latest[player_name][1]}
             pred_rows.append({
                 "MatchID": match_id, "Player": player_name, "Team": team,
@@ -1905,10 +1833,10 @@ for match_id, team, opponent, venue in fixture_teams:
                 "VenueAvg": venue_val, "IsHome": 1 if venue == "Home" else 0, "_model": "def",
                 "OppFactor": _serve_opp(def_opp_latest, "D", feat, opponent),
             })
-        elif pos == "F" and FORWARD_MODEL_SHIPPED:
+        elif pos == "F":
             # Forward-specific serving path (forward-only history features,
             # forward aggregates, forward prior estimator and youth
-            # defaults) -- see FORWARD_MODEL_SHIPPED above.
+            # defaults) -- see the forward head-to-head above.
             if ml_name and ml_name in fwd_player_feats:
                 feat = fwd_player_feats[ml_name]; has_history = True
             elif player_name in mid_transfer_lookup:
@@ -1927,7 +1855,7 @@ for match_id, team, opponent, venue in fixture_teams:
                 **feat, "OpponentAvgStat": opp_val, "TeamAvgStat": team_val,
                 "VenueAvg": venue_val, "IsHome": 1 if venue == "Home" else 0, "_model": "fwd",
             })
-        elif pos in ("M", "F"):
+        elif pos == "M":
             if ml_name and ml_name in mid_player_feats:
                 feat = mid_player_feats[ml_name]; has_history = True
             elif player_name in mid_transfer_lookup:
@@ -1946,7 +1874,6 @@ for match_id, team, opponent, venue in fixture_teams:
                 **feat, "OpponentAvgStat": opp_val, "TeamAvgStat": team_val,
                 "VenueAvg": venue_val, "IsHome": 1 if venue == "Home" else 0, "_model": "mid",
                 "OppFactor": _serve_opp(mid_opp_latest, "M", feat, opponent),
-                **_serve_rate(player_name, feat),
             })
 
 pred_df = pd.DataFrame(pred_rows)
@@ -2094,8 +2021,7 @@ for _, prow in dmf_players.drop_duplicates(subset=["Player"]).iterrows():
     if pos == "D":
         if ml_name and ml_name in def_player_feats:
             feat = def_player_feats[ml_name]
-            if DEFCON_LEVEL_ADJUST:
-                feat = level_adjust_features(feat, def_level_latest.get(ml_name, (1.0, 1.0)))
+            feat = level_adjust_features(feat, def_level_latest.get(ml_name, (1.0, 1.0)))
         elif player_name in def_transfer_lookup:
             t = def_transfer_lookup[player_name]
             feat = make_transfer_features(t["per90"], t["matches"], def_std_estimator, DEFENDER_DETAILED_POS)
@@ -2103,7 +2029,7 @@ for _, prow in dmf_players.drop_duplicates(subset=["Player"]).iterrows():
             feat = DEF_DEFAULTS
         if "RecentEWPer90" in DEF_FEATURE_COLS:
             feat = {**feat, "RecentEWPer90": def_recent_lookup.get(player_name, feat["AvgPer90"])}
-            if DEFCON_LEVEL_ADJUST and player_name in def_level_latest:
+            if player_name in def_level_latest:
                 feat = {**feat, "RecentEWPer90": feat["RecentEWPer90"] * def_level_latest[player_name][1]}
         team_val = def_final_team.get(team, def_team_global)
         for venue in ("Home", "Away"):
@@ -2111,7 +2037,7 @@ for _, prow in dmf_players.drop_duplicates(subset=["Player"]).iterrows():
                              "OpponentAvgStat": def_opp_pop, "TeamAvgStat": team_val,
                              "VenueAvg": def_final_venue.get(venue, def_venue_global),
                              "IsHome": 1 if venue == "Home" else 0, "_model": "def", "OppFactor": 1.0})
-    elif pos == "F" and FORWARD_MODEL_SHIPPED:
+    elif pos == "F":
         # Forward-specific artifact path -- mirrors the fixture loop's
         # forward tiers (keep the two loops in sync).
         if ml_name and ml_name in fwd_player_feats:
@@ -2127,7 +2053,7 @@ for _, prow in dmf_players.drop_duplicates(subset=["Player"]).iterrows():
                              "OpponentAvgStat": fwd_opp_pop, "TeamAvgStat": team_val,
                              "VenueAvg": fwd_final_venue.get(venue, fwd_venue_global),
                              "IsHome": 1 if venue == "Home" else 0, "_model": "fwd"})
-    elif pos in ("M", "F"):
+    elif pos == "M":
         if ml_name and ml_name in mid_player_feats:
             feat = mid_player_feats[ml_name]
         elif player_name in mid_transfer_lookup:
@@ -2140,8 +2066,7 @@ for _, prow in dmf_players.drop_duplicates(subset=["Player"]).iterrows():
             avg_rows.append({**feat, "Player": player_name, "Pos": pos,
                              "OpponentAvgStat": mid_opp_pop, "TeamAvgStat": team_val,
                              "VenueAvg": mid_final_venue.get(venue, mid_venue_global),
-                             "IsHome": 1 if venue == "Home" else 0, "_model": "mid", "OppFactor": 1.0,
-                             **_serve_rate(player_name, feat)})
+                             "IsHome": 1 if venue == "Home" else 0, "_model": "mid", "OppFactor": 1.0})
 
 avg_df = pd.DataFrame(avg_rows)
 def_mask = avg_df["_model"] == "def"

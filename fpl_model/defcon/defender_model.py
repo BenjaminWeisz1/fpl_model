@@ -10,8 +10,8 @@ POSITIVE_EVIDENCE = (
     "PctAboveThreshold", "RecentEWPer90",
 )
 
-# §46: remove spread and replace both recent-five windows. The baseline
-# monotonic schema remains available through DEFCON_DEFENDER_FEATURES=baseline.
+# §46: remove spread and replace both recent-five windows (the production schema; the others are kept for
+# research and the frozen validation copies).
 DEFAULT_FEATURE_MODE = "no_std_ew"
 
 

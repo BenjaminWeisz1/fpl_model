@@ -28,7 +28,7 @@ negatives), then rescales to the player's expected minutes for each fixture.
    **transfer priors** for new-to-league arrivals from `transfers.csv`, plus
    recency-weighted opponent/team/venue aggregates. The serving copies of those
    averages (the values used for the forecast) also weight each season by its
-   number of rows (§195, `DEFCON_ROW_WEIGHTED=0` reverts); the training copies
+   number of rows (§195); the training copies
    keep equal season votes, which tested better.
 3. Trains three classifier heads, all with `random_state=42`:
    - **Defenders**: monotonic histogram gradient boosting (sklearn
@@ -87,15 +87,12 @@ forecast.
 |---|---|---|
 | `DEFCON_TUNE` | `0` | `1` runs hyperparameter search (~5 h); `0` uses the locked defaults |
 | `DEFCON_MODEL_CACHE` | `1` | `0` disables the trained-model cache |
-| `DEFCON_MONOTONIC_DEF` | `1` | `0` restores the legacy unconstrained defender GBM; applies to both validation splits and production |
-| `DEFCON_DEFENDER_FEATURES` | `no_std_ew` | `baseline` restores the original 17-feature monotonic head; `no_std`, `ew`, and `lean` are experimental schemas. Legacy unconstrained GBM always uses baseline features |
 | `DEFCON_RF_N_JOBS` | `-1` | Cores for random-forest fits (result-invariant) |
-| `DEFCON_FWD_MODEL` | `1` | `0` serves forwards from the shared mid/forward model |
-| `DEFCON_RAW_CAMEO_MIN` | `15` | Minutes below this count as cameos, excluded from raw averages |
-| `DEFCON_CENTERED_ISOTONIC` | `1` | `0` restores the step isotonic calibrator for the defender head (§107; centred isotonic removes tied probabilities) |
-| `DEFCON_OPP_FACTOR` | `1` | `0` restores `OpponentAvgStat` in the defender and mid/fwd heads (§149) |
-| `DEFCON_MID_MODEL` | `rf` | `count` serves midfielders from the §150 count head (not recommended: worse on FPL's real hits, ignores transfer priors) |
-| `DEFCON_LEVEL_ADJUST` | `1` | `0` restores the §46 defender features without the §106 league-level adjustment (applies only with `no_std_ew`) |
+
+These are declared in `fpl_model/config.py`. The model's settled revert switches (monotonic defender head, feature
+schema, forward head, centred isotonic, opponent factor, count head, level adjustment, cameo filters, row-weighted
+serving, detailed positions) were retired in the 2026-11-16 cleanup; their behaviour is now fixed. Minutes below 15
+count as cameos for the raw averages (`RAW_CAMEO_MIN`) and the transfer prior is capped at 10 matches (`PRIOR_MAX_K`).
 
 ## Runtime
 

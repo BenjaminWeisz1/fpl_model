@@ -18,11 +18,14 @@ class RecentTest(unittest.TestCase):
     def test_production_prior_off_ablation_builds_unseeded_recent_feature(self):
         source=Path(__file__).with_name("predict.py").read_text(encoding="utf-8-sig")
         function=next(n for n in ast.parse(source).body if isinstance(n,ast.FunctionDef) and n.name=="_no_prior_val_rows")
-        rows=frame([2.,4.,6.],seasons=[2025,2026,2026])
+        rows=frame([2.,4.,6.],seasons=[2025,2026,2026]).assign(Team="T",Opponent=["O1","O2","O3"],Venue="Home")
         builder=Mock(return_value=rows)
+        opp=rows[["Season","Team","Opponent","Venue","Player"]].assign(OppFactor=1.0)
         scope={"pd":pd,"matchlogs":rows,"_prior_players":{"A"},"_SEASON_CURRENT":2026,"MAX_SEASON":2026,
                "DEF_FEATURE_COLS":["RecentEWPer90"],"build_dataset":builder,"attach_recent_rates":attach_recent_rates,
-               "DEFCON_LEVEL_ADJUST":False,"OPP_FACTOR_ON":False}
+               # level adjustment as identity, so the test sees the raw recent rate
+               "level_factors":Mock(return_value=(1.0,1.0,{})),"apply_level_factors":lambda b,p,e:b,
+               "DEF_LEVELS":{},"EW_HALF_LIFE":4,"df_def":opp,"df_mid":opp}
         exec(compile(ast.Module(body=[function],type_ignores=[]),"<production validation helper>","exec"),scope)
         result=scope["_no_prior_val_rows"](["IsDefender"],"DefStats_Def","Per90_Def",10,{}, {}, {}, ["CB"])
         self.assertEqual(result.Season.tolist(),[2026,2026])

@@ -12,9 +12,8 @@ PACKAGE = Path(__file__).resolve().parents[1] / "fpl_model"
 DIRECT_READ = re.compile(r"os\.environ\.get\(|os\.environ\[|\bin\s+os\.environ\b|os\.getenv\("
                          r"|__import__\(\"os\"\)\.environ")
 CONFIG_CALL = re.compile(r"config\.(?:get|is_set)\(\s*[\"']([A-Z0-9_]+)[\"']")
-# The vendored solver keeps its upstream code. defcon/predict.py moves to config.py when its settled switches are
-# retired (AGENDA overnight step 5), which retrains the defcon models once instead of twice.
-EXEMPT = {"config.py", "optimizer/open_fpl_solver", "defcon/predict.py"}
+# The vendored solver keeps its upstream code.
+EXEMPT = {"config.py", "optimizer/open_fpl_solver"}
 
 
 def _package_files():
