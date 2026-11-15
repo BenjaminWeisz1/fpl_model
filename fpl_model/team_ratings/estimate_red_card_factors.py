@@ -10,16 +10,21 @@ difference, clock bin and home. Factor = exp(-coef): the weight that turns a man
 
     python estimate_red_card_factors.py      # -> data/validation/red_card_20261030/factors_estimate.json
 """
-from fpl_model import paths
 import json
-import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 
-from fpl_model.team_ratings.red_card_adjust import MATCHES, DATA, dismissals, counts_at, match_end, team_map  # noqa: E402
+from fpl_model import paths
+from fpl_model.team_ratings.red_card_adjust import (  # noqa: E402
+    DATA,
+    MATCHES,
+    counts_at,
+    dismissals,
+    match_end,
+    team_map,
+)
 
 ROOT = paths.ROOT
 OUT = paths.VALIDATION / "red_card_20261030"

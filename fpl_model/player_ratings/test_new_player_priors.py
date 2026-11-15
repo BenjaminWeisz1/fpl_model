@@ -1,13 +1,11 @@
 """Tests for the new-player priors (CHANGELOG §103-§104). Run: python test_new_player_priors.py (or pytest)"""
 import json
-import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from fpl_model.player_ratings import new_player_priors as npp  # noqa: E402
 from fpl_model.player_ratings import build_new_player_priors as bnp  # noqa: E402
+from fpl_model.player_ratings import new_player_priors as npp  # noqa: E402
 
 
 def _toy():

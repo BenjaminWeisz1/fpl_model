@@ -7,9 +7,9 @@ from pathlib import Path
 
 import numpy as np
 
-SCRIPTS = Path(__file__).resolve().parents[1]
-
 from fpl_model.defcon_scaling import DEFENDER_POINTS_FACTOR, nb_sf, points_mu90, points_prob_at_90, prob_at_minutes
+
+SCRIPTS = Path(__file__).resolve().parents[1]
 
 
 class DefenderPointsFactorTests(unittest.TestCase):

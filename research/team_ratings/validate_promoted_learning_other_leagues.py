@@ -9,19 +9,28 @@ arm was scored.
 
     python -u -X utf8 scripts/team_ratings/validate_promoted_learning_other_leagues.py
 """
-from fpl_model import paths
 import hashlib
 import json
 import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from fpl_model.team_ratings.update_team_ratings import alpha, beta, money_weight  # noqa: E402
-from research.team_ratings.promoted_learning_team_ratings import M_GRID, N_GRID, boosted_run, reference_run  # noqa: E402
+from research.team_ratings.promoted_learning_team_ratings import (  # noqa: E402
+    M_GRID,
+    N_GRID,
+    boosted_run,
+    reference_run,
+)
 from research.team_ratings.ratings_fast import fast_run  # noqa: E402
-from research.team_ratings.validate_kalman_other_leagues import cs_ll, load_league, signal_prior_map, team_ll  # noqa: E402
+from research.team_ratings.validate_kalman_other_leagues import (  # noqa: E402
+    cs_ll,
+    load_league,
+    signal_prior_map,
+    team_ll,
+)
 
 ROOT = paths.ROOT
 OUT = paths.VALIDATION / "promoted_learning_other_leagues_20261115"
@@ -214,7 +223,7 @@ def main():
         v = verdict_of(base, new, by_lg)
         say(f"  bootstrap ({v['clusters']} entrant team-seasons, {N_BOOT} reps): tier(a) 95% CI "
             f"[{v['ci'][0]:+.5f}, {v['ci'][1]:+.5f}]")
-        say(f"  bias, entrants (actual - predicted goals; conceded / scored):")
+        say("  bias, entrants (actual - predicted goals; conceded / scored):")
         for lab, fn in (("whole season", None), (f"first {EARLY_N}", EARLY_N)):
             c0, s0 = bias(base, fn)
             c1, s1 = bias(new, fn)

@@ -3,15 +3,15 @@
 Walk-forward test, rate error at realized minutes. Test only; no production writes.
 Run: python -u -X utf8 scripts/assemble/validate_keeper_saves.py
 """
-from fpl_model import paths
 import json
-import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 from scipy.special import gammaln
+
+from fpl_model import paths
 
 HERE = Path(__file__).resolve().parent
 ROOT = paths.ROOT

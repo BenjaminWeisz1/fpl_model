@@ -10,13 +10,12 @@ build_player_ratings.py whose multiplier is the opponent's pre-match Defense_Rat
 Run locally (after the candidate's logged run):
     python validate_opponent_defence_mse.py
 """
-from fpl_model import paths
 import json
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from research.player_ratings.validate_opponent_lookup import N_BOOT, SEED, finals, mae, paired
 
 ROOT = paths.ROOT

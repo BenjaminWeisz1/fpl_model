@@ -527,7 +527,7 @@ def entrant_rows(transfers_df) -> dict:
     rows = {}
     for second in (False, True):   # a 'second season' row wins a (player, season) tie, as initial_ratings_df's order
         for r in transfers_df.itertuples(index=False):
-            if (getattr(r, 'Notes') == 'second season') == second:
+            if (r.Notes == 'second season') == second:
                 rows[(r.Player, r.Season)] = (_pu_branch(r.Notes, r.Season, r.League, r.Pos), r.Pos)
     return rows
 

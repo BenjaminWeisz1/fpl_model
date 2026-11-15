@@ -6,6 +6,7 @@ expected possession (Sofascore pass share) as pressure features. Hyperparameters
 No production writes. Run: python -u -X utf8 scripts/defcon/evaluate_opponent_adjustment.py
 """
 import os
+
 os.environ.setdefault("OMP_NUM_THREADS", "2")
 import json
 import time

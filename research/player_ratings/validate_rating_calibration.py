@@ -1,7 +1,6 @@
 """Goal/assist calibration after the rating (CHANGELOG §156). Offline on a pre-match log; no production writes.
 python -u -X utf8 scripts/player_ratings/validate_rating_calibration.py
 """
-from fpl_model import paths
 import json
 import sys
 from pathlib import Path
@@ -9,6 +8,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from sklearn.isotonic import IsotonicRegression
+
+from fpl_model import paths
 
 HERE = Path(__file__).resolve().parent
 ROOT = paths.ROOT

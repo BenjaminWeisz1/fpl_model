@@ -1,14 +1,10 @@
 import json
-import os
-import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
-
 
 from fpl_model.bonus import pass_bands as pb
 from fpl_model.bonus import simulate_bonus

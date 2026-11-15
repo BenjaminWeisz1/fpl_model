@@ -1,13 +1,9 @@
 """Tests for team_source.py and solver_jobs.py's pure parts, on fake FPL responses (no network):
 python -m unittest scripts/optimizer/test_team_source.py"""
 import copy
-import sys
 import unittest
-from pathlib import Path
 
-from fpl_model.optimizer import solve_modes  # noqa: E402
-from fpl_model.optimizer import solver_jobs  # noqa: E402
-from fpl_model.optimizer import team_source  # noqa: E402
+from fpl_model.optimizer import solve_modes, solver_jobs, team_source
 from fpl_model.optimizer.team_source import BASE_URL, TeamError  # noqa: E402
 
 TYPES = [1] * 2 + [2] * 5 + [3] * 5 + [4] * 3  # players 1-15, then 16-20 as spare buys

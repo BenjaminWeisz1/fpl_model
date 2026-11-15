@@ -136,15 +136,19 @@ import json
 import sys
 import time
 from datetime import datetime
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 from fpl_model.team_ratings.update_team_ratings import alpha, beta, home_advantage, money_weight
-
 from research.team_ratings import ratings_fast
-from research.team_ratings.evaluate_team_ratings_oot import EPS, OUT_DIR, cs_bin_table, load_inputs, summarize_predictions
+from research.team_ratings.evaluate_team_ratings_oot import (
+    EPS,
+    OUT_DIR,
+    cs_bin_table,
+    load_inputs,
+    summarize_predictions,
+)
 from research.team_ratings.ratings_fast import fast_run, frozen_predict_fast
 from research.team_ratings.tune_team_ratings import CUTOFFS, build_context, fmt_params
 
@@ -745,13 +749,13 @@ def main():
     say(f"  cutoffs improved: {n_improved}/{len(CUTOFFS)}")
     say(f"  tier (b): frozen {b_f:+.4f} LL/tm, walk-forward {b_wf:+.4f} "
         f"LL/tm -- propagation only (direct effect zero by construction;")
-    say(f"  near zero, as predicted)")
-    say(f"  noise-band context (§21): 0.001 LL/tm pooled is the established")
+    say("  near zero, as predicted)")
+    say("  noise-band context (§21): 0.001 LL/tm pooled is the established")
     say(f"  noise band on this harness; tier (a) holds "
         f"{base['pooled']['a']['frozen']['n_matches']} of "
         f"{base['pooled']['all']['frozen']['n_matches']} held-out matches, so")
-    say(f"  the cluster bootstrap above -- not the pooled band -- is the")
-    say(f"  tier-level judgment.")
+    say("  the cluster bootstrap above -- not the pooled band -- is the")
+    say("  tier-level judgment.")
 
     # ── Verdict ─────────────────────────────────────────────────────
     say()

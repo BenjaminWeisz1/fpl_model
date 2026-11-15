@@ -5,18 +5,17 @@ data/validation/move_factors_20261101/protocol.json.
 Phases, in order:  fit  ->  run  ->  score
 `fit` reads rows to 2024 only. `score` reads 2025-26, once. Production files are never written.
 """
-from fpl_model import paths
 import json
 import os
 import subprocess
 import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from research.player_ratings import validate_role_move_error as vm
+from fpl_model import paths
 from fpl_model.player_ratings.role_shares import role_table
+from research.player_ratings import validate_role_move_error as vm
 
 ROOT = paths.ROOT
 OUT = paths.VALIDATION / "move_factors_20261101"

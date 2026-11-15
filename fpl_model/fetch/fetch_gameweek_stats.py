@@ -1,13 +1,13 @@
 """
 Must run BEFORE fetch_fixtures_results.py
 """
-from fpl_model import paths
-import sys
-import requests
+
 import pandas as pd
-from pathlib import Path
-from fpl_model.fetch.team_name_map import to_fbref_name
+import requests
+
+from fpl_model import paths
 from fpl_model.fetch import penalty_reconcile
+from fpl_model.fetch.team_name_map import to_fbref_name
 
 BOOTSTRAP_URL = "https://fantasy.premierleague.com/api/bootstrap-static/"
 FIXTURES_URL = "https://fantasy.premierleague.com/api/fixtures/"
@@ -17,8 +17,8 @@ _DATA = paths.CURRENT
 PLAYER_STATS_FILE = paths.CURRENT / "player_match_stats.csv"
 PENALTY_LOG_FILE = paths.CURRENT / "penalty_log.csv"
 
-from fpl_model.league_rates import current_season  # noqa: E402
 from fpl_model.atomic_write import to_csv_atomic  # noqa: E402
+from fpl_model.league_rates import current_season  # noqa: E402
 
 CURRENT_SEASON = current_season()
 

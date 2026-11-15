@@ -5,8 +5,10 @@ whose predictions must reproduce validation_no_std_ew_<S>.csv. Candidate: the sa
 training rows weighted 0.5^((S_last - season) / HALF_LIFE) in the GBM fit, the OOF predictions and the
 isotonic calibrator. No production writes. Run: python -u -X utf8 scripts/defcon/evaluate_defender_recency.py
 """
-from fpl_model import paths
 import os
+
+from fpl_model import paths
+
 os.environ.setdefault("OMP_NUM_THREADS", "2")
 import gzip
 import json
@@ -22,8 +24,8 @@ from sklearn.model_selection import StratifiedKFold, cross_val_predict
 from sklearn.preprocessing import StandardScaler
 
 from fpl_model.defcon.defender_model import POSITIVE_EVIDENCE, monotonic_params
-from research.defcon.evaluate_defender_monotonic import metrics, bootstrap, predict
 from fpl_model.defcon.recent_defcon import feature_columns
+from research.defcon.evaluate_defender_monotonic import bootstrap, metrics, predict
 
 HERE = Path(__file__).resolve().parent
 FEAT = paths.VALIDATION / "defcon_feature_experiment_20261020"

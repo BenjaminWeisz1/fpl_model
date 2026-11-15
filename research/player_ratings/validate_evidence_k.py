@@ -17,7 +17,6 @@ test = entry 2023-2026. Primary rows: arrivals' first two logged seasons. Guard:
 """
 import json
 import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd

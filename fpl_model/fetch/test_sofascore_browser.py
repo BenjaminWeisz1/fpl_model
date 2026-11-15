@@ -1,12 +1,12 @@
 """Offline browser-import recovery checks, using explicitly synthetic fixtures."""
 import json
-from pathlib import Path
 import tempfile
 import unittest
+from pathlib import Path
 
 from fpl_model.fetch import fetch_sofascore as f
 from fpl_model.fetch import sofascore_browser_pilot as b
-from fpl_model.fetch.test_sofascore import lineup, event
+from fpl_model.fetch.test_sofascore import event, lineup
 
 
 class BrowserImportTests(unittest.TestCase):

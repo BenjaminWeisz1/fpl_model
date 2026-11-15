@@ -1,13 +1,12 @@
 """Defender experience bands on real FPL hits (CHANGELOG §192). Protocol: data/validation/defender_experience_20261102/protocol.json.
 Reads item 6's arm A predictions. No production writes. Run: python -u -X utf8 scripts/defcon/diagnose_defender_experience.py
 """
-from fpl_model import paths
 import json
-import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+from fpl_model import paths
 
 ROOT = paths.ROOT
 from fpl_model.defcon_scaling import DEFENDER_POINTS_FACTOR, nb_sf, prob_at_minutes

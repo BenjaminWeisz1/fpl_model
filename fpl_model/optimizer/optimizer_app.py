@@ -6,7 +6,7 @@ Serves app.html on 127.0.0.1 only and opens it in the browser. Start Solve runs 
 picked beside the button; solve_modes.py) and replay_plans.py,
 so the plans shown are the replay-checked ones. A new solve replaces that gameweek's folder. Ctrl+C stops the server.
 """
-from fpl_model import paths
+import contextlib
 import json
 import subprocess
 import sys
@@ -15,9 +15,8 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from fpl_model.optimizer import replay_plans
-from fpl_model.optimizer import run_optimizer
-from fpl_model.optimizer import solve_modes
+from fpl_model import paths
+from fpl_model.optimizer import replay_plans, run_optimizer, solve_modes
 
 _HERE = Path(__file__).resolve().parent
 _ROOT = paths.ROOT
@@ -127,10 +126,8 @@ def main():
     print(f"Optimizer page: {url}  (Ctrl+C to stop)")
     if "--no-browser" not in sys.argv:
         webbrowser.open(url)
-    try:
+    with contextlib.suppress(KeyboardInterrupt):
         server.serve_forever()
-    except KeyboardInterrupt:
-        pass
 
 
 if __name__ == "__main__":

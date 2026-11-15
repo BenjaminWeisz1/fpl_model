@@ -28,12 +28,11 @@ in this folder, then run this script.
 Run locally:
     python clean_penalty_share_paste.py
 """
-from fpl_model import paths
-import pandas as pd
 import re
-import sys
-from pathlib import Path
 
+import pandas as pd
+
+from fpl_model import paths
 from fpl_model.forecast_horizon import GAMEWEEKS, HORIZON  # noqa: E402  (the paste must cover the pipeline's window)
 
 _DATA = paths.CURRENT
@@ -54,7 +53,7 @@ def main():
     header_row = header_candidates[0]
     # The gameweek columns follow Price: HORIZON of them (forecast_horizon.py), then "Avg".
     labels = [str(v).strip() for v in df.iloc[header_row, 2:].tolist()]
-    if not all(re.fullmatch(r"GW\d+", l) for l in labels[:HORIZON]) or labels[HORIZON] != "Avg":
+    if not all(re.fullmatch(r"GW\d+", lab) for lab in labels[:HORIZON]) or labels[HORIZON] != "Avg":
         raise ValueError(f"Expected {HORIZON} gameweek columns then 'Avg' after Price "
                          f"(forecast_horizon.HORIZON), found {labels}")
     print(f"Gameweek columns: {labels[0]}-{labels[HORIZON - 1]} -> GW1-GW{HORIZON}")

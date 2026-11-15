@@ -3,13 +3,14 @@ Goal/assist ratings shrunk toward their position group at forecast time (CHANGEL
 
     python validate_rating_shrink.py [log.csv]
 """
-from fpl_model import paths
 import json
 import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+from fpl_model import paths
 
 ROOT = paths.ROOT
 OUT = paths.VALIDATION / "rating_shrink_20261030"

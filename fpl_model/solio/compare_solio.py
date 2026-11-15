@@ -49,7 +49,6 @@ Run locally:
     python compare_solio.py --current            # data/current, before a snapshot exists
     python compare_solio.py --current --rounds 5 # only the first five rounds of our forecast
 """
-from fpl_model import paths
 import argparse
 import json
 import sys
@@ -57,6 +56,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+from fpl_model import paths
 
 ROOT = paths.ROOT
 from fpl_model.atomic_write import to_csv_atomic  # noqa: E402
@@ -311,9 +312,10 @@ def main():
         x = fx[fx["Round"].isin(rounds[:k])].groupby("Team")["CS_Prob_Team"].mean()
         by_window[k] = team_table.set_index("Team")["Solio_CS"].corr(x)
     best = max(by_window, key=by_window.get)
-    print(f"  Solio CS% v our mean CS over the first k rounds, r by k: "
+    print("  Solio CS% v our mean CS over the first k rounds, r by k: "
           + ", ".join(f"{k}: {v:.2f}" for k, v in by_window.items()) + f"; closest at k = {best}")
-    slope = lambda a, b: float(np.polyfit(np.log(tc[b]), np.log(tc[a]), 1)[0])
+    def slope(a, b):
+        return float(np.polyfit(np.log(tc[b]), np.log(tc[a]), 1)[0])
     print(f"  team spread, log slope ours on Solio (below 1 = ours narrower): NPG neutral {slope('Ours_Neutral_NPG', 'Solio_Team_NPG'):.2f}, "
           f"over the rounds {slope('Ours_Forecast_NPG', 'Solio_Team_NPG'):.2f}; CS neutral {slope('Ours_Neutral_CS', 'Solio_CS'):.2f}, "
           f"over the rounds {slope('Ours_Forecast_CS', 'Solio_CS'):.2f}")

@@ -17,8 +17,8 @@ import pandas as pd
 
 from fpl_model.bonus import build_residual_bps_baseline as residual
 from fpl_model.bonus import pass_bands
-from research.bonus import shadow_team_goal_coherence as coherence
 from fpl_model.bonus import simulate_bonus as sb
+from research.bonus import shadow_team_goal_coherence as coherence
 from research.bonus import validate_bonus_calibration as calibration
 from research.bonus import validate_pass_bands as vpb
 from research.bonus import validate_prematch_coherence as vpc

@@ -83,9 +83,9 @@ class Build(unittest.TestCase):
         data, raw = world(self.root)
         path = raw / "2026" / "GW11" / c.SOURCE_NAME
         pd.read_csv(path).drop(columns="dc90").to_csv(path, index=False)
-        with patch.object(c, "DATA", data), patch.object(c, "RAW", raw), patch.object(c, "ROOT", self.root):
-            with self.assertRaisesRegex(ValueError, "lacks columns"):
-                c.build(11, 2026)
+        with patch.object(c, "DATA", data), patch.object(c, "RAW", raw), patch.object(c, "ROOT", self.root), \
+                self.assertRaisesRegex(ValueError, "lacks columns"):
+            c.build(11, 2026)
 
 
 if __name__ == "__main__":

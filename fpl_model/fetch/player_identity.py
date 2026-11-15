@@ -4,14 +4,13 @@ Provider IDs are global aliases; legacy names are scoped by season and match tea
 Accepted Understat per-row assignments seed the registry without re-matching history.
 No FPL IDs are invented from names. CSV schemas and access workflow: SOFASCORE.md.
 """
-from fpl_model import paths
 import csv
 import hashlib
 import json
 from datetime import datetime
 from pathlib import Path
-import sys
 
+from fpl_model import paths
 from fpl_model.league_rates import current_season  # noqa: E402
 
 DATA = paths.CURRENT
@@ -176,6 +175,7 @@ class Registry:
         """Crosswalk similarity, raised to .95 when one name's tokens contain the other's
         (Alisson / Alisson Becker, Rodri / Rodrigo 'Rodri' Hernandez Cascante)."""
         import unicodedata
+
         from fpl_model.fetch.build_position_crosswalk import name_similarity
 
         def tokens(name):

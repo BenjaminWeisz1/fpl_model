@@ -17,9 +17,10 @@ values untouched, so this is safe to re-run as you add more players.
 Run locally:
     python fill_transfer_team_ratings.py
 """
-from fpl_model import paths
+
 import pandas as pd
-from pathlib import Path
+
+from fpl_model import paths
 
 _DATA = paths.CURRENT
 

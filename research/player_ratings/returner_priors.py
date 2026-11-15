@@ -8,14 +8,13 @@ manual-path model on his transfers.csv values; x the §104 xAG era scale from 20
 """
 import json
 import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from fpl_model.player_ratings import new_player_priors as npp  # noqa: E402
 from fpl_model.player_ratings import fotmob_priors as fp  # noqa: E402
-from fpl_model.player_ratings.build_new_player_priors import era_scales, PARAMS, PARAMS_FOTMOB  # noqa: E402
+from fpl_model.player_ratings import new_player_priors as npp  # noqa: E402
+from fpl_model.player_ratings.build_new_player_priors import PARAMS, PARAMS_FOTMOB, era_scales  # noqa: E402
 
 LEAGUES = {"Championship"}
 

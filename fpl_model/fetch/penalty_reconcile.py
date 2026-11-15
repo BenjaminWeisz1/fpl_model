@@ -18,14 +18,13 @@ Run locally (dry run prints the changes; --apply writes them):
 One-off (§80): add the xG column, filled from the then penalty-inclusive FPL-era npxG:
     python penalty_reconcile.py --migrate-xg --apply
 """
-from fpl_model import paths
 import argparse
 import json
-
-import sys
-import pandas as pd
 from pathlib import Path
 
+import pandas as pd
+
+from fpl_model import paths
 from fpl_model.atomic_write import to_csv_atomic  # noqa: E402
 
 _DATA = paths.CURRENT

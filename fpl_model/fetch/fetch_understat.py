@@ -47,15 +47,15 @@ Run locally:
     python fetch_understat.py --limit 50      # cap new match downloads (testing)
     python fetch_understat.py --weekly        # current season only, tolerant of network errors
 """
-from fpl_model import config, paths
 import argparse
 import json
 import sys
 import time
-from pathlib import Path
 
 import pandas as pd
 import requests
+
+from fpl_model import config, paths
 
 _ROOT = paths.ROOT
 _DATA = paths.CURRENT
@@ -244,7 +244,7 @@ def parse_match(match_id, fixture):
     xg = fixture.get("xG", {}) or {}
 
     rows = []
-    for side, opp_fbref, opp_title in (("h", away_fbref, away_title), ("a", home_fbref, home_title)):
+    for side, opp_fbref, _opp_title in (("h", away_fbref, away_title), ("a", home_fbref, home_title)):
         team_fbref = home_fbref if side == "h" else away_fbref
         team_title = home_title if side == "h" else away_title
         roster = rosters.get(side, {}) or {}

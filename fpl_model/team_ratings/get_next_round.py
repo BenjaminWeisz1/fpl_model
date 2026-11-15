@@ -7,8 +7,9 @@ Importable by any script in the pipeline:
     from get_next_round import get_next_round
     next_round = get_next_round(data_dir, season=2026)
 """
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
 
 
 def get_next_round(data_dir: Path, season: int) -> int:

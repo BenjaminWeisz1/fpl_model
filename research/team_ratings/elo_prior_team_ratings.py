@@ -19,16 +19,15 @@ Run (after scripts/fetch/fetch_clubelo.py):
     python elo_prior_team_ratings.py
 Writes data/current/team_ratings_oot/elo_prior_report.txt + _summary.json.
 """
-import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 _HERE = Path(__file__).resolve().parent
-from research.team_ratings.evaluate_team_ratings_oot import load_inputs, beta
-from research.team_ratings.odds_prior_team_ratings import evaluate, promoted_by_season
 from fpl_model.fetch.fetch_clubelo import load_season_elo
+from research.team_ratings.evaluate_team_ratings_oot import beta, load_inputs
+from research.team_ratings.odds_prior_team_ratings import evaluate, promoted_by_season
 
 
 def season_targets(df):

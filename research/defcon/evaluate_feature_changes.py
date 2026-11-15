@@ -3,23 +3,26 @@
 No production writes or tuning beyond the four pre-registered schemas. Reuses
 the exact stored monotonic incumbent fits and identical training-row order.
 """
-from fpl_model import paths
 import os
+
+from fpl_model import paths
+
 os.environ.setdefault("OMP_NUM_THREADS", "2")
 import gzip
 import hashlib
 import json
-from pathlib import Path
 import pickle
 import shutil
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from fpl_model.defcon.defender_model import monotonic_params, POSITIVE_EVIDENCE
+from fpl_model.defcon.defender_model import POSITIVE_EVIDENCE, monotonic_params
 from fpl_model.defcon.recent_defcon import attach_recent_rates, feature_columns
 from research.defcon import evaluate_defender_history as fitting
-from research.defcon.evaluate_defender_monotonic import OUT as OLD, DATA, freeze_control, load_scope, predict, metrics, bootstrap
+from research.defcon.evaluate_defender_monotonic import DATA, bootstrap, freeze_control, load_scope, metrics, predict
+from research.defcon.evaluate_defender_monotonic import OUT as OLD
 
 OUT = paths.VALIDATION / "defcon_feature_experiment_20261020"
 BASE_COLS = ["AvgPer90", "AvgRaw", "StdPer90", "MatchesPlayed", "Recent5AvgPer90", "Recent5AvgRaw", "PctAboveThreshold",

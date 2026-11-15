@@ -4,7 +4,13 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from fpl_model.defcon.defender_model import season_levels, level_factors, apply_level_factors, level_adjust_features, CenteredIsotonic
+from fpl_model.defcon.defender_model import (
+    CenteredIsotonic,
+    apply_level_factors,
+    level_adjust_features,
+    level_factors,
+    season_levels,
+)
 
 
 def frame():

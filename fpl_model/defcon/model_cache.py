@@ -3,6 +3,7 @@
 Split out of predict.py (2026-11-16 cleanup). The cache key hashes the source of every module that shapes a trained
 model (MODEL_SOURCES below), so an edit to any of them retrains once instead of serving a stale model.
 """
+import contextlib
 import gzip
 import hashlib
 import json
@@ -154,10 +155,8 @@ def _load_cached_model(path, label):
                 payload["scaler"], payload["best_params"])
     except Exception as exc:
         print(f"  [{label}] cache entry unreadable ({exc}) -- retraining")
-        try:
+        with contextlib.suppress(OSError):
             path.unlink()
-        except OSError:
-            pass
         return None
 
 
@@ -174,10 +173,8 @@ def _store_cached_model(path, label, production, calibrator, scaler,
         os.replace(tmp, path)
     except Exception as exc:
         print(f"  [{label}] cache write failed ({exc}) -- continuing uncached")
-        try:
+        with contextlib.suppress(OSError):
             tmp.unlink()
-        except OSError:
-            pass
 
 
 def prune_model_cache():

@@ -4,13 +4,13 @@ Protocol: data/validation/set_piece_diagnostic_20261103/protocol.json. Diagnosti
 
     python diagnose_set_pieces.py      # needs validate_position_alpha.py run (its floor-0.025 log) for part C
 """
-from fpl_model import paths
 import json
 import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+from fpl_model import paths
 
 ROOT = paths.ROOT
 DATA = paths.CURRENT

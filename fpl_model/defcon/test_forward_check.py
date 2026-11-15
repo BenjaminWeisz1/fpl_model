@@ -1,13 +1,20 @@
 """Outcome-join and leakage safeguards for the prospective comparison."""
-from pathlib import Path
 import json
 import tempfile
 import unittest
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from fpl_model.defcon.forward_check import attach_outcomes, compare, assessment, verify_snapshot, sha256, validate_unplayed
+from fpl_model.defcon.forward_check import (
+    assessment,
+    attach_outcomes,
+    compare,
+    sha256,
+    validate_unplayed,
+    verify_snapshot,
+)
 
 
 def example():

@@ -6,6 +6,7 @@ defender candidates. It primes ordinary production cache entries on demand.
 Subsequent weekly runs use predict.py normally. No monkeypatch is persisted.
 """
 import os
+
 os.environ.setdefault("OMP_NUM_THREADS", "2")
 import ast
 import gzip
@@ -15,10 +16,8 @@ import json
 import pickle
 from pathlib import Path
 
-import numpy as np
-
 from fpl_model.defcon.defender_model import monotonic_params
-from research.defcon.evaluate_defender_monotonic import freeze_control, BASELINE, OUT
+from research.defcon.evaluate_defender_monotonic import BASELINE, OUT, freeze_control
 
 HERE = Path(__file__).resolve().parent
 

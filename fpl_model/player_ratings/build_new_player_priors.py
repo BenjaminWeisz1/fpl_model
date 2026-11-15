@@ -31,8 +31,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from fpl_model.player_ratings import new_player_priors as npp  # noqa: E402
 from fpl_model.player_ratings import fotmob_priors as fp  # noqa: E402
+from fpl_model.player_ratings import new_player_priors as npp  # noqa: E402
 
 PARAMS = Path(__file__).resolve().parent / "new_player_prior_params.json"
 OUT = npp.DATA / "new_player_priors.csv"
@@ -205,7 +205,7 @@ def tagged_championship(params, scales, pf=None):
         if use_f.any():
             v = np.where(use_f, fp.FPriorModel.predict_with(pf[t_], farr, fslots, t_), v)
         if t_ in params["era_scale_targets"]:
-            v = v * arr["Season"].map(lambda S: sc[S][t_]).to_numpy()
+            v = v * arr["Season"].map(lambda S: sc[S][t_]).to_numpy()  # noqa: B023 (applied at once)
         out[col] = v
     out["Path"] = np.where(use_f, "fotmob", "manual")
     out["Adopted"] = True
@@ -243,7 +243,7 @@ def priors_frame(params=None, pf=None, pr=None):
     for t, col in [("npxG", "Initial_NPG_Rating"), ("xAG", "Initial_Assist_Rating")]:
         out[col] = npp.PriorModel.predict_with(params[t], arr, slots, t)
         if t in params["era_scale_targets"]:
-            out[col] *= arr["Season"].map(lambda S: scales[S][t]).to_numpy()
+            out[col] *= arr["Season"].map(lambda S: scales[S][t]).to_numpy()  # noqa: B023 (applied at once)
     out["Understat_Seasons"] = (slots["m"] > 0).sum(1) * (arr["Path"] == "understat")
     out["Prior_Minutes_Used"] = slots["m"].sum(1)
     out["Adopted"] = out["Group"].isin(params["adopted_groups"])
@@ -253,7 +253,7 @@ def priors_frame(params=None, pf=None, pr=None):
         for t, col in [("npxG", "Initial_NPG_Rating"), ("xAG", "Initial_Assist_Rating")]:
             v = fp.FPriorModel.predict_with(pf[t], farr, fslots, t)
             if t in pf["era_scale_targets"]:
-                v = v * arr["Season"].map(lambda S: scales[S][t]).to_numpy()
+                v = v * arr["Season"].map(lambda S: scales[S][t]).to_numpy()  # noqa: B023 (applied at once)
             out.loc[use, col] = v[use]
         out.loc[use, "Path"] = "fotmob"
         out.loc[use, "Prior_Minutes_Used"] = fslots["m"].sum(1)[use]
@@ -265,7 +265,7 @@ def priors_frame(params=None, pf=None, pr=None):
         for t, col in [("npxG", "Initial_NPG_Rating"), ("xAG", "Initial_Assist_Rating")]:
             v = fp.FPriorModel.predict_with(pr[t], farr, fslots, t)
             if t in pr["era_scale_targets"]:
-                v = v * arr["Season"].map(lambda S: scales[S][t]).to_numpy()
+                v = v * arr["Season"].map(lambda S: scales[S][t]).to_numpy()  # noqa: B023 (applied at once)
             out.loc[use, col] = v[use]
         out.loc[use, "Path"] = farr["Path"].to_numpy()[use]
         out.loc[use, "Prior_Minutes_Used"] = fslots["m"].sum(1)[use]

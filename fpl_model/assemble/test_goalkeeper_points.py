@@ -1,14 +1,22 @@
 import unittest
-import sys
-from pathlib import Path
 
 import numpy as np
+import pandas as pd
 from scipy.stats import poisson
 
-
-import pandas as pd
-
-from fpl_model.assemble.build_predicted_points import PENALTY_GOALS_FACTOR, SAVE_FIXTURE_BETA, expected_clean_sheet_points, expected_goalkeeper_goals_conceded_points, expected_goalkeeper_save_points, expected_goals_conceded_deduction, expected_points_per_three_saves, save_fixture_multiplier, save_fixture_reference
+from fpl_model.assemble.build_predicted_points import (
+    expected_clean_sheet_points,
+    expected_goalkeeper_goals_conceded_points,
+    expected_goalkeeper_save_points,
+    expected_goals_conceded_deduction,
+    expected_points_per_three_saves,
+)
+from fpl_model.keeper_saves import (
+    PENALTY_GOALS_FACTOR,
+    SAVE_FIXTURE_BETA,
+    save_fixture_multiplier,
+    save_fixture_reference,
+)
 
 
 class GoalkeeperPointsTests(unittest.TestCase):

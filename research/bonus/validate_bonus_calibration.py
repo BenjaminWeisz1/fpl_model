@@ -13,15 +13,14 @@ never read as an input or modified.
 Run locally:
     python validate_bonus_calibration.py
 """
-from fpl_model import paths
-from collections import Counter, defaultdict
 import hashlib
 import json
-from pathlib import Path
+from collections import Counter, defaultdict
 
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 
 ROOT = paths.ROOT
 DATA = paths.CURRENT

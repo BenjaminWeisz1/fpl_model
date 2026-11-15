@@ -22,15 +22,14 @@ Run locally:
     python fetch_clubelo.py           # mirror: coverage check only
     CLUBELO_SOURCE=api python fetch_clubelo.py
 """
-from fpl_model import config, paths
 import sys
 import time
 from io import StringIO
-from pathlib import Path
 
 import pandas as pd
 import requests
 
+from fpl_model import config, paths
 from fpl_model.fetch.fetch_football_data import FIRST_SEASON, load_season
 
 _ROOT = paths.ROOT

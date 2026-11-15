@@ -5,8 +5,9 @@ rate. A newly applicable transfer prior starts a new recent segment. Use the
 same helper for historical pre-match rows and production player profiles.
 """
 from __future__ import annotations
-from dataclasses import dataclass
+
 import math
+from dataclasses import dataclass
 
 import numpy as np
 

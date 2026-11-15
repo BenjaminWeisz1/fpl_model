@@ -11,13 +11,12 @@ Noise floor: production with seed 43 vs seed 42. Uses the current part-2 inputs.
 Run locally:
     python shadow_team_goal_coherence.py
 """
-from fpl_model import paths
 import hashlib
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from fpl_model.bonus import simulate_bonus as sb
 
 S = paths.VALIDATION / "team_goal_coherence_shadow_20261028"

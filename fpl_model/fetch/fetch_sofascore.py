@@ -6,20 +6,19 @@ network runs. --probe makes only the four agreed lineup checks plus seasons meta
 --build-only needs no network. Exit 2 = incomplete, 1 = integrity/schema error;
 --weekly tolerates access/incomplete outcomes only. See SOFASCORE.md.
 """
-from fpl_model import paths
-import sys
 import argparse
-from collections import Counter, defaultdict
-from datetime import datetime, timezone
-from email.utils import parsedate_to_datetime
 import hashlib
 import json
 import math
-from pathlib import Path
 import time
+from collections import Counter, defaultdict
+from datetime import UTC, datetime
+from email.utils import parsedate_to_datetime
+from pathlib import Path
 
 import requests
 
+from fpl_model import paths
 from fpl_model.fetch.player_identity import Registry, read_csv, write_csv
 
 ROOT = paths.ROOT
@@ -39,7 +38,7 @@ FIELDS = ('minutesPlayed totalPass accuratePass totalCross accurateCross bigChan
 
 
 def now():
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def digest(payload):
@@ -79,7 +78,7 @@ def validate_lineup(payload):
             seen.add(p['id'])
             for key in FIELDS:
                 value = row.get('statistics', {}).get(key)
-                if value is not None and (isinstance(value, bool) or not isinstance(value, (int, float))
+                if value is not None and (isinstance(value, bool) or not isinstance(value, int | float)
                                           or not math.isfinite(value) or value < 0):
                     raise FetchError('schema', f'Invalid numeric field {key}')
         if sum(not p['substitute'] for p in players) != 11:
@@ -99,7 +98,7 @@ def validate_metadata(payload, route):
         if not isinstance(payload.get('events'), list):
             raise FetchError('schema', 'Invalid event list')
         for event in payload['events']:
-            if (not isinstance(event.get('id'), int) or not isinstance(event.get('startTimestamp'), (int, float))
+            if (not isinstance(event.get('id'), int) or not isinstance(event.get('startTimestamp'), int | float)
                     or not event.get('homeTeam', {}).get('name') or not event.get('awayTeam', {}).get('name')
                     or not event.get('status', {}).get('type')):
                 raise FetchError('schema', 'Invalid fixture metadata')
@@ -142,7 +141,7 @@ class Client:
                         try:
                             delay = float(retry)
                         except ValueError:
-                            delay = (parsedate_to_datetime(retry) - datetime.now(timezone.utc)).total_seconds()
+                            delay = (parsedate_to_datetime(retry) - datetime.now(UTC)).total_seconds()
                         self.sleep(max(0, delay))
                 else:
                     try:
@@ -193,7 +192,8 @@ class Client:
 
     def cached_get(self, route, relative, refresh=False):
         path = self.raw / relative
-        validator = lambda p: validate_metadata(p, route)
+        def validator(p):
+            return validate_metadata(p, route)
         old = self.load(path, validator)
         if old and not refresh:
             return old['payload']
@@ -344,7 +344,7 @@ def build(client, registry, data=DATA):
             raise ValueError('Cache event/season path mismatch')
         home = TEAM_NAMES.get(event['homeTeam']['name'], event['homeTeam']['name'])
         away = TEAM_NAMES.get(event['awayTeam']['name'], event['awayTeam']['name'])
-        kickoff = datetime.fromtimestamp(event['startTimestamp'], timezone.utc).isoformat()
+        kickoff = datetime.fromtimestamp(event['startTimestamp'], UTC).isoformat()
         fixture = registry.fixture('sofascore', event['id'], season, home, away, kickoff)
         for side, team, opp, venue in [('home', home, away, 'Home'), ('away', away, home, 'Away')]:
             players = payload[side]['players']

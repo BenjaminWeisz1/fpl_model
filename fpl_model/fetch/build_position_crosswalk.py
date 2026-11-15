@@ -50,20 +50,20 @@ empty on FotMob rows.
 Pure CSV transform (no network); deterministic. Run locally:
     python build_position_crosswalk.py
 """
-from fpl_model import paths
 import difflib
 import re
 import sys
 import unicodedata
 from collections import Counter, defaultdict
-from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from scipy.optimize import linear_sum_assignment
-import numpy as np
+
+from fpl_model import paths
 from fpl_model.atomic_write import to_csv_atomic  # noqa: E402
+from fpl_model.fetch.fetch_fotmob_matches import POSITIONS_OUT as FOTMOB_FILE
 from fpl_model.fetch.player_identity import Registry
-from fpl_model.fetch.fetch_fotmob_matches import FIRST_SEASON as FOTMOB_FIRST_SEASON, POSITIONS_OUT as FOTMOB_FILE
 
 _ROOT = paths.ROOT
 _DATA = paths.CURRENT
@@ -285,12 +285,7 @@ def main():
             pid = up.at[gi, "Player_ID_Understat"]
             season = up.at[gi, "Season"]
             is_starter = bool(up.at[gi, "Is_Starter"])
-            if is_starter or mapped != "Sub":
-                resolved = mapped
-                method = "starter"
-            else:
-                resolved = resolve_sub(pid, season)
-                method = "sub_modal_slot" if resolved else "sub_unresolved"
+            resolved = mapped if is_starter or mapped != "Sub" else resolve_sub(pid, season)
             rows.append({
                 "Season": season,
                 "Team": key[1],
@@ -430,7 +425,7 @@ def _build_player_crosswalk(out, up):
         })
     xw = pd.DataFrame(recs).sort_values("Player_Understat").reset_index(drop=True)
     xw.to_csv(OUT_XWALK, index=False, encoding="utf-8-sig")
-    print(f"\n=== player-level crosswalk ===")
+    print("\n=== player-level crosswalk ===")
     print(f"  {len(xw):,} Understat ids -> {OUT_XWALK.name}")
     print(f"  with a Web_Name resolved via players_current: "
           f"{int(xw['Web_Name'].notna().sum()):,}")

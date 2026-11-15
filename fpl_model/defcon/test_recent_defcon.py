@@ -1,10 +1,12 @@
 """Causality, cameo and exposure tests for the replacement recent feature."""
-import unittest
 import ast
+import unittest
 from pathlib import Path
 from unittest.mock import Mock
+
 import numpy as np
 import pandas as pd
+
 from fpl_model.defcon.recent_defcon import RecentRate, attach_recent_rates, feature_columns
 
 
@@ -82,7 +84,8 @@ class RecentTest(unittest.TestCase):
 
     def test_prior_weight_halves_after_four_qualifying_appearances(self):
         state=RecentRate(numerator=20.,exposure=1.)
-        for _ in range(4):state.observe(0.,90.)
+        for _ in range(4):
+            state.observe(0.,90.)
         self.assertAlmostEqual(state.numerator,10.)
 
     def test_player_histories_do_not_mix(self):
@@ -96,4 +99,5 @@ class RecentTest(unittest.TestCase):
         self.assertEqual(feature_columns(cols,"lean"),["AvgPer90","Pos_CB","RecentEWPer90"])
 
 
-if __name__=="__main__":unittest.main()
+if __name__=="__main__":
+    unittest.main()

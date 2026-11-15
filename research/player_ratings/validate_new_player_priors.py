@@ -11,7 +11,6 @@ the baseline log. Each arm predicts match npxG (xAG) = prior x minutes / 90, no 
 """
 import json
 import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd

@@ -11,7 +11,6 @@ opponent's pre-match Defense_Rating / season mean, keyed on Season/Team/Opponent
 Run locally (after the logged run):
     python validate_opponent_defence.py [--dir <run directory>]
 """
-from fpl_model import paths
 import argparse
 import json
 from pathlib import Path
@@ -19,6 +18,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from research.player_ratings.validate_opponent_lookup import HOME_ADVANTAGE, N_BOOT, SEED, finals, mae, paired
 
 ROOT = paths.ROOT

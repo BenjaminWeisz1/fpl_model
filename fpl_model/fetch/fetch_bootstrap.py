@@ -4,14 +4,13 @@ automatically disambiguating any players who share a raw web_name (e.g. two
 different players both named "Sangare" would otherwise collide in every
 downstream join keyed on Web_Name).
 """
-from fpl_model import paths
-import sys
-import requests
-import pandas as pd
-from pathlib import Path
-from fpl_model.fetch.team_name_map import to_fbref_name
 
+import pandas as pd
+import requests
+
+from fpl_model import paths
 from fpl_model.atomic_write import to_csv_atomic  # noqa: E402
+from fpl_model.fetch.team_name_map import to_fbref_name
 
 BOOTSTRAP_URL = "https://fantasy.premierleague.com/api/bootstrap-static/"
 _DATA = paths.CURRENT

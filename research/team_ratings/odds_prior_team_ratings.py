@@ -31,7 +31,6 @@ Run:
 Writes data/current/team_ratings_oot/odds_prior_report.txt + _summary.json.
 """
 import json
-import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -41,9 +40,19 @@ from scipy.optimize import least_squares
 from scipy.stats import poisson
 
 _HERE = Path(__file__).resolve().parent
-from research.team_ratings.evaluate_team_ratings_oot import CS_PEN_GOAL_MULT, DEFAULT_CUTOFFS, EPS, OUT_DIR, load_inputs, alpha, beta, home_advantage, money_weight
-from research.team_ratings.ratings_fast import fast_run, frozen_predict_fast, verify_against_reference
 from fpl_model.fetch.fetch_football_data import load_season
+from research.team_ratings.evaluate_team_ratings_oot import (
+    CS_PEN_GOAL_MULT,
+    DEFAULT_CUTOFFS,
+    EPS,
+    OUT_DIR,
+    alpha,
+    beta,
+    home_advantage,
+    load_inputs,
+    money_weight,
+)
+from research.team_ratings.ratings_fast import fast_run, frozen_predict_fast, verify_against_reference
 
 PARAMS = {"alpha": alpha, "beta": beta, "home_advantage": home_advantage,
           "money_weight": money_weight}

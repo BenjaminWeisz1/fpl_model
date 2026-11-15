@@ -72,13 +72,11 @@ import json
 import sys
 import time
 from datetime import datetime
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 from fpl_model.team_ratings.update_team_ratings import alpha, beta, home_advantage, money_weight
-
 from research.team_ratings import ratings_fast
 from research.team_ratings.evaluate_team_ratings_oot import OUT_DIR, cs_bin_table, load_inputs, summarize_predictions
 from research.team_ratings.ratings_fast import fast_run, frozen_predict_fast

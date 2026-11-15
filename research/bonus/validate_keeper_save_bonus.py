@@ -17,12 +17,12 @@ sys.path[:0] = [str(HERE), str(HERE.parent), str(HERE.parent / "assemble")]
 from fpl_model.bonus import build_residual_bps_baseline as residual  # noqa: E402
 from fpl_model.bonus import pass_bands  # noqa: E402,F401
 from fpl_model.bonus import simulate_bonus as sb  # noqa: E402
+from research.assemble.validate_team_coherence import NAMES  # noqa: E402
 from research.bonus import validate_bonus_accounting as acc  # noqa: E402
 from research.bonus import validate_bonus_calibration as calibration  # noqa: E402
 from research.bonus import validate_pass_bands as vpb  # noqa: E402
 from research.bonus import validate_prematch_coherence as vpc  # noqa: E402
 from research.bonus import validate_prematch_coherence_history as hist  # noqa: E402
-from research.assemble.validate_team_coherence import NAMES  # noqa: E402
 
 OUT = calibration.ROOT / "data" / "validation" / "keeper_save_bonus_20261101"
 FITS = calibration.ROOT / "data" / "validation" / "keeper_saves_20261101" / "results.json"

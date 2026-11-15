@@ -22,12 +22,12 @@ BPS rules changed over the seasons; see "Rules Verification: BPS Values by Seaso
 Run locally (after fetch_vaastav.py; no network):
     python build_vaastav_history.py
 """
-from fpl_model import paths
+
 import numpy as np
 import pandas as pd
-from pathlib import Path
 from scipy.optimize import linear_sum_assignment
 
+from fpl_model import paths
 from fpl_model.fetch.build_position_crosswalk import name_similarity
 
 _ROOT = paths.ROOT
@@ -134,7 +134,8 @@ def apply_overrides(v, so, overrides):
     ids = named.groupby("Local_Player")["Canonical_Player_ID"].agg(lambda s: s.iloc[0] if s.nunique() == 1 else None)
     # A row keeps what it has unless this match gives a better answer: Sofascore's own name for a
     # player can differ from player_match_stats (the two Josh Kings, CHANGELOG §125).
-    at = lambda col: pd.Series(found[col].to_numpy(), index=name.index)
+    def at(col):
+        return pd.Series(found[col].to_numpy(), index=name.index)
     v.loc[target, "Canonical_Player_ID"] = at("Canonical_Player_ID").fillna(name.map(ids)).fillna(v.loc[target, "Canonical_Player_ID"])
     v.loc[target, "Player_Sofascore"] = at("Player_Sofascore").fillna(v.loc[target, "Player_Sofascore"])
     v.loc[target, "Sofascore_Minutes"] = at("mins").fillna(v.loc[target, "Sofascore_Minutes"])

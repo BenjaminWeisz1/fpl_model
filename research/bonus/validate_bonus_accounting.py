@@ -14,14 +14,13 @@ fits 2026/27 GW1-4 and tests GW5-7. GW8 (fit GW1-7) is descriptive only.
 Run locally:
     python validate_bonus_accounting.py
 """
-from fpl_model import paths
 import hashlib
 import json
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from fpl_model.bonus import build_residual_bps_baseline as residual
 from fpl_model.bonus import simulate_bonus
 from research.bonus import validate_bonus_calibration as calibration

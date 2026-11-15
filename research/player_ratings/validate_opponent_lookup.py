@@ -14,13 +14,14 @@ candidate_code/ of the run directory, and production build_player_ratings.py is 
 Run locally (after the logged runs):
     python validate_opponent_lookup.py [--dir <run directory>]
 """
-from fpl_model import paths
 import argparse
 import json
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+from fpl_model import paths
 
 ROOT = paths.ROOT
 DIR = paths.VALIDATION / "opponent_lookup_20261028"

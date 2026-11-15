@@ -3,14 +3,14 @@
 Existing files are never replaced. A manifest records each file's SHA256, size and retrieval time. The source ends
 6 July 2026. Run: python -u -X utf8 scripts/fetch/fetch_transfermarkt.py
 """
-from fpl_model import paths
 import hashlib
 import json
 import time
-from datetime import datetime, timezone
-from pathlib import Path
+from datetime import UTC, datetime
 
 import requests
+
+from fpl_model import paths
 
 BASE = "https://pub-e682421888d945d684bcae8890b0ec20.r2.dev/data/"
 FILES = ["games.csv.gz", "appearances.csv.gz", "player_valuations.csv.gz", "players.csv.gz", "clubs.csv.gz", "game_lineups.csv.gz",
@@ -36,7 +36,7 @@ def main():
         tmp.write_bytes(r.content)
         tmp.replace(path)
         manifest[name] = {"sha256": hashlib.sha256(r.content).hexdigest(), "bytes": len(r.content), "url": BASE + name,
-                          "retrieved": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+                          "retrieved": datetime.now(UTC).isoformat(timespec="seconds")}
         print("saved", name, len(r.content))
         time.sleep(3)
     manifest_path.write_text(json.dumps(manifest, indent=1))

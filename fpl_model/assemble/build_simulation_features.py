@@ -8,17 +8,22 @@ simulation to consume directly.
 Run locally (after all the individual facet scripts):
     python build_simulation_features.py
 """
-from fpl_model import config, paths
-import sys
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from scipy import stats
-from pathlib import Path
+
+from fpl_model import config, paths
 
 _DATA = paths.CURRENT
 
-from fpl_model.league_rates import RECORDED_TEAM_MINUTES, check_minutes_round, minute_bands, penalty_rates, recorded_clock_scale  # noqa: E402
+from fpl_model.league_rates import (  # noqa: E402
+    RECORDED_TEAM_MINUTES,
+    check_minutes_round,
+    minute_bands,
+    penalty_rates,
+    recorded_clock_scale,
+)
 from fpl_model.team_ratings.update_team_ratings import home_advantage  # noqa: E402
 
 PEN_ATTEMPTS_PER_NPG, PEN_CONVERSION = penalty_rates()
@@ -42,6 +47,7 @@ FPL_ONLY_ASSISTS_FILE = paths.CURRENT / "fpl_only_assist_rates.csv"
 OUT_FILE = paths.CURRENT / "simulation_features.csv"
 
 from fpl_model.forecast_horizon import GAMEWEEKS  # noqa: E402  (the forecast window, set in one place)
+
 THRESHOLD = {"D": 10, "M": 12, "F": 12, "G": 0}
 # Highest 90-minute defcon probability passed to invert_mu; observed legitimate values reach ~0.91
 DEFCON_P90_MAX = 0.98
@@ -65,7 +71,8 @@ def invert_mu(prob, k, lo=1e-6, hi=60):
     def nb_sf(mu):
         r = max(3 * mu, 1e-9)
         return 1 - stats.nbinom.cdf(k, r, 0.75)
-    f = lambda mu: nb_sf(mu) - prob
+    def f(mu):
+        return nb_sf(mu) - prob
     from scipy import optimize
     try:
         return optimize.brentq(f, lo, hi)

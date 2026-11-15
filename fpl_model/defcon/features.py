@@ -6,7 +6,6 @@ Split out of predict.py (2026-11-16 cleanup) without changes. Every per-90 quant
 import numpy as np
 import pandas as pd
 
-
 # ── Position classification ────────────────────────────────────────────
 # Accepts both detailed fbref positions (CB, FB, WB, etc.) and coarse FPL-API
 # positions (D, M, F) -- the latter come from 2025/26 rows where detailed
@@ -16,12 +15,14 @@ MIDFIELDER_POSITIONS = {"DM", "CM", "AM", "WM", "W", "LM", "RM", "LW", "RW", "M"
 FORWARD_POSITIONS = {"FW", "F"}
 
 def is_defender_pos(pos_str):
-    if pd.isna(pos_str): return False
+    if pd.isna(pos_str):
+        return False
     return any(p.strip() in DEFENDER_POSITIONS for p in str(pos_str).split(","))
 
 def is_midfielder_or_forward_pos(pos_str):
     """Midfielders and forwards share the same defcon rules."""
-    if pd.isna(pos_str): return False
+    if pd.isna(pos_str):
+        return False
     positions = [p.strip() for p in str(pos_str).split(",")]
     return any(p in MIDFIELDER_POSITIONS or p in FORWARD_POSITIONS for p in positions)
 
@@ -30,7 +31,8 @@ def is_forward_pos(pos_str):
     selector. Mirrors the any-token convention of the other classifiers:
     a fbref row 'FW,AM' is a forward row; the transfers fallback writes a
     single first token, so first-token and any-token coincide there."""
-    if pd.isna(pos_str): return False
+    if pd.isna(pos_str):
+        return False
     return any(p.strip() in FORWARD_POSITIONS for p in str(pos_str).split(","))
 
 # Detailed position lists for the new Pos_* multi-hot features -- lets the
@@ -43,10 +45,7 @@ MID_FWD_DETAILED_POS = ["DM", "CM", "AM", "WM", "W", "LM", "RM", "LW", "RW", "FW
 def get_pos_dummies(pos_str, detailed_positions):
     """Multi-hot encoding: a row like 'CB,FB' sets BOTH Pos_CB and Pos_FB to 1,
     reflecting that the player featured in both positions that match."""
-    if pd.isna(pos_str):
-        codes = set()
-    else:
-        codes = set(p.strip() for p in str(pos_str).split(","))
+    codes = set() if pd.isna(pos_str) else {p.strip() for p in str(pos_str).split(",")}
     return {f"Pos_{c}": (1 if c in codes else 0) for c in detailed_positions}
 
 
@@ -179,7 +178,8 @@ def estimate_std_and_pct(pos_feats):
     players (>=5 qualifying matches) sorted by career AvgPer90."""
     stats = [(f["AvgPer90"], f["StdPer90"], f["PctAboveThreshold"])
              for f in pos_feats.values() if f["MatchesPlayed"] >= 5]
-    if not stats: return lambda p: (4.0, 0.3)
+    if not stats:
+        return lambda p: (4.0, 0.3)
     stats = sorted(stats, key=lambda x: x[0])
     avg_per90s = np.array([s[0] for s in stats])
     std_per90s = np.array([s[1] for s in stats])

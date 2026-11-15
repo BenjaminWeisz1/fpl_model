@@ -5,14 +5,12 @@ that sit between two spells of the same manager are one-off stand-ins (Ian Woan,
 surrounding spell, flagged in Stand_Ins. 2026/27 changes must be added by hand; the source ends in July 2026.
 Also runs the §158 check on team residuals. Run: python -u -X utf8 scripts/team_ratings/build_manager_tenures.py
 """
-from fpl_model import paths
 import json
-from pathlib import Path
-import sys
 
-import numpy as np
 import pandas as pd
 import statsmodels.formula.api as smf
+
+from fpl_model import paths
 
 ROOT = paths.ROOT
 from research.absence import build_absence_frame as B

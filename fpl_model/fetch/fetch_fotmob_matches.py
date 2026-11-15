@@ -41,7 +41,6 @@ outage cannot silently drop a round as the Understat outage did. FOTMOB_ALLOW_MI
     python fetch_fotmob_matches.py             # fetch new pages (7 s apart), then rebuild the outputs
     python fetch_fotmob_matches.py --offline   # rebuild from the cache only
 """
-from fpl_model import config, paths
 import argparse
 import json
 import re
@@ -49,13 +48,17 @@ import sys
 import time
 import unicodedata
 from collections import Counter, defaultdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
 import requests
 
-from fpl_model import league_rates  # noqa: E402
+from fpl_model import (
+    config,
+    league_rates,  # noqa: E402
+    paths,
+)
 from fpl_model.atomic_write import to_csv_atomic  # noqa: E402
 from fpl_model.fetch.fetch_understat import _mapped_position  # noqa: E402
 
@@ -122,7 +125,7 @@ def league_fixtures(season, offline=False):
             if not selected.startswith(str(season)):
                 raise ValueError(f"league page shows season {selected!r}, expected {season}")
             folder.mkdir(parents=True, exist_ok=True)
-            stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+            stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
             (folder / f"league_47_fixtures_{stamp}.html").write_text(html, encoding="utf-8")
         except (requests.RequestException, ValueError, KeyError) as exc:
             print(f"WARNING: FotMob league page unavailable ({exc}); using the newest saved copy")

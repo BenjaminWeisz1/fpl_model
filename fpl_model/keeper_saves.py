@@ -3,13 +3,11 @@
 Saves rise with the goals a keeper's side is expected to concede. Each caller's pooled rate keeps
 the level; this multiplier moves spread only. Refit SAVE_FIXTURE_BETA when a season ends.
 """
-from fpl_model import paths
-import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from fpl_model.league_rates import penalty_rates  # noqa: E402
 
 _DATA = paths.CURRENT

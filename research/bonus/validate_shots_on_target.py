@@ -22,8 +22,7 @@ import pandas as pd
 from scipy import stats
 
 from fpl_model.bonus import build_residual_bps_baseline as residual
-from fpl_model.bonus import pass_bands
-from fpl_model.bonus import simulate_bonus
+from fpl_model.bonus import pass_bands, simulate_bonus
 from research.bonus import validate_bonus_accounting as acc
 from research.bonus import validate_bonus_calibration as calibration
 from research.bonus import validate_pass_bands as vpb

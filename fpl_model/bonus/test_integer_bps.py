@@ -1,10 +1,6 @@
-import sys
 import unittest
-from pathlib import Path
-from unittest.mock import patch
 
 import numpy as np
-
 
 from fpl_model.bonus import simulate_bonus
 from fpl_model.bonus.test_pass_bands import match_players

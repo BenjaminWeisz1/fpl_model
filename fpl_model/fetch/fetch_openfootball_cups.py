@@ -2,13 +2,13 @@
 Fills Transfermarkt's League Cup gap (AGENDA 2026-10-31). Existing files are never replaced.
 Run: python -u -X utf8 scripts/fetch/fetch_openfootball_cups.py
 """
-from fpl_model import paths
 import hashlib
 import json
 import time
-from pathlib import Path
 
 import requests
+
+from fpl_model import paths
 
 BASE = "https://raw.githubusercontent.com/openfootball/england/master/{}/eflcup.txt"
 SEASONS = ["2018-19", "2019-20", "2020-21", "2021-22", "2022-23", "2023-24", "2024-25"]

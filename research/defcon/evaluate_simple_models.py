@@ -6,6 +6,7 @@ training seasons. Uses item 1's frames and predictions as the incumbent. No prod
 Run: python -u -X utf8 scripts/defcon/evaluate_simple_models.py
 """
 import os
+
 os.environ.setdefault("OMP_NUM_THREADS", "2")
 import json
 
@@ -19,8 +20,8 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import StandardScaler
 
-from research.defcon import overnight_frames as H
 from fpl_model.defcon.defender_model import CenteredIsotonic
+from research.defcon import overnight_frames as H
 
 YEARS = [2022, 2023, 2024, 2025, 2026]
 THRESH = {"D": 10, "M": 12, "F": 12}

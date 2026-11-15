@@ -12,13 +12,12 @@ factor x realized minutes / 90, against actual match npxG (xAG likewise).
 Run locally (after the logged run):
     python validate_per90_loop.py
 """
-from fpl_model import paths
 import json
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from research.player_ratings.validate_opponent_lookup import paired
 
 ROOT = paths.ROOT

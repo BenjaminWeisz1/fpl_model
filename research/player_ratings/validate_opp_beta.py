@@ -4,17 +4,15 @@ Dampening exponent on the goal/assist loop's opponent factor (CHANGELOG §123).
     python validate_opp_beta.py run     # one pre-match log per beta (same beta for both targets)
     python validate_opp_beta.py score   # beta* per target on 2018-2022, test 2023-2026 and 2025+ -> results.json
 """
-from fpl_model import paths
 import json
 import os
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from research.player_ratings.validate_prior_k import boot_diff  # noqa: E402
 
 ROOT = paths.ROOT

@@ -8,8 +8,6 @@ Same exact replay as §238 (validate_arrival_position.py): scaling an arrival's 
 row t by s_t x start x (m - 1). Arm A: m = k for every arrival. Arm B: m = exp(a + b x (age - 25)), age clipped 18-34.
 """
 import json
-import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd

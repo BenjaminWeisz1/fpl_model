@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 
-from research.assemble import points_error_breakdown as P
 from research.assemble import validate_team_coherence as V
 
 K, WINDOW = 8, 19

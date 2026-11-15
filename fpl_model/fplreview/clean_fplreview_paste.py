@@ -37,21 +37,21 @@ failed run deletes the previous run's projections so a stale table can't be snap
 Run locally:
     python clean_fplreview_paste.py [--gameweek N]
 """
-from fpl_model import paths
 import argparse
 import json
 import re
 import sys
 import traceback
-from datetime import datetime, timezone
-from pathlib import Path
+from datetime import UTC, datetime
 
 import pandas as pd
 
+from fpl_model import paths
+
 ROOT = paths.ROOT
 from fpl_model.atomic_write import to_csv_atomic  # noqa: E402
-from fpl_model.league_rates import current_season  # noqa: E402
 from fpl_model.forecast_horizon import HORIZON  # noqa: E402  (the pastes must cover the pipeline's window)
+from fpl_model.league_rates import current_season  # noqa: E402
 
 DATA = paths.CURRENT
 RAW = paths.RAW / "fplreview"
@@ -87,7 +87,7 @@ def parse_paste(path, expected_stat):
         raise ValueError(f"{path.name}: the paste shows stat '{stat_label}', expected '{expected_stat}' "
                          f"(wrong stat selected, or file saved under the wrong name)")
     labels = [str(v).strip() for v in df.iloc[h, 2:].tolist()]
-    rounds = [int(l[2:]) for l in labels if re.fullmatch(r"GW\d+", l)]
+    rounds = [int(lab[2:]) for lab in labels if re.fullmatch(r"GW\d+", lab)]
     if len(rounds) != HORIZON or labels[HORIZON] != "Total":
         raise ValueError(f"{path.name}: expected {HORIZON} gameweeks then 'Total' (forecast_horizon.HORIZON), "
                          f"found header {labels}")
@@ -194,9 +194,9 @@ def build(gameweek, season):
         "rounds": rounds, "players_per_paste": sizes, "unmatched_players": unmatched[["FPLR_Name", "Team_Short"]].values.tolist(),
         "position_differences": pos_diff[["FPLR_Name", "Team_Short", "FPLR_Pos", "Pos"]].values.tolist(),
         "minutes_check": check, "source_folder": str(folder.relative_to(ROOT)).replace("\\", "/"),
-        "source_modified_utc": {f"{s}.xlsx": datetime.fromtimestamp((folder / f"{s}.xlsx").stat().st_mtime, timezone.utc).isoformat()
+        "source_modified_utc": {f"{s}.xlsx": datetime.fromtimestamp((folder / f"{s}.xlsx").stat().st_mtime, UTC).isoformat()
                                 for s in STATS},
-        "built_utc": datetime.now(timezone.utc).isoformat(),
+        "built_utc": datetime.now(UTC).isoformat(),
     }
     cols = ["Season", "Round", "Web_Name", "Team_Short", "Pos", "FPLR_Name", "FPLR_Pos", "Price",
             "Points", "Goals", "Assists", "CleanSheet", "Defcon", "FPLR_xMins_First"]
@@ -220,8 +220,8 @@ def parse_team_strengths(path):
     try:
         start = cells.index("GD", i) + 1
         end = next(j for j in range(start, len(cells)) if cells[j].startswith("Data provided"))
-    except (ValueError, StopIteration):
-        raise ValueError(f"{path.name}: can't find the team table between 'GD' and 'Data provided for free by'")
+    except (ValueError, StopIteration) as err:
+        raise ValueError(f"{path.name}: can't find the team table between 'GD' and 'Data provided for free by'") from err
     block = cells[start:end]
     if len(block) % 5:
         raise ValueError(f"{path.name}: team table has {len(block)} cells, not five per team")
@@ -257,7 +257,7 @@ def build_team_strengths(folder, season):
             raise ValueError(f"team codes not in players_current.csv: {missing}")
         table.insert(0, "Season", season)
         return table, {"ok": True, "reason": None, "source_blend": blend, "file": paths[0].name,
-                       "modified_utc": datetime.fromtimestamp(paths[0].stat().st_mtime, timezone.utc).isoformat()}
+                       "modified_utc": datetime.fromtimestamp(paths[0].stat().st_mtime, UTC).isoformat()}
     except Exception as error:
         return None, {"ok": False, "reason": f"{type(error).__name__}: {error}"}
 
@@ -281,7 +281,7 @@ def main():
     except Exception as error:  # benchmark only: never stop part 2
         OUT_FILE.unlink(missing_ok=True)
         status = {"usable_for_comparison": False, "reasons": [f"{type(error).__name__}: {error}"],
-                  "built_utc": datetime.now(timezone.utc).isoformat()}
+                  "built_utc": datetime.now(UTC).isoformat()}
         traceback.print_exc()
     # Team strengths are independent of the player pastes: a problem with one never spoils the other.
     TEAM_FILE.unlink(missing_ok=True)

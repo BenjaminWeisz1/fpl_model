@@ -5,6 +5,7 @@ Fits the two already-locked configurations on earlier seasons, validates on
 production writes, retuning, future-outcome claims or changes to the GW8–12 study.
 """
 import os
+
 os.environ.setdefault("OMP_NUM_THREADS", "2")
 import ast
 import gzip
@@ -15,14 +16,14 @@ import time
 
 import numpy as np
 import pandas as pd
+import sklearn
 from sklearn.ensemble import GradientBoostingClassifier, HistGradientBoostingClassifier
 from sklearn.isotonic import IsotonicRegression
 from sklearn.model_selection import StratifiedKFold, cross_val_predict
 from sklearn.preprocessing import StandardScaler
-import sklearn
 
 from fpl_model.defcon.defender_model import monotonic_params
-from research.defcon.evaluate_defender_monotonic import OUT, freeze_control, metrics, predict, audit, bootstrap
+from research.defcon.evaluate_defender_monotonic import OUT, audit, bootstrap, freeze_control, metrics, predict
 
 
 def parameters():

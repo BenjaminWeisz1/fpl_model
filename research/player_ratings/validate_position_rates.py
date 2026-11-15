@@ -16,13 +16,14 @@ segment's first row).
 Scores: MSE of match values, (prediction per 90 - actual per 90) x minutes / 90, summed; change = candidate / control
 - 1; player-cluster bootstrap, 2,000 draws, seed 42. Calibration = sum actual / sum predicted.
 """
-from fpl_model import paths
 import json
 import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+from fpl_model import paths
 
 ROOT = paths.ROOT
 DATA = paths.CURRENT

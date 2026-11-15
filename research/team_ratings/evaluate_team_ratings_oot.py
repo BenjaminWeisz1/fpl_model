@@ -110,21 +110,19 @@ run_sequential() stays the pristine production reference; see
 rebalance_team_ratings.py / discount_team_ratings.py.
 Parameter-only experiments use the CLI flags.
 """
-from fpl_model import paths
 import argparse
 import hashlib
 import json
 import re
-import sys
 from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from fpl_model.team_ratings.update_team_ratings import alpha, beta, home_advantage, money_weight
-
+from fpl_model import paths
 from fpl_model.minutes_penalties_cs.build_penalty_predictions import PEN_ATTEMPTS_PER_NPG
+from fpl_model.team_ratings.update_team_ratings import alpha, beta, home_advantage, money_weight
 
 # Production clean-sheet definition (build_simulation_features.py:147-150):
 # expected goals conceded = opponent's predicted NPG plus expected penalty

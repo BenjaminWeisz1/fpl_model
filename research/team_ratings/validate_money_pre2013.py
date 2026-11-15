@@ -12,14 +12,12 @@ Run locally:
     python validate_money_pre2013.py
 """
 import json
-import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from research.team_ratings import validate_money_priors_pooled as vmp  # noqa: E402
 from fpl_model.atomic_write import to_csv_atomic  # noqa: E402
+from research.team_ratings import validate_money_priors_pooled as vmp  # noqa: E402
 
 ROOT = vmp.ROOT
 CUR = vmp.CUR

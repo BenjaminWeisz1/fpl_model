@@ -5,17 +5,16 @@ Phases, in order:  rates  ->  grid  ->  select  ->  final  ->  confirm
 `select` reads 2018-2022 only. `confirm` reads 2023-2024. Nothing here reads 2025-26 errors.
 Logs and ratings go to the evidence folder; production files are never written.
 """
-from fpl_model import paths
 import json
 import os
 import subprocess
 import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from fpl_model.player_ratings.role_shares import LINE_RATES_FILE, LINES, load_starts, role_table
+from fpl_model import paths
+from fpl_model.player_ratings.role_shares import LINE_RATES_FILE, LINES, role_table
 
 ROOT = paths.ROOT
 OUT = paths.VALIDATION / "role_factors_20261101"

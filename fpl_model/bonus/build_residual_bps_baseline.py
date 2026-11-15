@@ -25,16 +25,24 @@ Since §146 the fit also uses the previous season, centred on the current season
 Run locally:
     python build_residual_bps_baseline.py
 """
-from fpl_model import paths
 import json
-import os
 
-import pandas as pd
 import numpy as np
-from pathlib import Path
+import pandas as pd
 
-from fpl_model.bonus.bps_rules import ASSIST_BPS, CBI_ONE_PER_THREE_SEASON, CLEAN_SHEET_BPS, GC_BPS, GOAL_BPS, MISS_PEN_BPS, PEN_GOAL_BPS, PEN_SAVE_BPS, SAVE_BPS
+from fpl_model import paths
 from fpl_model.bonus import pass_bands
+from fpl_model.bonus.bps_rules import (
+    ASSIST_BPS,
+    CBI_ONE_PER_THREE_SEASON,
+    CLEAN_SHEET_BPS,
+    GC_BPS,
+    GOAL_BPS,
+    MISS_PEN_BPS,
+    PEN_GOAL_BPS,
+    PEN_SAVE_BPS,
+    SAVE_BPS,
+)
 
 _DATA = paths.CURRENT
 

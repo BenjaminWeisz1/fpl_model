@@ -7,8 +7,10 @@ forests with step isotonic for midfielders and forwards, calibrated on 5-fold ou
 
 Run: python -u -X utf8 scripts/defcon/overnight_frames.py
 """
-from fpl_model import paths
 import os
+
+from fpl_model import paths
+
 os.environ.setdefault("OMP_NUM_THREADS", "2")
 import ast
 import hashlib

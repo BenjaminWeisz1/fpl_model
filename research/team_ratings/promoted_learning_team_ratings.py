@@ -16,7 +16,6 @@ Run:
 Writes data/current/team_ratings_oot/promoted_learning_report.txt + _summary.json.
 """
 import json
-import sys
 from datetime import datetime
 from pathlib import Path
 

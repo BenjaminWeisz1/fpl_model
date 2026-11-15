@@ -54,13 +54,16 @@ tuples, optionally with a 6th element rebalance=<anchor> to verify the
 rebalanced path against its twin, or a 7th element discount=(d_atk,
 d_def) to verify the discounted path against its twin.
 """
-import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from research.team_ratings.evaluate_team_ratings_oot import frozen_predict, run_sequential, run_sequential_discounted, run_sequential_rebalanced
+from research.team_ratings.evaluate_team_ratings_oot import (
+    frozen_predict,
+    run_sequential,
+    run_sequential_discounted,
+    run_sequential_rebalanced,
+)
 
 _EPS = 1e-6      # mirrors the production loop's eps exactly
 _EQUIV_TOL = 1e-9  # same threshold class as the harness's history check

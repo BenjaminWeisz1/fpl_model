@@ -16,16 +16,15 @@ Run locally:
     python rebuild_money_priors_past_only.py            # dry run: prints the changes
     python rebuild_money_priors_past_only.py --apply
 """
-from fpl_model import paths
 import argparse
 import shutil
 import sys
-from datetime import datetime, timezone
-from pathlib import Path
+from datetime import UTC, datetime
 
-import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
+
+from fpl_model import paths
 
 _DATA = paths.CURRENT
 MONEY_FILE = paths.CURRENT / "money_priors_by_season.csv"
@@ -87,7 +86,7 @@ def main():
     if not args.apply:
         print("Dry run; pass --apply to write")
         return 0
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%d")
+    stamp = datetime.now(UTC).strftime("%Y%m%d")
     backup = _DATA.parent / "archive" / f"money_priors_by_season_before_past_only_{stamp}.csv"
     if not backup.exists():
         shutil.copy2(MONEY_FILE, backup)

@@ -41,23 +41,22 @@ teams.json (Team ratings and Fixtures pages):
               that opponent at that venue, from fixture_ticker.build_difficulty (no penalties, as the images)
 """
 from __future__ import annotations
-from fpl_model import paths
 
 import json
 import math
-import sys
-from datetime import datetime, timezone
-from pathlib import Path
+from datetime import UTC, datetime
 
 import pandas as pd
+
+from fpl_model import paths
 
 ROOT = paths.ROOT
 DATA = paths.CURRENT
 OUT = paths.SITE / "data"
 from fpl_model.forecast_horizon import HORIZON, week_weights  # noqa: E402
-from save_gameweek_outputs import CURRENT_SEASON, snapshot_plan  # noqa: E402
-from fpl_model.minutes_penalties_cs.build_penalty_predictions import build_conversion_rates, resolve_names  # noqa: E402
 from fpl_model.league_rates import penalty_rates  # noqa: E402
+from fpl_model.minutes_penalties_cs.build_penalty_predictions import build_conversion_rates, resolve_names  # noqa: E402
+from save_gameweek_outputs import CURRENT_SEASON, snapshot_plan  # noqa: E402
 
 # Component column -> exported stat key. Summed over a gameweek's fixtures.
 SUMMED_STATS = {
@@ -149,7 +148,7 @@ def build_projections(data_files=None):
         rows.append(row)
     return {
         "meta": {"season": CURRENT_SEASON, "rounds": rounds, "horizon": HORIZON,
-                 "generated_utc": datetime.now(timezone.utc).isoformat(timespec="seconds")},
+                 "generated_utc": datetime.now(UTC).isoformat(timespec="seconds")},
         "teams": sorted(players["Team"].unique().tolist()),
         "players": rows,
     }
@@ -223,7 +222,9 @@ def build_ratings(data_files=None, rates=None, conversion_rates=None):
 
 def opposition_strength(codes):
     """(Opponent code, Venue) -> (goals for, goals against) of an average team: the fixture ticker's own table."""
-    from fpl_model.optimizer.fixture_ticker import build_difficulty  # heavy imports (sklearn, matplotlib): only when exporting teams
+    from fpl_model.optimizer.fixture_ticker import (
+        build_difficulty,  # heavy imports (sklearn, matplotlib): only when exporting teams
+    )
     table = build_difficulty(sorted(codes))
     return {(r.Opponent, r.Venue): (r.Goals_For, r.Goals_Against) for r in table.itertuples()}
 

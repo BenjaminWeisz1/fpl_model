@@ -2,15 +2,11 @@
 
     python -m unittest scripts/optimizer/test_chips.py
 """
-import sys
 import unittest
-from pathlib import Path
 
 import pandas as pd
 
-
-from fpl_model.optimizer import chips  # noqa: E402
-from fpl_model.optimizer import replay_plans  # noqa: E402
+from fpl_model.optimizer import chips, replay_plans
 
 # bootstrap-static's 2026/27 chip instances
 FPL = {"chips": [

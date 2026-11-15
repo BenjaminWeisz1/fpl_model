@@ -15,8 +15,6 @@ data/raw/fotmob/pages/, and data/raw/fotmob/manifest.json (url, status, UTC time
 Season = the year the season starts (2025 = 2025/26; calendar-year leagues: 2025 = the 2025 season).
 FotMob lists are penalty-inclusive: xG's sub-stat is goals, goals' sub-stat is penalty goals.
 """
-from fpl_model import paths
-import sys
 import argparse
 import hashlib
 import json
@@ -24,9 +22,10 @@ import random
 import re
 import shutil
 import time
-from pathlib import Path
 
 import requests
+
+from fpl_model import paths
 
 ROOT = paths.ROOT
 RAW = paths.RAW / "fotmob"
@@ -162,7 +161,7 @@ def main():
                           LEAGUE_DIR / f"{fid}_{s}_{stat}.json")
     except Blocked as e:
         print(f"STOPPED: {e}", flush=True)
-        raise SystemExit(2)
+        raise SystemExit(2) from e
     print(f"done: {f.n} network requests", flush=True)
 
 

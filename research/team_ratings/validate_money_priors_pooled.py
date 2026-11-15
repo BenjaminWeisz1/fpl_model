@@ -11,13 +11,13 @@ walk-forward Poisson log loss 2017-2025.
 Run locally:
     python validate_money_priors_pooled.py            # stage 1, then stage 2 if the rule passes
 """
-from fpl_model import paths
 import json
 import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+from fpl_model import paths
 
 ROOT = paths.ROOT
 RAW = paths.RAW / "transfermarkt"

@@ -12,8 +12,6 @@ towards the minutes-weighted rate of the slots he has played since arriving:
     p_t = (Kpos x p_listed + sum w_j slot_rate_j) / (Kpos + sum w_j)   over earlier rows of the arrival segment.
 """
 import json
-import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd

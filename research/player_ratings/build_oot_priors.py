@@ -22,17 +22,16 @@ Output columns: Player, Season, Initial_NPG_Rating, Initial_Assist_Rating, Adopt
 import argparse
 import copy
 import json
-import sys
 import time
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from fpl_model.player_ratings import new_player_priors as npp  # noqa: E402
-from fpl_model.player_ratings import fotmob_priors as fp  # noqa: E402
-from fpl_model.player_ratings import build_new_player_priors as bnp  # noqa: E402
 from fpl_model.atomic_write import to_csv_atomic  # noqa: E402
+from fpl_model.player_ratings import build_new_player_priors as bnp  # noqa: E402
+from fpl_model.player_ratings import fotmob_priors as fp  # noqa: E402
+from fpl_model.player_ratings import new_player_priors as npp  # noqa: E402
 
 DEFAULT_OUT = npp.ROOT / "data" / "validation" / "position_rates_20261114" / "phase1"
 OOT_SEASONS = range(2019, 2027)

@@ -7,14 +7,14 @@ The connected Chrome collector consumes jobs.json, one normal navigation at a ti
 Explicit --raw/--data/--run paths permit shadow validation and reliable resume.
 """
 import argparse
-from collections import Counter
-from datetime import datetime, timezone
 import hashlib
 import json
-from pathlib import Path
 import shutil
 import sys
 import time
+from collections import Counter
+from datetime import UTC, datetime
+from pathlib import Path
 
 from fpl_model.fetch import fetch_sofascore as f
 from fpl_model.fetch.player_identity import Registry, read_csv
@@ -107,7 +107,8 @@ def import_pilot(raw, data, run, pilot):
                 if row['Provider'] == 'sofascore':
                     existing=registry.fixtures.get(('sofascore',row['Event_ID']))
                     if existing:
-                        names=lambda r: tuple(f.TEAM_NAMES.get(r[k],r[k]) for k in ('Home','Away'))
+                        def names(r):
+                            return tuple(f.TEAM_NAMES.get(r[k],r[k]) for k in ('Home','Away'))
                         if existing['Season']!=row['Season'] or names(existing)!=names(row):
                             raise ValueError('Pilot fixture membership conflict requires review')
                         cid=existing['Canonical_Fixture_ID']
@@ -123,14 +124,18 @@ def import_pilot(raw, data, run, pilot):
 
 def normalize_fixture_aliases(raw,data,run):
     """Reviewed team-label normalization only; never replace an accepted project ID."""
-    registry=Registry(data);changes=[]
+    registry=Registry(data)
+    changes=[]
     for row in registry.tables['fixture_identity_registry']:
-        if row['Provider']!='sofascore': continue
+        if row['Provider']!='sofascore':
+            continue
         normalized={k:f.TEAM_NAMES.get(row[k],row[k]) for k in ('Home','Away')}
-        if all(row[k]==v for k,v in normalized.items()): continue
+        if all(row[k]==v for k,v in normalized.items()):
+            continue
         path=raw/'matches'/row['Season']/(row['Event_ID']+'.json')
         env=f.Client(raw=raw).load(path,f.validate_lineup)
-        if not env: raise ValueError('Alias review requires actual raw event')
+        if not env:
+            raise ValueError('Alias review requires actual raw event')
         event=env['event']
         actual={k:f.TEAM_NAMES.get(event[s]['name'],event[s]['name']) for k,s in [('Home','homeTeam'),('Away','awayTeam')]}
         if actual!=normalized or str(env['season'])!=row['Season']:
@@ -161,11 +166,13 @@ def sync(raw, run):
                           'observation_end':observation_end}
     def validated_cached(path,validator):
         if path.exists():
-            stat=path.stat();record=index.get(str(path))
+            stat=path.stat()
+            record=index.get(str(path))
             if record and (record['size'],record['mtime_ns'])==(stat.st_size,stat.st_mtime_ns):
                 return record
         env=client.load(path,validator)
-        if env: remember(path,env)
+        if env:
+            remember(path,env)
         return env
     jobs = json.loads((run / 'jobs.json').read_text(encoding='utf-8')) if (run / 'jobs.json').exists() else []
     observations = json.loads((run / 'navigation.json').read_text(encoding='utf-8'))
@@ -174,7 +181,7 @@ def sync(raw, run):
     failures=json.loads(failure_path.read_text(encoding='utf-8')) if failure_path.exists() else {}
     for job in jobs:
         path = Path(job['cache'])
-        validator = f.validate_lineup if job['kind'] == 'lineup' else lambda p: f.validate_metadata(p, job['route'])
+        validator = f.validate_lineup if job['kind'] == 'lineup' else lambda p: f.validate_metadata(p, job['route'])  # noqa: B023 (used this iteration)
         old = validated_cached(path, validator)
         obs = next((o for o in reversed(observations)
                     if o.get('route') == job['route'] and o.get('outcome') == 'parsed_json'), None)
@@ -234,7 +241,8 @@ def plan(raw, data, run, refresh_current=False):
                        datetime.fromisoformat(fresh['end'])>=datetime.fromisoformat(after))
         pending=bool(after and not fulfilled)
         job=dict(kind='metadata',route=route,cache=str(path.resolve()),refresh=pending)
-        if pending: job['refresh_after']=after
+        if pending:
+            job['refresh_after']=after
         jobs.append(job)
         # Old successful data remains frozen, but it cannot establish the refresh.
         return env['payload'] if env and not pending else None
@@ -298,21 +306,23 @@ def plan(raw, data, run, refresh_current=False):
     pending=[]
     for j in jobs:
         env=client.load(Path(j['cache']), f.validate_lineup if j['kind']=='lineup' else None)
-        if not env or j.get('refresh'): pending.append(j)
+        if not env or j.get('refresh'):
+            pending.append(j)
     f.atomic_json(run/'queue.json',pending)
     return log(run, {'action':'plan','jobs':len(jobs),'pending':len(pending),
                      'pending_by_kind':dict(Counter(j['kind'] for j in pending)), 'discoveries':discoveries})
 
 
 def build(raw,data,run):
-    registry=Registry(data); registry.seed()
+    registry=Registry(data)
+    registry.seed()
     result=f.build(f.Client(raw=raw),registry,data)
     f.atomic_json(run/'build_summary.json',result)
     return log(run,dict(action='build',**result))
 
 
 def checkpoint(raw,data,run):
-    imported=sync(raw,run)
+    sync(raw,run)
     state_path=run/'discovery_status.json'
     state=json.loads(state_path.read_text(encoding='utf-8')) if state_path.exists() else {}
     jobs=json.loads((run/'jobs.json').read_text(encoding='utf-8')) if (run/'jobs.json').exists() else []
@@ -329,7 +339,8 @@ def checkpoint(raw,data,run):
         planned=plan(raw,data,run)
     status=planned['discoveries']
     failures=json.loads((run/'validation_failures.json').read_text(encoding='utf-8'))
-    counts={}; collection_complete=True
+    counts={}
+    collection_complete=True
     for s,d in status.items():
         cached={p.stem for p in (raw/'matches'/str(s)).glob('*.json')}
         discovery_path=raw/'discovery'/f'{s}.json'
@@ -356,7 +367,8 @@ def checkpoint(raw,data,run):
                 validation_failure_kinds=dict(Counter(v['kind'] for v in failures.values())))
     f.atomic_json(raw/'manifest.json',result)
     f.atomic_json(run/'checkpoint.json',result)
-    snapshots=run/'checkpoints';snapshots.mkdir(exist_ok=True)
+    snapshots=run/'checkpoints'
+    snapshots.mkdir(exist_ok=True)
     f.atomic_json(snapshots/(str(len(nav))+'.json'),result)
     return log(run,dict(action='checkpoint',**result))
 
@@ -378,8 +390,9 @@ def reconcile(raw,data,run):
             home=f.TEAM_NAMES.get(e['homeTeam']['name'],e['homeTeam']['name'])
             away=f.TEAM_NAMES.get(e['awayTeam']['name'],e['awayTeam']['name'])
             key=(season,home,away)
-            if key in source: raise ValueError('Duplicate season/home/away; review fixture identities')
-            source[key]={'date':datetime.fromtimestamp(e['startTimestamp'],timezone.utc).date().isoformat(),
+            if key in source:
+                raise ValueError('Duplicate season/home/away; review fixture identities')
+            source[key]={'date':datetime.fromtimestamp(e['startTimestamp'],UTC).date().isoformat(),
                          'event_id':e['id']}
         expected={k:v for k,v in local.items() if k[0]==season}
         only_source=[dict(season=k[0],home=k[1],away=k[2],**source[k]) for k in source.keys()-expected.keys()]
@@ -400,15 +413,22 @@ def audit(raw,data,run):
     before=raw_snapshot()
     rows=read_csv(data/'sofascore_player_match_stats.csv')
     by_key={(r['Event_ID_Sofascore'],r['Player_ID_Sofascore']):r for r in rows}
-    if len(by_key)!=len(rows): raise ValueError('Duplicate derived source identity')
+    if len(by_key)!=len(rows):
+        raise ValueError('Duplicate derived source identity')
     canonical={(r['Event_ID_Sofascore'],r['Canonical_Player_ID']) for r in rows}
-    if len(canonical)!=len(rows): raise ValueError('Duplicate derived canonical identity')
-    client=f.Client(raw=raw); seen=set(); seasons={}; raw_hashes={}
+    if len(canonical)!=len(rows):
+        raise ValueError('Duplicate derived canonical identity')
+    client=f.Client(raw=raw)
+    seen=set()
+    seasons={}
+    raw_hashes={}
     for path in sorted((raw/'matches').glob('*/*.json')):
         env=client.load(path,f.validate_lineup)
-        event=env['event'];season=env['season']
+        event=env['event']
+        season=env['season']
         validate_event(event,season,event['season']['id'])
-        if str(event['id'])!=path.stem or str(season)!=path.parent.name: raise ValueError('Raw path mismatch')
+        if str(event['id'])!=path.stem or str(season)!=path.parent.name:
+            raise ValueError('Raw path mismatch')
         dom=Path(env['dom_path'])
         if sha(dom)!=env['dom_sha256'] or json.loads(dom.read_text(encoding='utf-8'))!=env['payload']:
             raise ValueError('Raw/DOM provenance mismatch')
@@ -417,30 +437,37 @@ def audit(raw,data,run):
         report['cached']+=1
         for side in ('home','away'):
             keepers=[p for p in env['payload'][side]['players'] if not p['substitute'] and p['player'].get('position')=='G']
-            if len(keepers)!=1: raise ValueError('Starting keeper absent/ambiguous')
+            if len(keepers)!=1:
+                raise ValueError('Starting keeper absent/ambiguous')
             report['starting_keepers']+=1
             for p in env['payload'][side]['players']:
-                key=(str(event['id']),str(p['player']['id']));seen.add(key)
-                if key not in by_key: raise ValueError('Dropped source row')
+                key=(str(event['id']),str(p['player']['id']))
+                seen.add(key)
+                if key not in by_key:
+                    raise ValueError('Dropped source row')
                 row=by_key[key]
-                if not row['Canonical_Player_ID'] or not row['Canonical_Fixture_ID']: raise ValueError('Missing project identity')
+                if not row['Canonical_Player_ID'] or not row['Canonical_Fixture_ID']:
+                    raise ValueError('Missing project identity')
                 if row['Player_Sofascore']!=p['player']['name'] or row['Is_Starter']!=str(not p['substitute']):
                     raise ValueError('Source metadata changed')
                 if json.loads(row['Present_Fields'])!=sorted(p.get('statistics',{})):
                     raise ValueError('Presence metadata changed')
                 for field in f.FIELDS:
-                    value=p.get('statistics',{}).get(field);out=row['Sofascore_'+field]
+                    value=p.get('statistics',{}).get(field)
+                    out=row['Sofascore_'+field]
                     if (value is None and out!='') or (value is not None and (out=='' or float(out)!=value)):
                         raise ValueError(f'Source statistic changed: {key}/{field}')
                 report['rows']+=1
                 report['played']+=int(row['Appearance_Status']=='played')
                 report['unresolved']+=int(row['Identity_Status']=='unresolved_cross_provider')
-    if seen!=set(by_key): raise ValueError('Derived rows without raw source')
+    if seen!=set(by_key):
+        raise ValueError('Derived rows without raw source')
     registry=Registry(data)
     for base in (f.DATA, f.ROOT/'data/validation/sofascore_browser_pilot_20261026/current'):
         accepted=Registry(base)
         for key,cid in accepted.alias.items():
-            if registry.alias.get(key)!=cid: raise ValueError(f'Changed accepted player identity: {key}')
+            if registry.alias.get(key)!=cid:
+                raise ValueError(f'Changed accepted player identity: {key}')
         for key,row in accepted.fixtures.items():
             if key in registry.fixtures and registry.fixtures[key]['Canonical_Fixture_ID']!=row['Canonical_Fixture_ID']:
                 raise ValueError(f'Changed accepted fixture identity: {key}')
@@ -481,17 +508,27 @@ def main():
     p.add_argument('--pilot',type=Path,default=f.ROOT/'data/validation/sofascore_browser_pilot_20261026')
     p.add_argument('--refresh-current',action='store_true')
     a=p.parse_args()
-    if a.action=='prepare': result=prepare(a.run,a.data)
-    elif a.action=='import-pilot': result=import_pilot(a.raw,a.data,a.run,a.pilot)
-    elif a.action=='sync': result=sync(a.raw,a.run)
-    elif a.action=='plan': result=plan(a.raw,a.data,a.run,a.refresh_current)
-    elif a.action=='checkpoint': result=checkpoint(a.raw,a.data,a.run)
-    elif a.action=='reconcile': result=reconcile(a.raw,a.data,a.run)
-    elif a.action=='audit': result=audit(a.raw,a.data,a.run)
-    elif a.action=='normalize-fixture-aliases': result=normalize_fixture_aliases(a.raw,a.data,a.run)
-    else: result=build(a.raw,a.data,a.run)
+    if a.action=='prepare':
+        result=prepare(a.run,a.data)
+    elif a.action=='import-pilot':
+        result=import_pilot(a.raw,a.data,a.run,a.pilot)
+    elif a.action=='sync':
+        result=sync(a.raw,a.run)
+    elif a.action=='plan':
+        result=plan(a.raw,a.data,a.run,a.refresh_current)
+    elif a.action=='checkpoint':
+        result=checkpoint(a.raw,a.data,a.run)
+    elif a.action=='reconcile':
+        result=reconcile(a.raw,a.data,a.run)
+    elif a.action=='audit':
+        result=audit(a.raw,a.data,a.run)
+    elif a.action=='normalize-fixture-aliases':
+        result=normalize_fixture_aliases(a.raw,a.data,a.run)
+    else:
+        result=build(a.raw,a.data,a.run)
     log(a.run,{'command':sys.argv,'elapsed_seconds':time.monotonic()-started})
     print(json.dumps(result,indent=2))
 
 
-if __name__=='__main__': main()
+if __name__=='__main__':
+    main()

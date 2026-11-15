@@ -11,19 +11,15 @@ Run locally (after fetch_vaastav.py):
     python validate_fpl_only_assists_history.py
 """
 import json
-import re
-import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 from scipy.optimize import linear_sum_assignment
 
+from fpl_model.fetch.build_position_crosswalk import name_similarity  # noqa: E402
 from research.bonus import validate_bonus_calibration as calibration
 from research.bonus import validate_fpl_only_assists as v
-
-from fpl_model.fetch.build_position_crosswalk import name_similarity  # noqa: E402
 
 RAW = calibration.ROOT / "data" / "raw" / "vaastav"
 OUT_DIR = v.OUT_DIR

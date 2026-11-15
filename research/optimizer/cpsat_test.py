@@ -11,7 +11,6 @@ integer CP-SAT model by hand, so nothing depends on OR-Tools' floating-point MIP
 A watchdog stops the search if this process passes MEMORY_CAP_MB or the PC's free memory drops under MIN_FREE_MB.
 Writes data/optimizer/benchmark/cpsat/<instance>/w<workers>_s<seed>.json.
 """
-from fpl_model import paths
 import argparse
 import json
 import math
@@ -23,6 +22,8 @@ import highspy
 import numpy as np
 import psutil
 from ortools.sat.python import cp_model
+
+from fpl_model import paths
 
 _HERE = Path(__file__).resolve().parent
 BENCH = paths.OPTIMIZER / "benchmark"

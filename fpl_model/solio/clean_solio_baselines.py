@@ -33,16 +33,16 @@ failed run deletes the previous run's table so a stale one can't be snapshotted.
 Run locally:
     python clean_solio_baselines.py [--gameweek N]
 """
-from fpl_model import paths
 import argparse
 import json
 import re
 import sys
 import traceback
-from datetime import datetime, timezone
-from pathlib import Path
+from datetime import UTC, datetime
 
 import pandas as pd
+
+from fpl_model import paths
 
 ROOT = paths.ROOT
 from fpl_model.atomic_write import to_csv_atomic  # noqa: E402
@@ -135,7 +135,7 @@ def capture_info(folder, source):
     if path.is_file():
         info = json.loads(path.read_text(encoding="utf-8"))
         return info, None
-    stamp = datetime.fromtimestamp(source.stat().st_mtime, timezone.utc).isoformat()
+    stamp = datetime.fromtimestamp(source.stat().st_mtime, UTC).isoformat()
     return {"captured_utc": stamp}, f"no {CAPTURE_NAME}; capture time taken from the file's modified time"
 
 
@@ -213,8 +213,8 @@ def build(gameweek, season):
         "per90_suppression": cut, "team_checks": shares,
         "capture": capture, "deadline_utc": None if deadline is None else deadline.isoformat(),
         "source_folder": str(folder.relative_to(ROOT)).replace("\\", "/"),
-        "source_modified_utc": datetime.fromtimestamp(source.stat().st_mtime, timezone.utc).isoformat(),
-        "built_utc": datetime.now(timezone.utc).isoformat(),
+        "source_modified_utc": datetime.fromtimestamp(source.stat().st_mtime, UTC).isoformat(),
+        "built_utc": datetime.now(UTC).isoformat(),
     }
     return out.sort_values("Solio_Pts90", ascending=False), status
 
@@ -240,7 +240,7 @@ def main():
         OUT_FILE.unlink(missing_ok=True)
         # The gameweek, when known, lets the snapshot keep this status as the record of why Solio is missing.
         status = {"usable_for_comparison": False, "reasons": [f"{type(error).__name__}: {error}"],
-                  "gameweek": gameweek, "season": args.season, "built_utc": datetime.now(timezone.utc).isoformat()}
+                  "gameweek": gameweek, "season": args.season, "built_utc": datetime.now(UTC).isoformat()}
         traceback.print_exc()
     STATUS_FILE.write_text(json.dumps(status, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"usable_for_comparison: {status['usable_for_comparison']}")

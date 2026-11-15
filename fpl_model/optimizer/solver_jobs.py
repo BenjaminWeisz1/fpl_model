@@ -5,21 +5,19 @@ A job writes the request's squad and forced decisions to data/optimizer/site/, r
 replay-checked ones. Each run replaces the folder's plans. The page polls status(); the solver's [progress] lines
 (solve_modes.py) say which plan is being solved. A job is stopped at solve_modes.time_limit(mode), or by cancel().
 """
-from fpl_model import paths
 import json
 import re
 import subprocess
 import sys
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
-from fpl_model.optimizer import chips as chip_rules
-from fpl_model.optimizer import run_optimizer
-from fpl_model.optimizer import solve_modes
-from fpl_model.optimizer import team_source
+from fpl_model import paths
 from fpl_model.forecast_horizon import HORIZON
+from fpl_model.optimizer import chips as chip_rules
+from fpl_model.optimizer import run_optimizer, solve_modes, team_source
 
 _HERE = Path(__file__).resolve().parent
 _ROOT = paths.ROOT
@@ -224,7 +222,7 @@ def last_result():
     run = json.loads(summary.read_text(encoding="utf-8"))
     projection_weeks = sorted(int(c.split("_")[0]) for c in (FOLDER / "projection.csv").read_text(encoding="utf-8").split("\n", 1)[0].split(",") if c.endswith("_Pts"))
     return {"mode": run.get("mode"), "gws": [projection_weeks[0], projection_weeks[-1]], "plans": len(run["plans"]),
-            "solved_utc": datetime.fromtimestamp(html.stat().st_mtime, timezone.utc).strftime("%Y-%m-%d %H:%M")}
+            "solved_utc": datetime.fromtimestamp(html.stat().st_mtime, UTC).strftime("%Y-%m-%d %H:%M")}
 
 
 JOB = Job()

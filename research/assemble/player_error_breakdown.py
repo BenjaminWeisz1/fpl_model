@@ -5,7 +5,6 @@ Diagnostic only; no production writes.
 Run: python -u -X utf8 scripts/assemble/player_error_breakdown.py
 """
 import json
-import sys
 import unicodedata
 from pathlib import Path
 
@@ -13,8 +12,8 @@ import numpy as np
 import pandas as pd
 
 HERE = Path(__file__).resolve().parent
-from research.assemble import points_error_breakdown as P  # noqa: E402
 from fpl_model.defcon_scaling import DEFENDER_POINTS_FACTOR, nb_sf, prob_at_minutes  # noqa: E402
+from research.assemble import points_error_breakdown as P  # noqa: E402
 
 OUT = P.VAL / "player_error_20261101"
 OUT.mkdir(exist_ok=True)

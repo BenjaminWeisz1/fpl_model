@@ -20,18 +20,18 @@ Full snapshots require the pre-deadline outputs to cover the current forecast
 origin. Part 1 intentionally omits stale part-2 outputs. No fetches or model fits.
 """
 from __future__ import annotations
-from fpl_model import paths
 
 import argparse
-from datetime import datetime, timezone
 import hashlib
-from importlib.metadata import version
 import json
-from pathlib import Path
 import shutil
-import sys
+from datetime import UTC, datetime
+from importlib.metadata import version
+from pathlib import Path
 
 import pandas as pd
+
+from fpl_model import paths
 
 ROOT = paths.ROOT
 DATA = paths.CURRENT
@@ -139,7 +139,7 @@ def snapshot_plan(data, season, gameweek=None, part="all"):
                 raise ValueError(f"{name} is stale or lacks GW{gameweek}; run python run_pre_deadline.py first")
             views[name] = f[f.Round.eq(gameweek)].copy()
         points = read_csv(data/"predicted_points.csv")
-        rounds = sorted((int(c) for c in points.columns if str(c).isdigit()))
+        rounds = sorted(int(c) for c in points.columns if str(c).isdigit())
         if not rounds or rounds[0] != origin or gameweek not in rounds:
             raise ValueError(f"predicted_points.csv is stale or lacks GW{gameweek}; run python run_pre_deadline.py first")
         pts = points[[c for c in ("Player", "Pos", "Team", "Price", str(gameweek)) if c in points]].copy()
@@ -214,7 +214,7 @@ def save_snapshot(data=DATA, output=SNAPSHOTS, season=CURRENT_SEASON, gameweek=N
     for name, expected in observed.items():
         if digest(data/name) != expected:
             raise ValueError(f"Sources changed while checking snapshot: {name}; retry after the pipeline finishes")
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     deadline, timing = deadline_timing(data, plan["gameweek"], now)
     label = f"GW{plan['gameweek']:02d}"
     destination = output/str(season)/label/f"{now.strftime('%Y%m%dT%H%M%S_%fZ')}_{label}_{timing}_part{part}"
@@ -251,7 +251,7 @@ def save_snapshot(data=DATA, output=SNAPSHOTS, season=CURRENT_SEASON, gameweek=N
             raise ValueError(f"Inputs/outputs changed during snapshot: {name}; retry after the pipeline finishes")
     saved = {str(p.relative_to(destination)).replace("\\", "/"):
              {"sha256": digest(p), "bytes": p.stat().st_size,
-              "modified_utc": datetime.fromtimestamp(p.stat().st_mtime, timezone.utc).isoformat()}
+              "modified_utc": datetime.fromtimestamp(p.stat().st_mtime, UTC).isoformat()}
              for p in sorted(destination.rglob("*")) if p.is_file()}
     sources = [ROOT/"run_post_gameweek.py", ROOT/"run_pre_deadline.py", Path(__file__),
                ROOT/"fpl_model"/"defcon"/"predict.py", ROOT/"fpl_model"/"defcon"/"defender_model.py",

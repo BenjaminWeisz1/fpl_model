@@ -4,8 +4,10 @@ Reuses production ingestion/features and saved incumbent models without running
 the pipeline or writing production outputs. Freezes the control before any edit
 to predict.py. Run with python -u -X utf8 scripts/defcon/evaluate_defender_monotonic.py.
 """
-from fpl_model import paths
 import os
+
+from fpl_model import paths
+
 os.environ.setdefault("OMP_NUM_THREADS", "2")
 import ast
 import gzip
@@ -20,7 +22,7 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.isotonic import IsotonicRegression
-from sklearn.metrics import log_loss, brier_score_loss, roc_auc_score
+from sklearn.metrics import brier_score_loss, log_loss, roc_auc_score
 from sklearn.model_selection import StratifiedKFold, cross_val_predict
 from sklearn.preprocessing import StandardScaler
 

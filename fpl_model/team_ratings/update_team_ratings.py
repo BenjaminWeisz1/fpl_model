@@ -14,9 +14,10 @@ To add a new season's money priors: append rows to money_priors_by_season.csv
 Run locally:
     python update_team_ratings.py
 """
-from fpl_model import paths
+
 import pandas as pd
-from pathlib import Path
+
+from fpl_model import paths
 
 _DATA = paths.CURRENT
 

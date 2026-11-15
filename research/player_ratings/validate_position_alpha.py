@@ -5,16 +5,16 @@ Protocol, frozen before scoring: data/validation/position_alpha_20261103/protoco
     python validate_position_alpha.py run     # one pre-match log per floor (GOAL_MODEL_ALPHA); production untouched
     python validate_position_alpha.py score   # per-(group, target) floor on 2018-2023, test 2024-2026; results.json
 """
-from fpl_model import paths
 import json
 import os
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+from fpl_model import paths
 
 ROOT = paths.ROOT
 DATA = paths.CURRENT

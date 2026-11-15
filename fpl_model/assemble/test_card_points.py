@@ -1,12 +1,17 @@
 """Card points (CHANGELOG §175). Run: python -m unittest test_card_points"""
-import sys
 import unittest
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from fpl_model.card_points import K, SUSPENSION_THETA, decayed_multiplier, expected_card_points, fixture_yellows_90, forecast_cameo_share
+from fpl_model.card_points import (
+    SUSPENSION_THETA,
+    K,
+    decayed_multiplier,
+    expected_card_points,
+    fixture_yellows_90,
+    forecast_cameo_share,
+)
 
 
 class CardPoints(unittest.TestCase):

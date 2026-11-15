@@ -1,7 +1,5 @@
 """python -m unittest test_fixture_rounds (from scripts/fetch)"""
-import sys
 import unittest
-from pathlib import Path
 
 import pandas as pd
 

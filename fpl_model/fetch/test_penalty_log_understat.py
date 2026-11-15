@@ -49,11 +49,11 @@ class PenaltyLogUnderstatTests(unittest.TestCase):
     def test_append_keeps_bom_and_crlf(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "penalty_log.csv"
-            path.write_bytes("﻿Season,HomeAway,Player,Team,Opponent,Scored\r\n2026,Home,A,X,Y,TRUE\r\n".encode("utf-8"))
+            path.write_bytes("﻿Season,HomeAway,Player,Team,Opponent,Scored\r\n2026,Home,A,X,Y,TRUE\r\n".encode())
             plu.append_to_log(pens([(2026, "Away", "Pascal Groß", "Y", "X", False)]), path)
             raw = path.read_bytes()
             self.assertTrue(raw.startswith(b"\xef\xbb\xbf"))
-            self.assertTrue(raw.endswith("2026,Away,Pascal Groß,Y,X,FALSE\r\n".encode("utf-8")))
+            self.assertTrue(raw.endswith("2026,Away,Pascal Groß,Y,X,FALSE\r\n".encode()))
             self.assertEqual(raw.count(b"\r\n"), 3)
 
 

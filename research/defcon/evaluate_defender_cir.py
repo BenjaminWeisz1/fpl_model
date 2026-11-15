@@ -5,6 +5,7 @@ identical; only the calibrator changes. The OOF scores are recomputed with the s
 against the stored isotonic calibrator. No production writes. Run: python -u -X utf8 scripts/defcon/evaluate_defender_cir.py
 """
 import os
+
 os.environ.setdefault("OMP_NUM_THREADS", "2")
 import json
 
@@ -14,10 +15,10 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.isotonic import IsotonicRegression
 from sklearn.model_selection import StratifiedKFold, cross_val_predict
 
-from research.defcon import evaluate_defender_recency as R
-from research.defcon import evaluate_defender_level as L
 from fpl_model.defcon.defender_model import CenteredIsotonic
-from research.defcon.evaluate_defender_monotonic import metrics, bootstrap, predict
+from research.defcon import evaluate_defender_level as L
+from research.defcon import evaluate_defender_recency as R
+from research.defcon.evaluate_defender_monotonic import bootstrap, metrics, predict
 
 OUT = R.HERE.parents[1] / "data" / "validation" / "defcon_cir_experiment_20261029"
 OUT.mkdir(exist_ok=True)

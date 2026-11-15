@@ -1,10 +1,7 @@
 import unittest
-import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
 
 from fpl_model.bonus.build_residual_bps_baseline import add_known_bps
 

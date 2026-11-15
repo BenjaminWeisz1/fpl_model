@@ -4,18 +4,17 @@ Returning players' blend of old PL rating and new-league prior (CHANGELOG §114)
     python validate_return_blend.py run     # one pre-match log per H (GOAL_MODEL_RETURN_H)
     python validate_return_blend.py score   # train/test MSE on returners' rows; writes results.json
 """
-from fpl_model import paths
 import json
 import os
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from research.player_ratings.validate_prior_k import boot_diff, sq_errors, OOT_PRIORS, TARGETS  # noqa: E402
+from fpl_model import paths
+from research.player_ratings.validate_prior_k import OOT_PRIORS, TARGETS, boot_diff, sq_errors  # noqa: E402
 
 ROOT = paths.ROOT
 DATA = paths.CURRENT

@@ -1,9 +1,7 @@
 """Fault-injection and identity tests; all payloads synthetic, no network."""
-import copy
-import json
-from pathlib import Path
 import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 import requests

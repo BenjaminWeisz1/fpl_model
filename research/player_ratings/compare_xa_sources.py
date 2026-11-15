@@ -10,12 +10,12 @@ constant. Scored by MSE against conventional assists (Understat) and FPL assists
 Run locally:
     python compare_xa_sources.py
 """
-from fpl_model import paths
 import json
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+from fpl_model import paths
 
 ROOT = paths.ROOT
 DATA = paths.CURRENT

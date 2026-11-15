@@ -10,19 +10,20 @@ fixed-fit/fixed-feature forecast test, not a weekly-refit comparison. All paths
 resolve from this script. No network access or scheduler is involved.
 """
 from __future__ import annotations
-from fpl_model import paths
 
 import argparse
-from datetime import datetime, timezone
 import gzip
 import hashlib
 import json
-from pathlib import Path
 import pickle
 import shutil
+from datetime import UTC, datetime
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+from fpl_model import paths
 
 ROOT = paths.ROOT
 DATA = paths.CURRENT
@@ -69,7 +70,7 @@ def sha256(path):
 
 
 def utc_now():
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def clean_teams(frame):

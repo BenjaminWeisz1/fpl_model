@@ -3,8 +3,11 @@ Data checks on historical_money.csv (CHANGELOG §209). Read-only diagnostic: dup
 games, squad values against Transfermarkt pre-season matchday squads (§206 team_seasons.csv), year-on-year share jumps,
 wage-v-value mismatches. Run from the project root: python scripts/team_ratings/check_historical_money.py
 """
-import pandas as pd, numpy as np
+import numpy as np
+import pandas as pd
+
 from research.team_ratings import validate_money_priors_pooled as vmp
+
 m = pd.read_csv("data/current/historical_money.csv", encoding="utf-8-sig")
 print("dups", m.duplicated(["Season","Team"]).sum(), "rows/season", m.groupby("Season").size().unique())
 k = m[m.GF.notna()]

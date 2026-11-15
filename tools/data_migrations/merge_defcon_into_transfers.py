@@ -10,9 +10,10 @@ defcon history from player_match_stats.csv directly, not from transfers.csv.
 Run locally:s
     python merge_defcon_into_transfers.py
 """
-from fpl_model import paths
+
 import pandas as pd
-from pathlib import Path
+
+from fpl_model import paths
 
 _DATA = paths.CURRENT
 
@@ -27,7 +28,7 @@ main["Defcon"] = main.apply(lambda r: defcon_lookup.get((r["Player"], r["Season"
 
 n_populated = main["Defcon"].notna().sum()
 print(f"Defcon populated for {n_populated} of {len(main)} rows in {MAIN_TRANSFERS_FILE}")
-print(f"(expected to be small -- only new-to-league players get this)")
+print("(expected to be small -- only new-to-league players get this)")
 
 unmatched = set(defcon["Player"]) - set(main["Player"])
 if unmatched:

@@ -13,12 +13,10 @@ Replicates the exact blending logic from the main script:
 Run locally:
     python compute_preseason_ratings.py
 """
-from fpl_model import paths
-import sys
 
 import pandas as pd
-from pathlib import Path
 
+from fpl_model import paths
 from fpl_model.league_rates import current_season  # noqa: E402
 
 _DATA = paths.CURRENT

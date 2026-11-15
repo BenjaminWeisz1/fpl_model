@@ -28,14 +28,14 @@ Run locally:
     python sofascore_weekly.py plan | import | build | status
 """
 import argparse
-from collections import Counter
-from datetime import datetime, timezone
 import hashlib
 import json
-from pathlib import Path
 import re
 import shutil
 import time
+from collections import Counter
+from datetime import UTC, datetime
+from pathlib import Path
 
 from fpl_model.fetch import fetch_sofascore as f
 from fpl_model.fetch.player_identity import Registry, read_csv
@@ -133,7 +133,7 @@ def read_inbox(inbox):
         m = MANUAL.match(path.name)
         if not m:
             continue
-        retrieved = datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat()
+        retrieved = datetime.fromtimestamp(path.stat().st_mtime, UTC).isoformat()
         route = (f'/unique-tournament/17/season/{{sid}}/events/round/{m.group(1)}' if m.group(1)
                  else f'/event/{m.group(2)}/lineups')
         yield path, route, retrieved, 'manual_browser_save', path.read_bytes()
@@ -170,7 +170,7 @@ def import_inbox(raw, inbox):
                         added[event['id']] = event
                 write_dom(dom_path, dom)
                 client.store(metadata_path(raw, route), payload, f.BASE + route,
-                             lambda p: f.validate_metadata(p, route), refresh=True, **meta)
+                             lambda p: f.validate_metadata(p, route), refresh=True, **meta)  # noqa: B023 (stored now, this iteration)
                 imported['round'] += 1
             elif m := LINEUP_ROUTE.match(route):
                 eid = int(m.group(1))
@@ -207,7 +207,7 @@ def import_inbox(raw, inbox):
         client.store(raw / 'discovery' / f'{f.CURRENT_SEASON}.json', {'events': merged, 'season_id': sid},
                      f.BASE + f'/unique-tournament/17/season/{sid}/rounds', refresh=True,
                      transport='derived_from_browser_round_envelopes')
-    archive = weekly_dir(raw) / 'imported' / datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+    archive = weekly_dir(raw) / 'imported' / datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')
     for path in done:
         archive.mkdir(parents=True, exist_ok=True)
         shutil.move(str(path), str(archive / path.name))

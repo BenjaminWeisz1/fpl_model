@@ -17,13 +17,13 @@ sign flipped so higher is easier); each ticker has its own six k-means bands and
 Teams are sorted easiest run first, by total difficulty with each week's fixtures weighted 0.85 ^ (weeks ahead): a blank
 adds nothing and a double counts both games. data/optimizer/GW<nn>/fixture_difficulty.csv holds the 40 values of each.
 """
-from fpl_model import paths
 import json
 import os
-import sys
 from pathlib import Path
 
 import matplotlib
+
+from fpl_model import paths
 
 os.environ.setdefault("LOKY_MAX_CPU_COUNT", "1")  # joblib otherwise warns: Windows 11 has no wmic
 matplotlib.use("Agg")

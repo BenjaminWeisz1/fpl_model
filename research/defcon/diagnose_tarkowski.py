@@ -1,9 +1,9 @@
 """Read-only reproduction of Tarkowski's weekly feature sensitivity."""
-from pathlib import Path
 import ast
 import gzip
-import pickle
 import json
+import pickle
+from pathlib import Path
 
 import numpy as np
 import pandas as pd

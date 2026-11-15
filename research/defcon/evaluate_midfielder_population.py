@@ -5,7 +5,6 @@ through MID_FEATURE_COLS. This reproduces its row, target, feature, prior,
 source-scale, and position construction without running production fits,
 touching the model cache, or writing serving outputs.
 """
-from fpl_model import paths
 import argparse
 import ast
 import hashlib
@@ -22,6 +21,8 @@ from sklearn.isotonic import IsotonicRegression
 from sklearn.metrics import brier_score_loss, log_loss, roc_auc_score
 from sklearn.model_selection import StratifiedKFold, cross_val_predict
 from sklearn.preprocessing import StandardScaler
+
+from fpl_model import paths
 
 _ROOT = paths.ROOT
 _DATA = paths.CURRENT

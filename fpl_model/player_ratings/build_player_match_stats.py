@@ -34,9 +34,10 @@ Column mapping:
 
 One-off, already run: refuses to run while player_match_stats.csv exists. Don't delete it to get past that.
 """
-from fpl_model import paths
+
 import pandas as pd
-from pathlib import Path
+
+from fpl_model import paths
 
 _DATA = paths.CURRENT
 _RAW = paths.RAW

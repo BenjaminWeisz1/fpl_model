@@ -13,13 +13,10 @@ player gets the position fallback.
 Run locally (before build_simulation_features.py):
     python build_fpl_only_assist_rates.py
 """
-import sys
-from pathlib import Path
 
 import pandas as pd
 
 from fpl_model.bonus import fpl_only_assists as foa
-
 from fpl_model.minutes_penalties_cs.build_penalty_predictions import resolve_names  # noqa: E402
 
 _DATA = foa._DATA
@@ -41,7 +38,8 @@ def history():
     so = pd.read_csv(_DATA / "sofascore_player_match_stats.csv", encoding="utf-8-sig", low_memory=False)
     so = so[so["Appearance_Status"].eq("played")].copy()
     so["Kickoff"] = pd.to_datetime(so["Kickoff"], utc=True)
-    num = lambda c: pd.to_numeric(so[f"Sofascore_{c}"], errors="coerce").fillna(0)
+    def num(c):
+        return pd.to_numeric(so[f"Sofascore_{c}"], errors="coerce").fillna(0)
     so["mins"] = num("minutesPlayed")
     so["rebound_shots"] = ((num("onTargetScoringAttempt") - num("goals")).clip(lower=0)
                            + num("blockedScoringAttempt") + num("hitWoodwork"))
@@ -68,10 +66,7 @@ def main():
         reb = foa.shrunk_rate(h["rebound_shots"] if h is not None else 0.0, mins, p.Pos, "rebound_rate")
         pen = foa.shrunk_rate(h["pens_won"] if h is not None else 0.0, mins, p.Pos, "pens_rate")
         share = float(share_of.get(p.Web_Name, 0.0) or 0.0)
-        if mode == "model":
-            value = foa.rate(p.Pos, reb, pen, share)
-        else:
-            value = foa.FALLBACK[p.Pos]
+        value = foa.rate(p.Pos, reb, pen, share) if mode == "model" else foa.FALLBACK[p.Pos]
         rows.append({"Player": p.Player, "Web_Name": p.Web_Name, "Team": p.Team, "Pos": p.Pos, "Mode": mode,
                      "Sofascore_Appearances": apps, "History_Minutes": round(mins),
                      "Rebound_Rate": round(reb, 5), "Pens_Rate": round(pen, 5), "Pen_Share": round(share, 3),

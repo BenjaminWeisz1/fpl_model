@@ -6,22 +6,23 @@ selected schema experiment. Reuse writes ordinary production cache entries;
 normal weekly runs subsequently use predict.py without this runner.
 """
 import os
+
 os.environ.setdefault("OMP_NUM_THREADS","2")
 import ast
 import gzip
 import hashlib
 import inspect
 import json
-from pathlib import Path
 import pickle
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import sklearn
 
-from research.defcon.evaluate_feature_changes import OUT, OLD, preserve
-from research.defcon.evaluate_defender_monotonic import predict
 from fpl_model.defcon.recent_defcon import attach_recent_rates
+from research.defcon.evaluate_defender_monotonic import predict
+from research.defcon.evaluate_feature_changes import OLD, OUT, preserve
 
 HERE=Path(__file__).resolve().parent
 

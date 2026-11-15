@@ -3,7 +3,7 @@
     python site/server.py [--no-browser] [--port N]
 
 Serves the static pages, plus the Solver page's API (§228), which runs solves through
-scripts/optimizer/solver_jobs.py (one at a time, in the background):
+fpl_model/optimizer/solver_jobs.py (one at a time, in the background):
     GET  /api/solver/state   weeks, modes, players for the pickers, the last result
     POST /api/solver/team    {"id": n} | {"json": text} | {"file": true} -> the squad, rebuilt or checked
     POST /api/solver/solve   squad, horizon, mode, chips, hold / avoid / moves -> starts the job
@@ -14,6 +14,7 @@ site/data/ is written by part 3 (run_site_export.py) and never edited by hand. C
 Run it by path: this folder is named "site", so it is not imported as a package (it would shadow Python's
 own site module).
 """
+import contextlib
 import json
 import sys
 import webbrowser
@@ -23,8 +24,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))  # the repo root, so the fpl_model package imports
-from fpl_model.optimizer import solver_jobs  # noqa: E402
-from fpl_model.optimizer import team_source  # noqa: E402
+from fpl_model.optimizer import solver_jobs, team_source  # noqa: E402  (needs the sys.path line above)
+
 PORT = 8766  # the optimizer page uses 8765
 
 
@@ -104,10 +105,8 @@ def main(argv=None):
     print(f"Website: {url}  (Ctrl+C to stop)", flush=True)
     if "--no-browser" not in argv:
         webbrowser.open(url)
-    try:
+    with contextlib.suppress(KeyboardInterrupt):
         server.serve_forever()
-    except KeyboardInterrupt:
-        pass
     return 0
 
 

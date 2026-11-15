@@ -10,12 +10,12 @@ bootstrap on the difference from bin 0.
 Run locally (after the logged run):
     python diagnose_inactivity.py
 """
-from fpl_model import paths
 import json
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+from fpl_model import paths
 
 ROOT = paths.ROOT
 DATA = paths.CURRENT

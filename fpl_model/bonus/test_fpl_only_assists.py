@@ -1,6 +1,5 @@
 """FPL-only assist rates (CHANGELOG §92): frozen model, shrinkage, modes and the live rates file."""
 import json
-import os
 import tempfile
 import unittest
 from pathlib import Path

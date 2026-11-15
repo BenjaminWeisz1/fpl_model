@@ -32,9 +32,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from research.player_ratings import validate_arrival_position as vap  # noqa: E402  (load, step_weights, PAIRS, SLOT_CANON)
-from research.player_ratings import validate_position_rates as vpr  # noqa: E402  (segments, boot, rel)
 from fpl_model.player_ratings import position_rates as pr  # noqa: E402
+from research.player_ratings import (
+    validate_arrival_position as vap,  # noqa: E402  (load, step_weights, PAIRS, SLOT_CANON)
+)
+from research.player_ratings import validate_position_rates as vpr  # noqa: E402  (segments, boot, rel)
 
 C_GRID = np.round(np.arange(0, 1.0001, 0.05), 2)
 KPOS_GRID = [1, 2, 4, 8, 16, 32]

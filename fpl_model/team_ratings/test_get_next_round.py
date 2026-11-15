@@ -1,5 +1,4 @@
 """python -m unittest test_get_next_round (from scripts/team_ratings)"""
-import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -45,7 +44,7 @@ class NextRound(unittest.TestCase):
         self.assertEqual(next_round([("A", "B"), ("C", "D")], fixtures), 2)
 
     def test_repeated_fixture_stops(self):
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValueError):
             next_round([("A", "B")], FIXTURES + [(2026, 3, "A", "B")])
 
 

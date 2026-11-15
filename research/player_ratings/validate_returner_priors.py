@@ -10,7 +10,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from research.player_ratings.validate_prior_k import sq_errors, boot_diff, TARGETS  # noqa: E402
+from research.player_ratings.validate_prior_k import TARGETS, boot_diff, sq_errors  # noqa: E402
 
 D = Path(sys.argv[1])
 base = pd.read_csv(D / "log_base.csv", encoding="utf-8-sig", low_memory=False)

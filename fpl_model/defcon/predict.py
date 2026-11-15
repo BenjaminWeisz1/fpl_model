@@ -9,33 +9,50 @@ three heads out of time (evaluation.py), trains or loads them through the model 
 predictions_defensive.csv and defcon_average_probabilities.csv. See fpl_model/defcon/README.md.
 """
 import warnings
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from scipy import optimize as _optimize
+from scipy import stats as _stats
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.metrics import log_loss, roc_auc_score
 
 from fpl_model import config, paths
-from fpl_model.defcon.defender_model import (DEFAULT_FEATURE_MODE, apply_level_factors, level_adjust_features,
-                                             level_factors, monotonic_params, season_levels)
+from fpl_model.defcon.defender_model import (
+    DEFAULT_FEATURE_MODE,
+    apply_level_factors,
+    level_adjust_features,
+    level_factors,
+    monotonic_params,
+    season_levels,
+)
 from fpl_model.defcon.evaluation import mech_gap, mech_lrt, report_metrics, score_validation
-from fpl_model.defcon.features import (DEFENDER_DETAILED_POS, MID_FWD_DETAILED_POS, QUALIFYING_MINUTES_P90,
-                                       RAW_CAMEO_MIN, avg_raw_qualifying, estimate_std_and_pct, get_pos_dummies,
-                                       is_defender_pos, is_forward_pos, is_midfielder_or_forward_pos, pooled_prior_std,
-                                       recent5_qualifying_per90, recent5_qualifying_raw)
+from fpl_model.defcon.features import (
+    DEFENDER_DETAILED_POS,
+    MID_FWD_DETAILED_POS,
+    QUALIFYING_MINUTES_P90,
+    RAW_CAMEO_MIN,
+    avg_raw_qualifying,
+    estimate_std_and_pct,
+    get_pos_dummies,
+    is_defender_pos,
+    is_forward_pos,
+    is_midfielder_or_forward_pos,
+    pooled_prior_std,
+    recent5_qualifying_per90,
+    recent5_qualifying_raw,
+)
 from fpl_model.defcon.model_cache import prune_model_cache, tune_and_calibrate
 from fpl_model.defcon.opponent_model import match_order, opponent_factors, position_groups
 from fpl_model.defcon.recent_defcon import EW_HALF_LIFE, attach_recent_rates, feature_columns
+from fpl_model.forecast_horizon import GAMEWEEKS, HORIZON  # set in one place
+from fpl_model.league_rates import current_season
+from fpl_model.match_order import chrono_order
+from fpl_model.team_ratings.get_next_round import get_next_round
 
 warnings.filterwarnings("ignore")
 
-_SCRIPTS_DIR = Path(__file__).resolve().parents[1]
-from fpl_model.team_ratings.get_next_round import get_next_round
-
 _DATA = paths.CURRENT
-from fpl_model.match_order import chrono_order
-from fpl_model.league_rates import current_season  # noqa: E402
 
 CURRENT_SEASON = current_season()
 # The defender head's feature schema (§46: one exponentially weighted recent rate, no StdPer90). Its activity
@@ -63,7 +80,7 @@ fixtures = pd.read_csv(_DATA / "fixtures.csv")
 # only covers GW1..GW<HORIZON>, so anything beyond that would silently fall back to unscaled 90-minute
 # probabilities in the minutes-scaling step below. Filtering here also avoids
 # wastefully scoring the rest of the season's fixtures we don't use.
-from fpl_model.forecast_horizon import GAMEWEEKS, HORIZON  # noqa: E402  (set in one place)
+
 _next_round = get_next_round(_DATA, CURRENT_SEASON)
 fixtures = fixtures[(fixtures["Season"] == CURRENT_SEASON) & (fixtures["Round"] >= _next_round) & (fixtures["Round"] < _next_round + HORIZON)].reset_index(drop=True)
 print(f"Next round from match_results.csv: {_next_round}")
@@ -436,7 +453,6 @@ def precompute_player_features(pos_mask, stat_col, per90_col, threshold, detaile
     recent5_per90_direct = {p: recent5_qualifying_per90(g, per90_col)
                             for p, g in grouped}
     recent5_raw_direct = {p: recent5_qualifying_raw(g, stat_col) for p, g in grouped}
-    most_recent_pos = grouped["Position"].last()
     # §38: the Pos_* dummies use the detailed Understat slot when the switch is
     # on (identical to Position when off), so a player who has shifted role is
     # served on their most recent actual formation slot, not coarse D/M/F.
@@ -767,7 +783,7 @@ def evaluate_oot(X_train, y_train, X_val, y_val, feature_cols, label, model_name
     if hasattr(base, 'feature_importances_'):
         imp = base.feature_importances_
         fi = sorted(zip(feature_cols, imp), key=lambda x: -x[1])
-        print(f"\n  Top 10 features:")
+        print("\n  Top 10 features:")
         for name, w in fi[:10]:
             print(f"    {name:<24s} {w:.4f} ({w / sum(imp) * 100:.1f}%)")
     print()
@@ -1198,14 +1214,16 @@ for match_id, team, opponent, venue in fixture_teams:
 
         if pos == "D":
             if ml_name and ml_name in def_player_feats:
-                feat = def_player_feats[ml_name]; has_history = True
+                feat = def_player_feats[ml_name]
+                has_history = True
                 feat = level_adjust_features(feat, def_level_latest.get(ml_name, (1.0, 1.0)))
             elif player_name in def_transfer_lookup:
                 t = def_transfer_lookup[player_name]
                 feat = make_transfer_features(t["per90"], t["matches"], def_std_estimator, DEFENDER_DETAILED_POS)
                 has_history = True
             else:
-                feat = DEF_DEFAULTS; has_history = False
+                feat = DEF_DEFAULTS
+                has_history = False
             opp_val = def_final_opp.get(opponent, def_opp_global)
             team_val = def_final_team.get(team, def_team_global)
             venue_val = def_final_venue.get(venue, def_venue_global)
@@ -1226,13 +1244,15 @@ for match_id, team, opponent, venue in fixture_teams:
             # forward aggregates, forward prior estimator and youth
             # defaults) -- see the forward head-to-head above.
             if ml_name and ml_name in fwd_player_feats:
-                feat = fwd_player_feats[ml_name]; has_history = True
+                feat = fwd_player_feats[ml_name]
+                has_history = True
             elif player_name in mid_transfer_lookup:
                 t = mid_transfer_lookup[player_name]
                 feat = make_transfer_features(t["per90"], t["matches"], fwd_std_estimator, MID_FWD_DETAILED_POS)
                 has_history = True
             else:
-                feat = FWD_DEFAULTS; has_history = False
+                feat = FWD_DEFAULTS
+                has_history = False
             opp_val = fwd_final_opp.get(opponent, fwd_opp_global)
             team_val = fwd_final_team.get(team, fwd_team_global)
             venue_val = fwd_final_venue.get(venue, fwd_venue_global)
@@ -1245,13 +1265,15 @@ for match_id, team, opponent, venue in fixture_teams:
             })
         elif pos == "M":
             if ml_name and ml_name in mid_player_feats:
-                feat = mid_player_feats[ml_name]; has_history = True
+                feat = mid_player_feats[ml_name]
+                has_history = True
             elif player_name in mid_transfer_lookup:
                 t = mid_transfer_lookup[player_name]
                 feat = make_transfer_features(t["per90"], t["matches"], mid_std_estimator, MID_FWD_DETAILED_POS)
                 has_history = True
             else:
-                feat = MID_DEFAULTS; has_history = False
+                feat = MID_DEFAULTS
+                has_history = False
             opp_val = mid_final_opp.get(opponent, mid_opp_global)
             team_val = mid_final_team.get(team, mid_team_global)
             venue_val = mid_final_venue.get(venue, mid_venue_global)
@@ -1291,8 +1313,7 @@ results["Probability_at_90min"] = results["Probability"].round(4)
 # an implied mean defcon rate via the same NB(r=3*mu, p=0.75) relationship
 # used for the original DC/90 threshold-probability formula, scale that
 # mean by xMins/90, then recompute the probability at the scaled mean.
-from scipy import stats as _stats
-from scipy import optimize as _optimize
+
 
 def _nb_sf(mu, k, p=0.75):
     r = 3 * mu
@@ -1305,7 +1326,8 @@ def _invert_mu(prob, k, lo=1e-6, hi=60):
         return 0.0
     if prob >= 1 - 1e-9:
         return hi  # degenerate case, effectively "very high rate"
-    f = lambda mu: _nb_sf(mu, k) - prob
+    def f(mu):
+        return _nb_sf(mu, k) - prob
     try:
         return _optimize.brentq(f, lo, hi)
     except ValueError:
@@ -1313,7 +1335,7 @@ def _invert_mu(prob, k, lo=1e-6, hi=60):
         return lo if f(lo) < 0 else hi
 
 
-GW_COL = "Round" 
+GW_COL = "Round"
 
 minutes_probs = pd.read_csv(_DATA / "minutes_probabilities.csv", encoding="utf-8-sig")
 minutes_lookup = {}
@@ -1349,26 +1371,29 @@ results = results.sort_values(["MatchID", "Team", "Player"]).reset_index(drop=Tr
 
 # ── Save results ──────────────────────────────────────────────────────
 results.to_csv(_DATA / "predictions_defensive.csv", index=False)
-print(f"\nPredictions saved to predictions_defensive.csv")
+print("\nPredictions saved to predictions_defensive.csv")
 print(f"Total predictions: {len(results)}")
-print(f"\nSample predictions:")
+print("\nSample predictions:")
 print(results.head(20).to_string(index=False))
 
-print(f"\n--- Summary ---")
+print("\n--- Summary ---")
 for p in ["D", "M", "F"]:
     sub = results[results["Pos"] == p]
     print(f"  {p}: {len(sub)} predictions, mean probability {sub['Probability'].mean():.4f}")
 print(f"Players with history: {results['HasHistory'].sum()} / {len(results)}")
 
-print(f"\n--- Data Source Breakdown (unique D/M/F players) ---")
+print("\n--- Data Source Breakdown (unique D/M/F players) ---")
 ml_set = set(matchlogs["Player"].unique())
 tr_set = set(transfers["Player"].unique())
 dmf_current = players_current[players_current["Pos"].isin(["D", "M", "F"])]
 n_ml, n_tr, n_youth = 0, 0, 0
 for p in dmf_current["Player"].unique():
-    if p in ml_set: n_ml += 1
-    elif p in tr_set: n_tr += 1
-    else: n_youth += 1
+    if p in ml_set:
+        n_ml += 1
+    elif p in tr_set:
+        n_tr += 1
+    else:
+        n_youth += 1
 print(f"  Matchlog history: {n_ml}")
 print(f"  Transfer data only: {n_tr}")
 print(f"  Youth/defaults (no data): {n_youth}")

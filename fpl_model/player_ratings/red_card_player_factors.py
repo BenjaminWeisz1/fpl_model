@@ -16,8 +16,6 @@ His minutes run from kick-off (or his entry) to his substitution, his own dismis
     python red_card_player_factors.py     # -> data/current/red_card_player_factors.csv
 """
 import json
-import sys
-from pathlib import Path
 
 import pandas as pd
 

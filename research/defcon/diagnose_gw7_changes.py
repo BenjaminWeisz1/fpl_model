@@ -6,11 +6,12 @@ Report model-refit, personal-feature and context effects in a stated sequence.
 This reconstructs a counterfactual old rating, not a saved live GW6 output.
 """
 import os
+
 os.environ.setdefault("OMP_NUM_THREADS", "2")
 import ast
+import gzip
 import hashlib
 import json
-import gzip
 import pickle
 
 import numpy as np
@@ -18,9 +19,9 @@ import pandas as pd
 from scipy.optimize import brentq
 from scipy.stats import nbinom
 
-from fpl_model.defcon.defender_model import POSITIVE_EVIDENCE, DEFAULT_FEATURE_MODE
+from fpl_model.defcon.defender_model import DEFAULT_FEATURE_MODE, POSITIVE_EVIDENCE
 from fpl_model.defcon.recent_defcon import attach_recent_rates, feature_columns
-from research.defcon.evaluate_defender_monotonic import OUT, DATA, freeze_control, load_scope, fit_candidate, predict
+from research.defcon.evaluate_defender_monotonic import DATA, OUT, fit_candidate, freeze_control, load_scope, predict
 
 
 def context(scope, aggregates):

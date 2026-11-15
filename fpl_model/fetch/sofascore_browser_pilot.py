@@ -7,8 +7,8 @@ and builds only in the pilot's shadow current directory. See pilot README.
 import argparse
 import hashlib
 import json
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 from fpl_model.fetch import fetch_sofascore as f
 from fpl_model.fetch.player_identity import Registry

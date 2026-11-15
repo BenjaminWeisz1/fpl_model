@@ -27,15 +27,14 @@ Web_Names exist, e.g. Wesley/Malick Fofana).
 Run locally:
     python export_player_ratings.py
 """
-from fpl_model import paths
 import sys
 import time
 
 import pandas as pd
-from pathlib import Path
 
-from fpl_model.defcon_scaling import points_prob_at_90          # noqa: E402
-from fpl_model.player_availability import with_availability     # noqa: E402
+from fpl_model import paths
+from fpl_model.defcon_scaling import points_prob_at_90  # noqa: E402
+from fpl_model.player_availability import with_availability  # noqa: E402
 
 _DATA = paths.CURRENT
 

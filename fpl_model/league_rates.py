@@ -3,13 +3,12 @@
 current_season() is the calendar year of GW1's deadline in gameweek_deadlines.csv, which fetch_bootstrap.py
 rewrites first in part 1: 2026 for 2026/27, and it moves when FPL publishes the new game.
 """
-from fpl_model import paths
-import os
 import re
 from functools import lru_cache
-from pathlib import Path
 
 import pandas as pd
+
+from fpl_model import paths
 
 _DATA = paths.CURRENT
 RECORDED_TEAM_MINUTES = 11 * 90     # eleven players x 90 recorded minutes a match

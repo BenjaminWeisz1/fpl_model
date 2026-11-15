@@ -10,13 +10,12 @@ uplifts); secondary: starts only, and calibration for usual subs when starting a
 Run locally (after the candidate's logged run):
     python validate_sub_uplift.py
 """
-from fpl_model import paths
 import json
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from research.player_ratings.validate_opponent_lookup import paired
 
 ROOT = paths.ROOT

@@ -37,7 +37,7 @@ def stratified_reliability(proba, y, matches_played, label, n_bins=5, min_cell=2
     # prediction spread (p_std) growing with MatchesPlayed, and within-bucket
     # AUC growing with MatchesPlayed (more evidence -> more discrimination).
     summary = {"buckets": {}, "lrt": None}
-    print(f"\n  Reliability by MatchesPlayed bucket:")
+    print("\n  Reliability by MatchesPlayed bucket:")
     print(f"  {'bucket':<10s} {'n':>6s} {'obs':>6s} {'pred':>6s} {'gap':>6s} {'p_std':>6s} {'AUC':>6s} {'Brier':>7s}")
     for lab in active:
         m = bucket_masks[lab]
@@ -59,7 +59,7 @@ def stratified_reliability(proba, y, matches_played, label, n_bins=5, min_cell=2
     if len(interior) > 0:
         pbin = np.digitize(p, interior)
         nb = len(interior) + 1
-        print(f"\n  Observed target rate by (predicted-probability bin x MatchesPlayed bucket):")
+        print("\n  Observed target rate by (predicted-probability bin x MatchesPlayed bucket):")
         hdr = f"  {'prob bin':<18s} {'n':>5s} {'pred':>6s} {'all':>6s}"
         hdr += "".join(f" {lab:>9s}" for lab in active)
         print(hdr)

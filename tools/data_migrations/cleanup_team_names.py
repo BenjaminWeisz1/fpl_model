@@ -17,9 +17,10 @@ proceeding with the rest of the pipeline.
 Run locally:
     python cleanup_team_names.py
 """
-from fpl_model import paths
+
 import pandas as pd
-from pathlib import Path
+
+from fpl_model import paths
 from fpl_model.fetch.team_name_map import to_fbref_name
 
 _DATA = paths.CURRENT

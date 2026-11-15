@@ -2,7 +2,6 @@
 Run after build_absence_frame.py: python -u -X utf8 scripts/absence/validate_absence.py
 """
 import json
-import sys
 from pathlib import Path
 
 import numpy as np

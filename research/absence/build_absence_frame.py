@@ -4,13 +4,13 @@ One row per team-match: the expected XI from trailing league minutes, who actual
 Sofascore's own pre-match missing lists, and the quality gap between expected and actual XI on several pre-match measures.
 Run: python -u -X utf8 scripts/absence/build_absence_frame.py
 """
-from fpl_model import paths
 import re
 import unicodedata
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+from fpl_model import paths
 
 ROOT = paths.ROOT
 DATA = paths.CURRENT

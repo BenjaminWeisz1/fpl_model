@@ -20,19 +20,30 @@ Run locally (after build_simulation_features.py):
 
 Importing the module reads no data: the league constants are computed on first use (league_constants()).
 """
-from fpl_model import config, paths
 import functools
 import json
-import sys
 from typing import NamedTuple
 
-import pandas as pd
 import numpy as np
-from scipy import stats
-from pathlib import Path
+import pandas as pd
 
-from fpl_model.bonus.bps_rules import ASSIST_BPS, CLEAN_SHEET_BPS, GC_BPS, GOAL_BPS, MISS_PEN_BPS, PEN_GOAL_BPS, PEN_SAVE_BPS, SAVE_BPS
-from fpl_model.keeper_saves import goalkeeper_event_rates, goalkeeper_pen_save_rate, save_fixture_multiplier, save_fixture_reference
+from fpl_model import config, paths
+from fpl_model.bonus.bps_rules import (
+    ASSIST_BPS,
+    CLEAN_SHEET_BPS,
+    GC_BPS,
+    GOAL_BPS,
+    MISS_PEN_BPS,
+    PEN_GOAL_BPS,
+    PEN_SAVE_BPS,
+    SAVE_BPS,
+)
+from fpl_model.keeper_saves import (
+    goalkeeper_event_rates,
+    goalkeeper_pen_save_rate,
+    save_fixture_multiplier,
+    save_fixture_reference,
+)
 from fpl_model.league_rates import minute_bands, penalty_rates  # noqa: E402
 
 _DATA = paths.CURRENT

@@ -53,13 +53,11 @@ import json
 import sys
 import time
 from datetime import datetime
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 from fpl_model.team_ratings.update_team_ratings import alpha, beta, home_advantage, money_weight
-
 from research.team_ratings import ratings_fast
 from research.team_ratings.evaluate_team_ratings_oot import OUT_DIR, cs_bin_table, load_inputs, summarize_predictions
 from research.team_ratings.ratings_fast import fast_run, frozen_predict_fast
@@ -174,9 +172,9 @@ def main():
     say(f"  cutoffs: {list(CUTOFFS)} (rolling origin: train Season < C, score Season == C)")
     say(f"  production (baseline): {fmt_params(prod_params)}, "
         f"home_advantage={home_advantage:.9f} (fixed, not tuned)")
-    say(f"  primary metric: pooled FROZEN Poisson LL per team-match across all "
-        f"cutoffs' held-out matches (sample-size-weighted);")
-    say(f"  unweighted cutoff mean + walk-forward pooled reported alongside")
+    say("  primary metric: pooled FROZEN Poisson LL per team-match across all "
+        "cutoffs' held-out matches (sample-size-weighted);")
+    say("  unweighted cutoff mean + walk-forward pooled reported alongside")
     say()
     say("PRE-REGISTERED PREDICTION (2026-09-04, before the grid ran):")
     say("  1. optimum near production alpha (0.04-0.05)")

@@ -5,6 +5,7 @@ AvgRaw and RecentEWPer90 by L_(s-1) / (the league levels of the player's earlier
 No production writes. Run: python -u -X utf8 scripts/defcon/evaluate_defender_level.py
 """
 import os
+
 os.environ.setdefault("OMP_NUM_THREADS", "2")
 import gzip
 import json
@@ -18,9 +19,9 @@ from sklearn.isotonic import IsotonicRegression
 from sklearn.model_selection import StratifiedKFold, cross_val_predict
 from sklearn.preprocessing import StandardScaler
 
-from research.defcon import evaluate_defender_recency as R
-from research.defcon.evaluate_defender_monotonic import metrics, bootstrap, predict
 from fpl_model.defcon.recent_defcon import EW_HALF_LIFE
+from research.defcon import evaluate_defender_recency as R
+from research.defcon.evaluate_defender_monotonic import bootstrap, metrics, predict
 
 OUT = R.HERE.parents[1] / "data" / "validation" / "defcon_level_experiment_20261029"
 OUT.mkdir(exist_ok=True)

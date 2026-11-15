@@ -20,11 +20,12 @@ multi-position players split equally). This module computes the same table from 
 Switch GOAL_MODEL_POSITION_RATES = file (default, the file) | slots (all earlier seasons) | slots3 (last 3 seasons).
 Combined positions keep the §77 rule (each listed position counts twice the next) on top of these single-slot rates.
 """
-from fpl_model import config, paths
-from functools import lru_cache
+from functools import cache, lru_cache
 
 import numpy as np
 import pandas as pd
+
+from fpl_model import config, paths
 
 DATA = paths.CURRENT
 MODE = config.get("GOAL_MODEL_POSITION_RATES")
@@ -105,7 +106,7 @@ def window_seasons(season, window):
     raise ValueError(window)
 
 
-@lru_cache(maxsize=None)
+@cache
 def _slot_rates(season, window):
     f = file_rates()
     out = f[["NPG/90", "Assists/90"]].copy()

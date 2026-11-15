@@ -8,8 +8,6 @@ Exploratory, written after that gate was read; decides nothing.
 3. Premier League controls with paired match-level 95% intervals. Season
    clusters are too few there, and match-level intervals run too narrow.
 """
-import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd

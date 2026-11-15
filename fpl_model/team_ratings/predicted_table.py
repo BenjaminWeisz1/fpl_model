@@ -14,8 +14,6 @@ an expected value, not a simulation of how ratings would move.
 
     python -u -X utf8 scripts/team_ratings/predicted_table.py
 """
-from fpl_model import paths
-import sys
 from pathlib import Path
 
 import numpy as np
@@ -23,12 +21,14 @@ import pandas as pd
 import requests
 from scipy.stats import poisson
 
+from fpl_model import paths
+
 _HERE = Path(__file__).resolve().parent
 _ROOT = paths.ROOT
 _DATA = paths.CURRENT
 
-from fpl_model.league_rates import current_season, mean_npg, penalty_rates  # noqa: E402
 from fpl_model.fetch.team_name_map import to_fbref_name  # noqa: E402
+from fpl_model.league_rates import current_season, mean_npg, penalty_rates  # noqa: E402
 from fpl_model.team_ratings.update_team_ratings import home_advantage  # noqa: E402
 
 BASE_URL = "https://fantasy.premierleague.com/api"
@@ -91,12 +91,12 @@ def build():
         home_goals = h["Attack_Rating"] * (a["Defense_Rating"] / avg) * home_advantage * pen_factor
         away_goals = a["Attack_Rating"] * (h["Defense_Rating"] / avg) * (2 - home_advantage) * pen_factor
         pw, pd_, pl = outcome_probs(home_goals, away_goals)
-        for team, w, l in ((home, pw, pl), (away, pl, pw)):
+        for team, w, loss in ((home, pw, pl), (away, pl, pw)):
             row = table[team]
             row["Exp_Points_Remaining"] += 3 * w + pd_
             row["Exp_W"] += w
             row["Exp_D"] += pd_
-            row["Exp_L"] += l
+            row["Exp_L"] += loss
             row["Remaining"] += 1
 
     out = pd.DataFrame.from_dict(table, orient="index").rename_axis("Team").reset_index()
@@ -110,6 +110,7 @@ def build():
 def draw(out):
     """Same renderer and style as the team-ratings images (export_weekly_heatmaps), team names as they use."""
     import seaborn as sns
+
     from fpl_model.export_weekly_heatmaps import _STYLE, _render_heatmap
     sns.set_style(_STYLE)
     df = out[["Team", "Predicted_Points"]].rename(columns={"Predicted_Points": "Points"})

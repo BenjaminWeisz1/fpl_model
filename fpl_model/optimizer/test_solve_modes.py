@@ -1,10 +1,7 @@
 """Tests for solve_modes.py on a toy model named like the pinned solver's (python -m unittest scripts/optimizer/test_solve_modes.py)."""
-import sys
 import unittest
-from pathlib import Path
 
 import highspy
-import numpy as np
 
 from fpl_model.optimizer import solve_modes  # noqa: E402
 

@@ -39,13 +39,13 @@ rows again, so the duplication cannot recur.
 
     python scripts/fetch/fix_mislabelled_season_rows.py [--dry-run]
 """
-from fpl_model import paths
 import shutil
 import sys
 import time
-from pathlib import Path
 
 import pandas as pd
+
+from fpl_model import paths
 
 _ROOT = paths.ROOT
 _DATA = paths.CURRENT

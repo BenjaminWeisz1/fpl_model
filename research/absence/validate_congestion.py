@@ -4,7 +4,6 @@ difference minus the pre-match rating prediction. Run: python -u -X utf8 scripts
 """
 import json
 import re
-import sys
 from pathlib import Path
 
 import numpy as np

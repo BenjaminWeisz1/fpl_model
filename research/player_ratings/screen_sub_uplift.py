@@ -11,12 +11,12 @@ early, starters playing 60-84. Start/sub from player_match_positions.csv (Unders
 Run locally:
     python screen_sub_uplift.py
 """
-from fpl_model import paths
 import json
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+from fpl_model import paths
 
 ROOT = paths.ROOT
 DATA = paths.CURRENT

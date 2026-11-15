@@ -11,8 +11,7 @@ to the §64 model.
 Run locally (after build_residual_bps_baseline.py):
     python build_pass_band_rates.py
 """
-import sys
-from pathlib import Path
+
 import pandas as pd
 
 from fpl_model.bonus import pass_bands as pb

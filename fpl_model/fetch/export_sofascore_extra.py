@@ -5,12 +5,12 @@ data/current/sofascore_missing_players.csv (the source's missingPlayers lists: w
 Reads data/raw/sofascore/matches/ only; no network; not a pipeline stage.
 Run: python -u -X utf8 scripts/fetch/export_sofascore_extra.py
 """
-from fpl_model import paths
 import json
 from collections import Counter
-from pathlib import Path
 
 import pandas as pd
+
+from fpl_model import paths
 
 ROOT = paths.ROOT
 RAW = paths.RAW / "sofascore" / "matches"
@@ -33,7 +33,7 @@ def main():
                     row = {"Season": season, "Event_ID_Sofascore": event_id, "Side": side, "Player_ID_Sofascore": p["player"]["id"],
                            "Substitute": p.get("substitute"), "Captain": p.get("captain"), "Position": p.get("position")}
                     for k, v in stats.items():
-                        if k not in SKIP and not isinstance(v, (dict, list)):
+                        if k not in SKIP and not isinstance(v, dict | list):
                             row[k] = v
                             seen[(season, k)] += 1
                     rows.append(row)
@@ -49,7 +49,6 @@ def main():
     mp = pd.DataFrame(missing)
     mp.to_csv(DATA / "sofascore_missing_players.csv", index=False, encoding="utf-8-sig")
     print("files", files, "rows", len(out), "fields", out.shape[1], "missing rows", len(mp))
-    cov = out.drop(columns=["Event_ID_Sofascore", "Side", "Player_ID_Sofascore"]).groupby("Season").agg(lambda s: s.notna().mean())
     played = out[out.get("minutesPlayed").notna()]
     cov_p = played.drop(columns=["Event_ID_Sofascore", "Side", "Player_ID_Sofascore"]).groupby("Season").agg(lambda s: s.notna().mean()).T.round(2)
     cov_p.to_csv(DATA.parent / "validation" / "sofascore_extra_coverage_20261031.csv", encoding="utf-8-sig")

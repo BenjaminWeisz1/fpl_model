@@ -6,7 +6,7 @@ import json
 import numpy as np
 import pandas as pd
 
-from fpl_model.card_points import DATA, K, KEYS, build_frame, decayed_multiplier, trailing_level
+from fpl_model.card_points import DATA, KEYS, K, build_frame, decayed_multiplier, trailing_level
 
 OUT = DATA.parent / "validation" / "card_exposure_20261102"
 N_BOOT, SEED = 5000, 175

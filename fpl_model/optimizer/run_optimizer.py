@@ -21,15 +21,16 @@ plan folder as team.json, which replay_plans.py checks against.
 See apply_constraints; chips are fixed weeks, never picked by the solver (chips.py, §226). Exits 3 if no plan satisfies
 them.
 """
-from fpl_model import paths
 import argparse
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
 import requests
+
+from fpl_model import paths
 
 _HERE = Path(__file__).resolve().parent
 _ROOT = paths.ROOT
@@ -37,10 +38,14 @@ _DATA = paths.CURRENT
 _SOLVER = _HERE / "open_fpl_solver"
 sys.path.insert(0, str(_SOLVER))  # vendored solver: imported as `dev.solver`, not part of the package
 
+from dev import solver  # noqa: E402
+
+from fpl_model.forecast_horizon import (  # noqa: E402  (the pipeline's forecast window and week weighting, set in one place)
+    HORIZON,
+    TIME_DECAY,
+)
 from fpl_model.optimizer import chips as chip_rules  # noqa: E402
 from fpl_model.optimizer import solve_modes  # noqa: E402
-from dev import solver  # noqa: E402
-from fpl_model.forecast_horizon import HORIZON, TIME_DECAY  # noqa: E402  (the pipeline's forecast window and week weighting, set in one place)
 
 BASE_URL = "https://fantasy.premierleague.com/api"
 LAST_GW = 38
@@ -135,12 +140,12 @@ TEAM_FILE = paths.ROOT / "team_data.json"
 
 def team_saved_utc(team_file=TEAM_FILE):
     """When the team file was saved: its modified time. picks_last_updated is when the picks changed."""
-    return datetime.fromtimestamp(Path(team_file).stat().st_mtime, timezone.utc)
+    return datetime.fromtimestamp(Path(team_file).stat().st_mtime, UTC)
 
 
 def check_team_fresh(saved, events, now=None):
     """Free transfers, bank and picks all change at a deadline, so a file from before the latest one is stale."""
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     deadlines = [datetime.fromisoformat(e["deadline_time"].replace("Z", "+00:00")) for e in events]
     passed = [d for d in deadlines if d <= now]
     if passed and saved < max(passed):

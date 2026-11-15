@@ -27,16 +27,16 @@ FotMob additions are audited in penalty_log_fotmob_additions.csv. Understat file
 Run locally (after fetch_fotmob_matches.py and build_position_crosswalk.py):
     python penalty_log_understat.py [--dry-run]
 """
-from fpl_model import paths
 import argparse
 import json
-from datetime import datetime, timezone
-from pathlib import Path
+from datetime import UTC, datetime
 
 import pandas as pd
 
+from fpl_model import paths
 from fpl_model.fetch import penalty_reconcile
-from fpl_model.fetch.fetch_fotmob_matches import FIRST_SEASON as FOTMOB_FIRST_SEASON, SHOTS_OUT as FOTMOB_SHOTS
+from fpl_model.fetch.fetch_fotmob_matches import FIRST_SEASON as FOTMOB_FIRST_SEASON
+from fpl_model.fetch.fetch_fotmob_matches import SHOTS_OUT as FOTMOB_SHOTS
 
 _ROOT = paths.ROOT
 _DATA = paths.CURRENT
@@ -125,7 +125,7 @@ def main():
     args = parser.parse_args()
     log = pd.read_csv(penalty_reconcile.PENALTY_LOG_FILE, encoding="utf-8-sig").rename(columns={"HomeAway": "Venue"})
     log["Scored"] = log["Scored"].astype(str).str.strip().str.upper() == "TRUE"
-    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    stamp = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     for source, pens, id_col, name_col, audit_file in (
             ("Understat", understat_penalties(), "MatchID_Understat", "Understat_Player", ADDITIONS_FILE),
             ("FotMob", fotmob_penalties(), "MatchID_FotMob", "FotMob_Player", FOTMOB_ADDITIONS_FILE)):

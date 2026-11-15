@@ -12,14 +12,13 @@ The constants were fixed by the §68 experiment (2018-2024 Sofascore and the
 pre-registration. Pass bands are active only when Sofascore is usable
 (sofascore_status.json); otherwise every stage falls back to the §64 model.
 """
-from fpl_model import paths
 import json
-import os
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from scipy import optimize
+
+from fpl_model import paths
 
 _DATA = paths.CURRENT
 
@@ -73,7 +72,8 @@ def shrunk(counts, pos):
 def tilt(p, shift):
     """Exponential tilt of a band distribution so its mean moves by `shift` BPS."""
     target = float(np.clip(p @ BANDS + shift, 0.02, 5.98))
-    f = lambda lam: (p * np.exp(lam * BANDS)) @ BANDS / (p * np.exp(lam * BANDS)).sum() - target
+    def f(lam):
+        return (p * np.exp(lam * BANDS)) @ BANDS / (p * np.exp(lam * BANDS)).sum() - target
     lam = optimize.brentq(f, -10, 10)
     q = p * np.exp(lam * BANDS)
     return q / q.sum()

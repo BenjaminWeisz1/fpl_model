@@ -5,8 +5,6 @@ Reuses the §103 out-of-time candidate predictions (test_predictions.csv) and th
     python validate_new_player_priors_era.py
 """
 import json
-import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd

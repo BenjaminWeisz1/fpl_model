@@ -1,17 +1,17 @@
 """Weekly archive integrity, freshness and round-label tests."""
-from datetime import datetime, timezone
 import json
 import os
-from pathlib import Path
 import tempfile
-from types import SimpleNamespace
 import unittest
+from datetime import UTC, datetime
+from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import pandas as pd
 
 from pipeline_stages import parse_gameweek, run_pipeline
-from save_gameweek_outputs import PART1, PART2, save_snapshot, verify_snapshot, snapshot_plan
+from save_gameweek_outputs import PART1, PART2, save_snapshot, snapshot_plan, verify_snapshot
 
 
 def inputs(data):
@@ -67,8 +67,10 @@ class SaveOutputsTest(unittest.TestCase):
         from save_gameweek_outputs import benchmark_files
         data = self.root/"repo"/"data"/"current"
         raw = self.root/"repo"/"data"/"raw"/"solio"/"2026"/"GW08"
-        data.mkdir(parents=True); raw.mkdir(parents=True)
-        (raw/"solio_baselines.csv").write_text("x\n1\n"); (raw/"capture.json").write_text("{}")
+        data.mkdir(parents=True)
+        raw.mkdir(parents=True)
+        (raw/"solio_baselines.csv").write_text("x\n1\n")
+        (raw/"capture.json").write_text("{}")
         (data/"solio_baselines.csv").write_text("x\n1\n")
         (data/"solio_status.json").write_text(json.dumps({"gameweek": 8, "source_folder": "data/raw/solio/2026/GW08"}))
         (data/"fplreview_projections.csv").write_text("x\n1\n")
@@ -90,9 +92,9 @@ class SaveOutputsTest(unittest.TestCase):
             with (self.data/"player_ratings.csv").open("a") as stream:
                 stream.write("\n")
             return result
-        with patch("save_gameweek_outputs.snapshot_plan",side_effect=changing_plan):
-            with self.assertRaisesRegex(ValueError,"changed while checking"):
-                save_snapshot(self.data,self.output,part="1")
+        with patch("save_gameweek_outputs.snapshot_plan",side_effect=changing_plan), \
+                self.assertRaisesRegex(ValueError,"changed while checking"):
+            save_snapshot(self.data,self.output,part="1")
         self.assertFalse(self.output.exists())
 
     def test_rerun_keeps_both_revisions(self):
@@ -139,7 +141,7 @@ class SaveOutputsTest(unittest.TestCase):
 
     def test_folder_and_manifest_carry_gameweek_and_timing(self):
         pd.DataFrame([{"Gameweek":8,"Deadline_UTC":"2026-10-23T17:30:00Z"}]).to_csv(self.data/"gameweek_deadlines.csv",index=False)
-        for now,tag in ((datetime(2026,10,23,17,29,tzinfo=timezone.utc),"pre_deadline"),(datetime(2026,10,23,17,30,tzinfo=timezone.utc),"after_deadline")):
+        for now,tag in ((datetime(2026,10,23,17,29,tzinfo=UTC),"pre_deadline"),(datetime(2026,10,23,17,30,tzinfo=UTC),"after_deadline")):
             saved=save_snapshot(self.data,self.output,part="1",now=now)
             self.assertEqual(saved.parent.name,"GW08")
             self.assertTrue(saved.name.endswith(f"_GW08_{tag}_part1"),saved.name)

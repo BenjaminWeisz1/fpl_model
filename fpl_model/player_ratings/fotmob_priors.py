@@ -10,15 +10,13 @@ import difflib
 import json
 import re
 import unicodedata
-import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
 
+from fpl_model.fetch.fetch_fotmob_leagues import CALENDAR_LEAGUES, FIRST_SEASON, LEAGUE_DIR, LEAGUES  # noqa: E402
 from fpl_model.player_ratings import new_player_priors as npp  # noqa: E402
-from fpl_model.fetch.fetch_fotmob_leagues import LEAGUES, LEAGUE_DIR, FIRST_SEASON, CALENDAR_LEAGUES  # noqa: E402
 
 FID_LEAGUE = {fid: name for name, (fid, _) in LEAGUES.items()}
 
@@ -55,7 +53,7 @@ def load_fotmob():
                            "Minutes": mp["StatValue"].astype(float), "Matches": mp["MatchesPlayed"]})
 
         def col(name, field="StatValue"):
-            s = L[name]
+            s = L[name]  # noqa: B023 (col is called only within this iteration)
             return dict(zip(s["ParticiantId"], s[field].astype(float))) if s is not None else {}
 
         pen = col("goals", "SubStatValue")
@@ -129,10 +127,13 @@ def attach_fotmob(arr, slots, fm):
                 fid = None
         ids.append(fid)
         if fid is None:
-            n_seasons.append(0); no_xg.append(False)
+            n_seasons.append(0)
+            no_xg.append(False)
             continue
         g = by_id[fid]
-        slots["m"][i, :] = 0; slots["z"][i, :] = 0; slots["league"][i, :] = ""
+        slots["m"][i, :] = 0
+        slots["z"][i, :] = 0
+        slots["league"][i, :] = ""
         for v in slots["x"].values():
             v[i, :] = 0
         found, lacks = 0, False
@@ -147,7 +148,8 @@ def attach_fotmob(arr, slots, fm):
             slots["x"]["xAG"][i, k] = rows["xA"].sum()
             slots["league"][i, k] = "F:" + rows.sort_values("Minutes").iloc[-1]["League"]
             slots["z"][i, k] = float(np.average(rows["z"], weights=rows["Minutes"]))
-        n_seasons.append(found); no_xg.append(lacks)
+        n_seasons.append(found)
+        no_xg.append(lacks)
     arr["FM_ID"] = ids
     arr["FM_Seasons"] = n_seasons
     arr["FM_NoXG"] = no_xg
@@ -193,7 +195,8 @@ class FPriorModel(npp.PriorModel):
     def fit(self, arr, slots, tag="all"):
         t = self.target
         leagues = sorted({L for L in slots["league"].ravel() if L})
-        A = arr[f"{tag}_{t}_A"].to_numpy(); B = arr[f"{tag}_{t}_B"].to_numpy()
+        A = arr[f"{tag}_{t}_A"].to_numpy()
+        B = arr[f"{tag}_{t}_B"].to_numpy()
         scale = max(B.sum(), 1.0) / 1000.0
         pre = self.arrays(arr, t)
 

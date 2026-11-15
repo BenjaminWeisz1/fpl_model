@@ -4,7 +4,6 @@ Run: python -u -X utf8 scripts/absence/congestion_players.py
 """
 import json
 
-import numpy as np
 import pandas as pd
 import statsmodels.formula.api as smf
 

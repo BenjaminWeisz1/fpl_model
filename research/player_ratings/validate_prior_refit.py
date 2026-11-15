@@ -14,8 +14,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from fpl_model.player_ratings import new_player_priors as npp  # noqa: E402
 from fpl_model.player_ratings import fotmob_priors as fp  # noqa: E402
+from fpl_model.player_ratings import new_player_priors as npp  # noqa: E402
 from research.player_ratings import anchored_priors as ap  # noqa: E402
 from research.player_ratings import validate_fotmob_priors as vfp  # noqa: E402
 from research.player_ratings.validate_new_player_priors import boot_change, calib  # noqa: E402

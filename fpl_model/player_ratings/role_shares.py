@@ -3,11 +3,11 @@
 Not wired into any pipeline stage. Lines match validate_role_move_error.py. Later steps should import this
 so training and forecasts share one calculation. Frozen settings come from validate_role_shares.py.
 """
-from fpl_model import paths
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+from fpl_model import paths
 
 DATA = paths.CURRENT
 LINES = ["CB", "WD", "CM", "ATT", "FW"]

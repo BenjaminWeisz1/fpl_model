@@ -10,14 +10,12 @@ that's a bonus-points-facet concern, handled when we build that model.
 Run locally (after predict_fixture_goals.py):
     python build_penalty_predictions.py
 """
-from fpl_model import paths
-import sys
 
 import pandas as pd
-from pathlib import Path
 
-from fpl_model.league_rates import check_minutes_round, penalty_rates, recorded_clock_scale  # noqa: E402
+from fpl_model import paths
 from fpl_model.forecast_horizon import GAMEWEEKS  # noqa: E402  (the forecast window, set in one place)
+from fpl_model.league_rates import check_minutes_round, penalty_rates, recorded_clock_scale  # noqa: E402
 
 _DATA = paths.CURRENT
 

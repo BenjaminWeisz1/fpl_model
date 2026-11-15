@@ -12,9 +12,10 @@ Run this ONCE, before running fetch_gameweek_stats.py for the first time.
 Run locally:
     python backfill_season_column.py
 """
-from fpl_model import paths
+
 import pandas as pd
-from pathlib import Path
+
+from fpl_model import paths
 
 _DATA = paths.CURRENT
 FILE = paths.CURRENT / "player_match_stats.csv"

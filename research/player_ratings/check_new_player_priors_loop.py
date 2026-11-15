@@ -10,8 +10,6 @@ Shadow checks of the new-player priors in the rating loop (CHANGELOG §103-§105
    first-season rows and for all their rows.
 """
 import json
-import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd

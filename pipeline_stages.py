@@ -23,12 +23,13 @@ Stage dicts take:
     season_start_only  -- optional bool; skipped unless --preseason was passed
     accepts_gameweek   -- optional bool; receives --gameweek N when the run was given it
 """
-from fpl_model import paths
 import os
 import subprocess
 import sys
 import time
 from pathlib import Path
+
+from fpl_model import paths
 
 ROOT = paths.ROOT
 SCRIPTS = ROOT / "fpl_model"

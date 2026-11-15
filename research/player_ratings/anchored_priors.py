@@ -10,15 +10,13 @@ level = mean non-penalty xG per team-match over the league's seasons 2017-2025 w
 the five Understat leagues, FotMob lists for the 22 FotMob leagues); a league without data gets the mean log level.
 """
 import json
-import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
 
-from fpl_model.player_ratings import new_player_priors as npp  # noqa: E402
 from fpl_model.player_ratings import fotmob_priors as fp  # noqa: E402
+from fpl_model.player_ratings import new_player_priors as npp  # noqa: E402
 
 COEFFS = npp.DATA / "league_coefficients_20261029.csv"
 UNDERSTAT_NAME = {v: k for k, v in npp.UNDERSTAT_LEAGUE.items()}

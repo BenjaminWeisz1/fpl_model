@@ -15,8 +15,6 @@ Run locally:
     python validate_transfer_money_updates.py
 """
 import json
-import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd

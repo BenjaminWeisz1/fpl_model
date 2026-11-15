@@ -1,13 +1,13 @@
 """Weekly browser-download import and status tests; all payloads synthetic, no network."""
 import json
-from pathlib import Path
 import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from fpl_model.fetch import fetch_sofascore as f
-from fpl_model.fetch.player_identity import write_csv
 from fpl_model.fetch import sofascore_weekly as w
+from fpl_model.fetch.player_identity import write_csv
 from fpl_model.fetch.test_sofascore import lineup
 
 SID = 96668

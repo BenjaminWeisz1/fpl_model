@@ -10,12 +10,11 @@ run on the fixed data, under data/validation/npxg_penalty_20261028/:
 Run locally (after the logged run):
     python validate_npxg_penalty.py
 """
-from fpl_model import paths
 import json
-from pathlib import Path
 
 import pandas as pd
 
+from fpl_model import paths
 from research.player_ratings.validate_opponent_lookup import paired
 
 ROOT = paths.ROOT

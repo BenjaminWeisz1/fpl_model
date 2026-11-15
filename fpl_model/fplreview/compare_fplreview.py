@@ -37,7 +37,6 @@ Run locally:
     python compare_fplreview.py --snapshot <folder>
     python compare_fplreview.py --current            # data/current, before a snapshot exists
 """
-from fpl_model import paths
 import argparse
 import json
 import sys
@@ -45,6 +44,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+from fpl_model import paths
 
 ROOT = paths.ROOT
 from fpl_model.atomic_write import to_csv_atomic  # noqa: E402

@@ -2,15 +2,15 @@
 One factor per head, fitted on one FPL-era season's held-out rows, tested on the other. No production writes.
 Run: python -u -X utf8 scripts/defcon/evaluate_points_calibration.py
 """
-from fpl_model import paths
 import json
-import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from scipy.optimize import brentq
 from sklearn.metrics import log_loss
+
+from fpl_model import paths
 
 HERE = Path(__file__).resolve().parent
 ROOT = paths.ROOT

@@ -11,13 +11,13 @@ holds the team names). Personal, non-commercial use; plain requests with a 1 s p
 Run locally:
     python fetch_vaastav.py
 """
-from fpl_model import paths
 import hashlib
 import json
 import time
-from pathlib import Path
 
 import requests
+
+from fpl_model import paths
 
 _RAW = paths.RAW / "vaastav"
 BASE = "https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/master/data"

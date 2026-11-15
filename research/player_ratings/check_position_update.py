@@ -15,8 +15,8 @@ import numpy as np
 import pandas as pd
 
 from research.player_ratings import validate_arrival_position as vap  # noqa: E402
-from research.player_ratings import validate_position_rates as vpr  # noqa: E402
 from research.player_ratings import validate_position_forms as vpf  # noqa: E402
+from research.player_ratings import validate_position_rates as vpr  # noqa: E402
 
 C = {"npxG": 0.4, "xAG": 0.35}
 KPOS = 1.0

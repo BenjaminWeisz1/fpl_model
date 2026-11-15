@@ -4,15 +4,18 @@ Tagged arrivals (mid-season, two leagues) in the adopted groups with the product
     python validate_tagged_priors.py
 """
 import json
-import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from fpl_model.player_ratings import new_player_priors as npp  # noqa: E402
 from fpl_model.player_ratings import fotmob_priors as fp  # noqa: E402
-from fpl_model.player_ratings.build_new_player_priors import era_scales, name_match_ids, PARAMS, PARAMS_FOTMOB  # noqa: E402
+from fpl_model.player_ratings import new_player_priors as npp  # noqa: E402
+from fpl_model.player_ratings.build_new_player_priors import (  # noqa: E402
+    PARAMS,
+    PARAMS_FOTMOB,
+    era_scales,
+    name_match_ids,
+)
 from research.player_ratings.validate_new_player_priors import boot_change, calib  # noqa: E402
 
 LOG = npp.ROOT / "data" / "validation" / "prior_refit_beta_20261030" / "log_beta.csv"

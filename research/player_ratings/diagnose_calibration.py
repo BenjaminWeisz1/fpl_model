@@ -4,7 +4,6 @@ Diagnostic only; reads a GOAL_MODEL_PREMATCH_LOG log with the Opp_Factor and Is_
 
     python diagnose_calibration.py [log.csv]
 """
-from fpl_model import paths
 import json
 import sys
 import warnings
@@ -13,6 +12,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
+
+from fpl_model import paths
 
 ROOT = paths.ROOT
 OUT = paths.VALIDATION / "calibration_diag_20261030"

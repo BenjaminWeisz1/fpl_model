@@ -14,7 +14,6 @@ Run locally:
 """
 import hashlib
 import json
-import sys
 from collections import deque
 
 import numpy as np

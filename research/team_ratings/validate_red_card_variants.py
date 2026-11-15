@@ -8,16 +8,15 @@ evaluate_team_ratings_oot.py on each with --dump-predictions, and scores the hel
     python validate_red_card_variants.py run
     python validate_red_card_variants.py score     # -> data/validation/red_card_20261030/variants/results.json
 """
-from fpl_model import paths
 import json
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from fpl_model.team_ratings import red_card_adjust as rca  # noqa: E402
 
 ROOT = paths.ROOT

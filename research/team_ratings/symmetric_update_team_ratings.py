@@ -136,18 +136,29 @@ import math
 import sys
 import time
 from datetime import datetime
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 from fpl_model.team_ratings.update_team_ratings import alpha, beta, home_advantage, money_weight
-
 from research.team_ratings import ratings_fast
 from research.team_ratings.evaluate_team_ratings_oot import OUT_DIR, load_inputs, summarize_predictions
-from research.team_ratings.ratings_fast import fast_run, frozen_predict_fast  # noqa: F401 (frozen_predict_fast via evaluate)
+from research.team_ratings.kalman_team_ratings import (
+    NOISE_BAND_LL,
+    TOY_LAM0,
+    TOY_NUMS,
+    add_match_indices,
+    build_season_teams,
+    es_calibrated_reference,
+    evaluate,
+    incumbent_runner,
+    kalman_runner,
+)
+from research.team_ratings.ratings_fast import (  # noqa: F401 (frozen_predict_fast via evaluate)
+    fast_run,
+    frozen_predict_fast,
+)
 from research.team_ratings.tune_team_ratings import CUTOFFS, build_context, fmt_params
-from research.team_ratings.kalman_team_ratings import NOISE_BAND_LL, TOY_LAM0, TOY_NUMS, add_match_indices, build_season_teams, es_calibrated_reference, evaluate, incumbent_runner, kalman_runner
 
 EPS = 1e-6  # mirrors the production loop's eps exactly (ratings_fast._EPS)
 
@@ -367,7 +378,7 @@ def sym_invariants(prod, prior_map, df, ave_full, say):
     ok = ok and fin
     rel = np.concatenate([np.abs(ph_s - ph_f) / ph_f,
                           np.abs(pa_s - pa_f) / pa_f])
-    say(f"    walk-forward divergence vs incumbent over 2017-2026 (the")
+    say("    walk-forward divergence vs incumbent over 2017-2026 (the")
     say(f"    second-order form difference accumulating): relative |diff| "
         f"median {np.median(rel):.2e}, mean {rel.mean():.2e}, "
         f"max {rel.max():.2e}")
@@ -478,7 +489,7 @@ def main():
     guard_ok = ratings_fast.verify_against_reference(checks, prior_map, log=say)
     say(f"  guard wall time: {time.perf_counter() - t_guard:.0f}s "
         f"(the symmetric engine has no verbatim twin -- STEP 0 is its")
-    say(f"  correctness story; this guard secures the incumbent baseline)")
+    say("  correctness story; this guard secures the incumbent baseline)")
     if not guard_ok:
         say("  GUARD FAILED -- aborting.")
         return 1
@@ -590,7 +601,7 @@ def main():
     say(f"    -> the symmetric form alone reproduces {frac:.0%} of the §24")
     say(f"       gain ({sym_imp:+.4f} of {k24_imp:+.4f}); ES-ref-vs-symmetric")
     say(f"       isolates the calibrated lam-dependent gain ({es_f - sym_f:+.4f});")
-    say(f"       selected-vs-ES-ref isolates entry/boundary P inflation +")
+    say("       selected-vs-ES-ref isolates entry/boundary P inflation +")
     say(f"       r_scale ({sel_f - es_f:+.4f}).")
     if stored24 is not None:
         ref_delta = stored24["scorecard"]["no_leakage_pooled_frozen_delta"]

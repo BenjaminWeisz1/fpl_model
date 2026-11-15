@@ -4,13 +4,13 @@ Needs a pre-match log first:
   GOAL_MODEL_PREMATCH_LOG=data/validation/conversion_xgot_20261101/log.csv python build_player_ratings.py
 Run: python -u -X utf8 scripts/player_ratings/validate_conversion_xgot.py
 """
-from fpl_model import paths
 import json
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from scipy.special import gammaln
+
+from fpl_model import paths
 
 ROOT = paths.ROOT
 DATA = paths.CURRENT

@@ -21,15 +21,15 @@ Run locally:
     python fetch_understat_leagues.py            # fetch what is missing, then write the manifest
     python fetch_understat_leagues.py --manifest # manifest only, no downloads
 """
-from fpl_model import config, paths
 import argparse
 import hashlib
 import json
 import sys
 import time
-from pathlib import Path
 
 import requests
+
+from fpl_model import config, paths
 
 _ROOT = paths.ROOT
 LEAGUE_CACHE = paths.RAW / "understat" / "league"

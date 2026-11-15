@@ -32,24 +32,25 @@ Outputs:
   (next_gw_predicted_scores.png is drawn in part 1 by scripts/team_ratings/predicted_scores.py)
 
 """
-from fpl_model import paths
-
 import argparse
-import os
 import re
 import sys
 import textwrap
+
+import matplotlib
 import numpy as np
 import pandas as pd
-import matplotlib
+
+from fpl_model import paths
+
 matplotlib.use("Agg")            # headless -- no GUI event loop
+
 import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.patches import Rectangle
-from pathlib import Path
 
-from fpl_model.defcon_scaling import points_mu90, prob_at_minutes          # noqa: E402
+from fpl_model.defcon_scaling import points_mu90, prob_at_minutes  # noqa: E402
 
 # ── Configuration ──────────────────────────────────────────────────────────────
 _OUT_DIR = paths.IMAGES
@@ -322,7 +323,7 @@ def _render_heatmap(df: pd.DataFrame, sort_col: str, display_cols: list,
             cx = (x_edges[c] + x_edges[c + 1]) / 2
             raw = show_df.iloc[r, c]
             v = float(raw)
-            if all_cols[c] in pct_cols:
+            if all_cols[c] in pct_cols:  # noqa: SIM108 (a nested conditional expression would read worse)
                 txt = "" if pd.isna(raw) else f"{v * 100:.0f}%"
             else:
                 txt = _fmt(v, precision)
@@ -556,7 +557,7 @@ def predicted_points_charts() -> None:
     ]
     _POS_LABEL = {None: "All positions", "G": "Goalkeepers", "M": "Midfielders",
                   "F": "Forwards", "D": "Defenders"}
-    
+
     for pos, fname in specs:
         subset = df[df["Pos"] == pos] if pos is not None else df
         display = list(gw_cols) + ["Total"]

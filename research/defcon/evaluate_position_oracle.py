@@ -4,6 +4,7 @@ Oracle = the held-out row's actual Pos_* dummies. Realistic = the player's previ
 Same fitted head for both. No production writes. Run: python -u -X utf8 scripts/defcon/evaluate_position_oracle.py
 """
 import os
+
 os.environ.setdefault("OMP_NUM_THREADS", "2")
 import json
 

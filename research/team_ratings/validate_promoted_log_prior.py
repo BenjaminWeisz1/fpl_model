@@ -10,7 +10,6 @@ Run locally:
     python validate_promoted_log_prior.py
 """
 import json
-import sys
 
 import numpy as np
 import pandas as pd

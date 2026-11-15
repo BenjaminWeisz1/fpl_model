@@ -22,15 +22,16 @@ Shared by the validation (`validate_new_player_priors.py`) and the production wr
     Parameters are fitted by minimising the squared error of match output = prior x minutes/90
     over the arrivals' first-season PL matches, which reduces to per-player sufficient statistics.
 """
-from fpl_model import paths
 import json
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
 
-from fpl_model.player_ratings import position_rates as _pr  # §246 (GOAL_MODEL_POSITION_RATES; default "file" changes nothing)
+from fpl_model import paths
+from fpl_model.player_ratings import (
+    position_rates as _pr,  # §246 (GOAL_MODEL_POSITION_RATES; default "file" changes nothing)
+)
 
 ROOT = paths.ROOT
 DATA = paths.CURRENT
@@ -143,7 +144,9 @@ def attach_priors(arr, uplayers, ids=None):
     by_id = {k: g for k, g in uplayers.groupby("Understat_ID")}
     K = N_PRIOR_SEASONS
     n = len(arr)
-    m = np.zeros((n, K)); z = np.zeros((n, K)); lg = np.full((n, K), "", dtype=object)
+    m = np.zeros((n, K))
+    z = np.zeros((n, K))
+    lg = np.full((n, K), "", dtype=object)
     xs = {"npxG": np.zeros((n, K)), "xAG": np.zeros((n, K))}
     path = []
     for i, r in enumerate(arr.itertuples()):
@@ -162,8 +165,11 @@ def attach_priors(arr, uplayers, ids=None):
                     lg[i, k] = "U:" + top["ULeague"]
                     z[i, k] = float(np.average(rows["z"], weights=rows["Minutes"]))
         if not use_u:
-            m[i, :] = 0; z[i, :] = 0; lg[i, :] = ""
-            xs["npxG"][i, :] = 0; xs["xAG"][i, :] = 0
+            m[i, :] = 0
+            z[i, :] = 0
+            lg[i, :] = ""
+            xs["npxG"][i, :] = 0
+            xs["xAG"][i, :] = 0
             m[i, 0] = r.Min_Old if r.Min_Old == r.Min_Old else 0.0
             lg[i, 0] = "M:" + r.League
             xs["npxG"][i, 0] = r.npxG_Old if r.npxG_Old == r.npxG_Old else (r.NPG_Old if r.NPG_Old == r.NPG_Old else 0.0)
@@ -294,7 +300,8 @@ class PriorModel:
     def fit(self, arr, slots, tag="all"):
         t = self.target
         leagues = sorted({L for L in slots["league"].ravel() if L})
-        A = arr[f"{tag}_{t}_A"].to_numpy(); B = arr[f"{tag}_{t}_B"].to_numpy()
+        A = arr[f"{tag}_{t}_A"].to_numpy()
+        B = arr[f"{tag}_{t}_B"].to_numpy()
         scale = max(B.sum(), 1.0) / 1000.0  # keeps the loss O(1) per thousand match-90s
         pre = self.arrays(arr, t)
 

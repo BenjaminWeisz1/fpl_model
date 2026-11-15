@@ -3,13 +3,14 @@
 Protocol: data/validation/xmins_scale_20261102/protocol.json. Reads archived forecasts and FPL event/N/live JSON
 saved in the folder given as argv[1]. Changes no data file.
 """
-from fpl_model import paths
 import json
 import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+from fpl_model import paths
 
 ROOT = paths.ROOT
 OUT = paths.VALIDATION / "xmins_scale_20261102"

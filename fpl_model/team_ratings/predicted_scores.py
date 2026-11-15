@@ -12,19 +12,19 @@ which only part 2 has, so part 1 uses the league penalty rate, as clean sheets a
 
     python -u -X utf8 scripts/team_ratings/predicted_scores.py
 """
-from fpl_model import paths
 import sys
 from pathlib import Path
 
 import pandas as pd
 import requests
 
+from fpl_model import paths
+
 _HERE = Path(__file__).resolve().parent
 _DATA = paths.CURRENT
 
 from fpl_model.league_rates import current_season, mean_npg, penalty_rates  # noqa: E402
 from fpl_model.team_ratings.update_team_ratings import home_advantage  # noqa: E402
-
 
 FPL_API = "https://fantasy.premierleague.com/api"
 
@@ -85,6 +85,7 @@ def predicted_scores(round_num):
 
 def main():
     import seaborn as sns
+
     from fpl_model.export_weekly_heatmaps import _STYLE, _TEAM_DISPLAY, _render_scores
     bootstrap = fetch("bootstrap-static/")
     round_num = next_gameweek(bootstrap)

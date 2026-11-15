@@ -15,13 +15,13 @@ script exits non-zero naming the unmapped teams.
 Run locally:
     python fetch_football_data.py
 """
-from fpl_model import paths
 import sys
 import time
-from pathlib import Path
 
 import pandas as pd
 import requests
+
+from fpl_model import paths
 
 _ROOT = paths.ROOT
 _DATA = paths.CURRENT

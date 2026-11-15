@@ -148,15 +148,13 @@ import math
 import sys
 import time
 from datetime import datetime
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 from fpl_model.team_ratings.update_team_ratings import alpha, beta, home_advantage, money_weight
-
 from research.team_ratings import ratings_fast
-from research.team_ratings.evaluate_team_ratings_oot import OUT_DIR, cs_bin_table, load_inputs, summarize_predictions
+from research.team_ratings.evaluate_team_ratings_oot import OUT_DIR, load_inputs, summarize_predictions
 from research.team_ratings.ratings_fast import fast_run, frozen_predict_fast
 from research.team_ratings.tune_team_ratings import CUTOFFS, build_context, fmt_params
 
@@ -648,7 +646,7 @@ def main():
     guard_ok = ratings_fast.verify_against_reference(checks, prior_map, log=say)
     say(f"  guard wall time: {time.perf_counter() - t_guard:.0f}s "
         f"(the Kalman engine has no verbatim reference -- STEP 0 is its")
-    say(f"  correctness story; this guard secures the incumbent baseline)")
+    say("  correctness story; this guard secures the incumbent baseline)")
     if not guard_ok:
         say("  GUARD FAILED -- aborting.")
         return 1
@@ -826,8 +824,8 @@ def main():
     say(f"  pooled frozen delta vs incumbent: global-grid winner {g_f:+.4f}"
         f" vs no-leakage selection {s_f:+.4f} (flattery "
         f"{g_f - s_f:+.4f})")
-    say(f"    (pre-registered: the global number flatters; the no-leakage")
-    say(f"     number is the decision number)")
+    say("    (pre-registered: the global number flatters; the no-leakage")
+    say("     number is the decision number)")
     e_b = base["pooled"]["early"]["frozen"]["poisson_ll_per_tm"]
     e_s = sel["pooled"]["early"]["frozen"]["poisson_ll_per_tm"]
     l_b = base["pooled"]["late"]["frozen"]["poisson_ll_per_tm"]

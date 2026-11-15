@@ -16,12 +16,11 @@ observed 2025+ position rate.
 Fitted on all 2025+ FPL-era rows (12,377 outfield player-matches; production_fit_A3.json in
 data/validation/fpl_only_assists_20261028/). Do not re-estimate without a new pre-registration.
 """
-from fpl_model import paths
 import json
-import os
-from pathlib import Path
 
 import numpy as np
+
+from fpl_model import paths
 
 _DATA = paths.CURRENT
 

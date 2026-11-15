@@ -4,6 +4,7 @@ Protocol, frozen before scoring: data/validation/defcon_team_aggregates_20261102
 Run: python -u -X utf8 scripts/defcon/evaluate_team_aggregates.py [extract|run|score]
 """
 import os
+
 os.environ.setdefault("OMP_NUM_THREADS", "2")
 import json
 import sys
@@ -13,9 +14,8 @@ import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
 
-from research.defcon import overnight_frames as H
-
 from fpl_model.defcon_scaling import DEFENDER_POINTS_FACTOR, nb_sf, prob_at_minutes
+from research.defcon import overnight_frames as H
 
 OUT = H.ROOT / "data" / "validation" / "defcon_team_aggregates_20261102"
 H.OUT, H.FRAMES = OUT, OUT / "frames.pkl"

@@ -11,12 +11,13 @@ error versus extrapolating.
 Run locally:
     python build_minutes_probabilities.py
 """
-from fpl_model import paths
 import re
 import sys
-import pandas as pd
+
 import numpy as np
-from pathlib import Path
+import pandas as pd
+
+from fpl_model import paths
 
 # When stdout is a pipe (e.g. run_weekly_update.py's capture_output=True on
 # Windows), Python encodes with cp1252, which cannot represent some player
@@ -25,8 +26,8 @@ from pathlib import Path
 sys.stdout.reconfigure(errors="replace")
 sys.stderr.reconfigure(errors="replace")
 
-from fpl_model.player_availability import status_conflicts  # noqa: E402
 from fpl_model.forecast_horizon import GAMEWEEKS  # noqa: E402  (the forecast window, set in one place)
+from fpl_model.player_availability import status_conflicts  # noqa: E402
 
 _DATA = paths.CURRENT
 

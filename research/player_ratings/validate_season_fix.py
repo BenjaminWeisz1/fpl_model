@@ -13,13 +13,14 @@ after) under data/validation/season_fix_20261028/:
 Run locally (after both logged runs):
     python validate_season_fix.py [--dir <run directory>]
 """
-from fpl_model import paths
 import argparse
 import json
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+from fpl_model import paths
 
 ROOT = paths.ROOT
 DIR = paths.VALIDATION / "season_fix_20261028"

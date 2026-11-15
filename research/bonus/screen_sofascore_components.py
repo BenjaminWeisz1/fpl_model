@@ -23,13 +23,12 @@ adopts nothing.
 Run locally:
     python screen_sofascore_components.py
 """
-from fpl_model import paths
 import json
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from research.bonus.validate_bonus_calibration import SLOT_POSITION
 
 ROOT = paths.ROOT

@@ -18,19 +18,26 @@ check sees it as an input of the same run.
 Run locally (after every individual facet script has been run):
     python build_predicted_points.py
 """
-from fpl_model import paths
-import os
-import sys
-import pandas as pd
+
 import numpy as np
-from pathlib import Path
+import pandas as pd
 from scipy.stats import poisson
 
-from fpl_model.card_points import ROLE_MIX, current_rates, expected_card_points, fixture_yellows_90, forecast_cameo_share  # noqa: E402
-from fpl_model.defcon_scaling import points_mu90, prob_at_minutes          # noqa: E402
-from fpl_model.keeper_saves import goalkeeper_event_rates  # noqa: E402
+from fpl_model import paths
 from fpl_model.atomic_write import to_csv_atomic  # noqa: E402
-from fpl_model.keeper_saves import PENALTY_GOALS_FACTOR, SAVE_FIXTURE_BETA, save_fixture_multiplier, save_fixture_reference
+from fpl_model.card_points import (  # noqa: E402
+    ROLE_MIX,
+    current_rates,
+    expected_card_points,
+    fixture_yellows_90,
+    forecast_cameo_share,
+)
+from fpl_model.defcon_scaling import points_mu90, prob_at_minutes  # noqa: E402
+from fpl_model.keeper_saves import (
+    goalkeeper_event_rates,  # noqa: E402
+    save_fixture_multiplier,
+    save_fixture_reference,
+)
 
 _DATA = paths.CURRENT
 

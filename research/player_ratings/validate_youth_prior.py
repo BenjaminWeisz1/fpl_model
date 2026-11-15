@@ -6,17 +6,16 @@ Youth prior: fitted multiplier on the position average (CHANGELOG §113).
 Reads the §112 K = 16 pre-match log (data/validation/prior_k_20261029/log_k16.csv); youth rows there do not
 depend on the new-player priors file. Writes data/validation/youth_prior_20261029/results.json.
 """
-from fpl_model import paths
 import json
 import os
 import subprocess
 import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from research.player_ratings.validate_prior_k import entrants, boot_diff, OOT_PRIORS  # noqa: E402
+from fpl_model import paths
+from research.player_ratings.validate_prior_k import OOT_PRIORS, boot_diff, entrants  # noqa: E402
 
 ROOT = paths.ROOT
 DATA = paths.CURRENT
