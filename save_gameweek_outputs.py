@@ -255,7 +255,9 @@ def save_snapshot(data=DATA, output=SNAPSHOTS, season=CURRENT_SEASON, gameweek=N
              for p in sorted(destination.rglob("*")) if p.is_file()}
     sources = [ROOT/"run_post_gameweek.py", ROOT/"run_pre_deadline.py", Path(__file__),
                ROOT/"fpl_model"/"defcon"/"predict.py", ROOT/"fpl_model"/"defcon"/"defender_model.py",
-               ROOT/"fpl_model"/"defcon"/"recent_defcon.py",ROOT/"fpl_model"/"defcon"/"opponent_model.py"]
+               ROOT/"fpl_model"/"defcon"/"recent_defcon.py",ROOT/"fpl_model"/"defcon"/"opponent_model.py",
+               ROOT/"fpl_model"/"defcon"/"features.py",ROOT/"fpl_model"/"defcon"/"model_cache.py",
+               ROOT/"fpl_model"/"defcon"/"evaluation.py"]
     sources += [ROOT/"fpl_model"/relative for relative in (
         "team_ratings/update_team_ratings.py", "team_ratings/predict_fixture_goals.py",
         "player_ratings/build_player_ratings.py", "player_ratings/export_player_ratings.py",

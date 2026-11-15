@@ -17,7 +17,19 @@ negatives), then rescales to the player's expected minutes for each fixture.
 
 ## How it works
 
-`predict.py` is the whole model. On every run it:
+The stage is `predict.py` (`python -m fpl_model.defcon.predict`), which runs the steps below and imports its parts:
+
+| Module | Job |
+|---|---|
+| `predict.py` | Loads the data, builds the training frames, runs the validation battery, trains the three heads and writes the forecasts |
+| `features.py` | Position classification and the per-match feature helpers (cameo filters, prior-blended spread, the nearest-neighbour estimator) |
+| `recent_defcon.py` | The causal EW recent rate, shared by training and serving, and the feature schemas |
+| `defender_model.py` | The locked monotonic defender configuration, league-level adjustment and centred isotonic calibrator |
+| `opponent_model.py` | The §149 opponent factor |
+| `model_cache.py` | The calibrated-model wrapper, `tune_and_calibrate` and the trained-model cache |
+| `evaluation.py` | Out-of-time metrics: log loss, AUC, Brier and reliability by evidence bucket |
+
+On every run it:
 
 1. Loads the full match history from `data/current/player_match_stats.csv`
    — fbref rows 2017–2024 plus FPL-API rows from 2025 on. FPL-API defensive
@@ -98,8 +110,8 @@ count as cameos for the raw averages (`RAW_CAMEO_MIN`) and the transfer prior is
 
 About 20 minutes on fresh data (nine model trainings: three production heads
 plus six validation splits); around 6 minutes when the trained-model cache
-hits unchanged training data. Any edit to `predict.py` invalidates the
-cache keys and forces a full retrain once.
+hits unchanged training data. Any edit to a model module (`MODEL_SOURCES` in `model_cache.py`, plus
+`defender_model.py`) invalidates the cache keys and forces a full retrain once.
 
 ## Other scripts
 
@@ -109,8 +121,6 @@ cache keys and forces a full retrain once.
   preserves the control before edits, checks exact training-frame cache keys,
   reports held-out metrics and player-cluster bootstrap intervals, and audits
   isolated evidence updates. Evidence is in `experiment_20261020/`.
-- `defender_model.py` — the locked defender configuration and constrained features.
-- `recent_defcon.py` — the shared causal EW recent-rate helper and feature schemas.
 - `evaluate_defender_recency.py` (§105, not adopted) and `evaluate_defender_level.py`
   (§106, adopted) — out-of-time tests on the saved §46 frame, evidence in
   `recency_experiment_20261029/` and `level_experiment_20261029/` (the latter also holds

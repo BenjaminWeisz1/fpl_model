@@ -1,32 +1,34 @@
-from fpl_model import config, paths
-import os
-import sys
-import gzip
-import json
-import pickle
-import re
-import time
-import hashlib
-import pandas as pd
-import numpy as np
-from collections import defaultdict
-from pathlib import Path
-import warnings
-warnings.filterwarnings("ignore")
+"""
+Defcon model stage: P(a player reaches FPL's defensive-contribution threshold) for every fixture in the forecast
+window, plus a fixture-neutral 90-minute probability per player.
 
-import sklearn
-from sklearn.model_selection import (
-    cross_val_score, cross_val_predict, StratifiedKFold, RandomizedSearchCV,
-)
-from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingClassifier
-from fpl_model.defcon.defender_model import monotonic_params, DEFAULT_FEATURE_MODE, season_levels, level_factors, apply_level_factors, level_adjust_features, CenteredIsotonic
+    python -m fpl_model.defcon.predict
+
+Reads player_match_stats.csv and friends from data/current, builds the training frames (features.py), validates the
+three heads out of time (evaluation.py), trains or loads them through the model cache (model_cache.py), then writes
+predictions_defensive.csv and defcon_average_probabilities.csv. See fpl_model/defcon/README.md.
+"""
+import warnings
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
+from sklearn.metrics import log_loss, roc_auc_score
+
+from fpl_model import config, paths
+from fpl_model.defcon.defender_model import (DEFAULT_FEATURE_MODE, apply_level_factors, level_adjust_features,
+                                             level_factors, monotonic_params, season_levels)
+from fpl_model.defcon.evaluation import mech_gap, mech_lrt, report_metrics, score_validation
+from fpl_model.defcon.features import (DEFENDER_DETAILED_POS, MID_FWD_DETAILED_POS, QUALIFYING_MINUTES_P90,
+                                       RAW_CAMEO_MIN, avg_raw_qualifying, estimate_std_and_pct, get_pos_dummies,
+                                       is_defender_pos, is_forward_pos, is_midfielder_or_forward_pos, pooled_prior_std,
+                                       recent5_qualifying_per90, recent5_qualifying_raw)
+from fpl_model.defcon.model_cache import prune_model_cache, tune_and_calibrate
 from fpl_model.defcon.opponent_model import match_order, opponent_factors, position_groups
-from fpl_model.defcon.recent_defcon import attach_recent_rates, feature_columns, EW_HALF_LIFE
-from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import StandardScaler
-from sklearn.isotonic import IsotonicRegression
-from sklearn.metrics import log_loss, roc_auc_score, brier_score_loss
-from scipy.stats import chi2
+from fpl_model.defcon.recent_defcon import EW_HALF_LIFE, attach_recent_rates, feature_columns
+
+warnings.filterwarnings("ignore")
 
 _SCRIPTS_DIR = Path(__file__).resolve().parents[1]
 from fpl_model.team_ratings.get_next_round import get_next_round
@@ -41,10 +43,6 @@ CURRENT_SEASON = current_season()
 DEFENDER_FEATURE_MODE = DEFAULT_FEATURE_MODE
 
 
-def _centered_calibration(label):
-    """§107: the defender head's calibrator interpolates between isotonic block centres instead of returning steps
-    (which gave many defenders identical probabilities)."""
-    return label.startswith("Defender")
 
 # ── Load data ──────────────────────────────────────────────────────────
 # Read the consolidated player_match_stats.csv (replaces the old player_matchlogs.csv).
@@ -167,47 +165,6 @@ def prior_for_season(player, season):
 fixtures["Home"] = fixtures["Home"].str.strip()
 fixtures["Away"] = fixtures["Away"].str.strip()
 
-# ── Position classification ────────────────────────────────────────────
-# Accepts both detailed fbref positions (CB, FB, WB, etc.) and coarse FPL-API
-# positions (D, M, F) -- the latter come from 2025/26 rows where detailed
-# tactical position data isn't available.
-DEFENDER_POSITIONS = {"CB", "FB", "WB", "LB", "RB", "D"}
-MIDFIELDER_POSITIONS = {"DM", "CM", "AM", "WM", "W", "LM", "RM", "LW", "RW", "M"}
-FORWARD_POSITIONS = {"FW", "F"}
-
-def is_defender_pos(pos_str):
-    if pd.isna(pos_str): return False
-    return any(p.strip() in DEFENDER_POSITIONS for p in str(pos_str).split(","))
-
-def is_midfielder_or_forward_pos(pos_str):
-    """Midfielders and forwards share the same defcon rules."""
-    if pd.isna(pos_str): return False
-    positions = [p.strip() for p in str(pos_str).split(",")]
-    return any(p in MIDFIELDER_POSITIONS or p in FORWARD_POSITIONS for p in positions)
-
-def is_forward_pos(pos_str):
-    """Forward rows (any FW/F token) -- the forward-specific model's row
-    selector. Mirrors the any-token convention of the other classifiers:
-    a fbref row 'FW,AM' is a forward row; the transfers fallback writes a
-    single first token, so first-token and any-token coincide there."""
-    if pd.isna(pos_str): return False
-    return any(p.strip() in FORWARD_POSITIONS for p in str(pos_str).split(","))
-
-# Detailed position lists for the new Pos_* multi-hot features -- lets the
-# model learn position-specific defcon tendencies directly (e.g. CB > FB > WB)
-# rather than relying entirely on indirect signal through a player's own
-# individual stats.
-DEFENDER_DETAILED_POS = ["CB", "FB", "WB", "LB", "RB"]
-MID_FWD_DETAILED_POS = ["DM", "CM", "AM", "WM", "W", "LM", "RM", "LW", "RW", "FW"]
-
-def get_pos_dummies(pos_str, detailed_positions):
-    """Multi-hot encoding: a row like 'CB,FB' sets BOTH Pos_CB and Pos_FB to 1,
-    reflecting that the player featured in both positions that match."""
-    if pd.isna(pos_str):
-        codes = set()
-    else:
-        codes = set(p.strip() for p in str(pos_str).split(","))
-    return {f"Pos_{c}": (1 if c in codes else 0) for c in detailed_positions}
 
 matchlogs["IsDefender"] = matchlogs["Position"].apply(is_defender_pos)
 matchlogs["IsMidfielderOrForward"] = matchlogs["Position"].apply(is_midfielder_or_forward_pos)
@@ -278,8 +235,6 @@ matchlogs["Per90_Mid"] = np.where(matchlogs["Minutes"] > 0, matchlogs["DefStats_
 matchlogs["Season"] = matchlogs["Season"].astype(int)
 MAX_SEASON = int(matchlogs["Season"].max())
 RECENCY_DECAY = 0.8  # exponential decay factor per season
-# The >= 60 minute bar every per-90 feature in this model uses.
-QUALIFYING_MINUTES_P90 = 60
 
 # ── Detailed per-match position from Understat (CHANGELOG §38, AGENDA §4) ──
 # The Pos_* multi-hot dummies below are built from this column. Historically
@@ -455,122 +410,6 @@ fwd_prior_opp, fwd_prior_team, fwd_prior_venue, fwd_final_opp, fwd_final_team, f
 # "Pure" = in-dataset only (no prior blending), so the estimator reflects
 # actual PL behaviour.
 
-def pooled_prior_std(est_std, k, prior_per90, pl_values):
-    """StdPer90 for a prior-blended player: the sample std of the COMBINED
-    evidence -- k pseudo-matches at the prior-league rate (spread est_std,
-    borrowed from rate-similar PL players) plus the player's qualifying PL
-    per-90s -- via two-sample pooled variance:
-
-        [(k-1) est^2 + (n-1) s^2 + (k n / (k+n)) (xbar - prior)^2] / (k+n-1)
-
-    The PL-only std (old behaviour) lets a 2-match arrival's variance be
-    dominated by noise: matches of 7 and 19 -> std 8.5 when the rate-implied
-    std is ~6, and the model reads that phantom volatility as risk,
-    depressing a proven arrival's probability. Edge cases, all derived from
-    the same formula:
-      n = 0     -> est_std exactly (the combined sample IS the k
-                   pseudo-matches) -- covers debut rows and tier-2 players
-      n = 1     -> [(k-1) est^2 + (k/(k+1)) (x1 - prior)^2] / k: one match
-                   carries no sample variance, but its distance from the
-                   prior rate is real spread evidence (old behaviour: flat
-                   est_std, discarding that information)
-      k + n < 2 -> est_std fallback (fewer than two observations to span,
-                   e.g. Min_Old < 90 with no PL matches yet)
-    """
-    vals = [float(v) for v in pl_values if pd.notna(v)]
-    n = len(vals)
-    if n == 0 or k + n < 2:
-        return float(est_std)
-    num = (k - 1.0) * est_std * est_std
-    if n > 1:
-        num += (n - 1.0) * float(np.std(vals, ddof=1)) ** 2
-    num += (k * n / (k + n)) * (float(np.mean(vals)) - prior_per90) ** 2
-    return float(np.sqrt(max(num, 0.0) / (k + n - 1.0)))
-
-
-# ── Cameo filtering for raw features (AvgRaw / Recent5AvgRaw) ─────────
-# Per-90 features already exclude sub-60-min matches (a cameo's per-90 is
-# extrapolation noise: 3 actions in 1 minute -> 270 per-90). Raw per-match
-# volume has the OPPOSITE failure: a cameo's raw total is mechanically
-# SMALL (fewer minutes -> fewer actions), so cameo matches bias per-match
-# raw averages DOWNWARD -- a bench player with 7 raw per full match shows
-# AvgRaw ~4 once 15-minute appearances are averaged in. AvgRaw and
-# Recent5AvgRaw therefore count only non-cameo matches (Minutes >=
-# RAW_CAMEO_MIN). RAW_CAMEO_MIN = 15 was selected from candidates 15/30/45:
-# 30 was uniformly worse out-of-time and the degradation grew monotonically
-# with the threshold (45 was cancelled mid-sweep), so 15 -- the gentlest
-# filter -- shipped even though the no-filter incumbent edged it on OOT log
-# loss (+0.0026 sum); the trade buys unbiased per-match raw volume for bench
-# players (CHANGELOG §15). Re-test as data accumulates (0 reproduces the pre-§15 behaviour exactly).
-# Edge cases (same discipline as pooled_prior_std):
-#   - no non-cameo match + prior    -> AvgRaw = prior rate (the blend
-#     degenerates to the k pseudo-matches; also covers debut rows)
-#   - no non-cameo match, no prior  -> 0.0 (same convention as AvgPer90
-#     when no qualifying matches exist)
-#   - last-5 window mostly cameos (>= RECENT5_CAMEO_LIMIT cameos among
-#     the last 5) -> Recent5AvgRaw falls back to the cameo-filtered
-#     AvgRaw instead of collapsing to a zero-/one-match "recent" average
-#   - short window with too little full-match signal (fewer than
-#     RECENT5_MIN_QUALIFYING non-cameo matches -- e.g. a new arrival whose
-#     2-3 career matches mix one full match with cameos) -> same fallback;
-#     a full 5-match window with <= 2 cameos always keeps >= 3 qualifying
-#     matches, so this only bites short windows
-RAW_CAMEO_MIN = 15
-RECENT5_CAMEO_LIMIT = 3
-RECENT5_MIN_QUALIFYING = 2
-# Recent5AvgPer90 was ONE OF TWO per-90 features with no cameo filter (the
-# opponent/team/venue aggregates were the other -- see compute_season_aggregates), and it
-# suffered exactly the extrapolation failure the comment above describes:
-# 40% of defender last-5 windows contain a sub-60' match, and ~84% of
-# windows above 14 per 90 were bench cameos rather than form. The model
-# learned that correctly and inverted -- raising Recent5AvgPer90 from 10 to
-# 14 LOWERED the prediction for 85.5% of served defender rows, while the
-# cameo-filtered relationship keeps rising (0.459 -> 0.468 observed, and
-# 0.507 -> 0.611 among starters). The feature now uses the same >= 60'
-# qualifying bar as every other per-90 feature (CHANGELOG §36).
-
-
-def avg_raw_qualifying(sum_raw_q, n_raw_q, k=0.0, prior_per90=0.0):
-    """AvgRaw over non-cameo matches only, blended with k prior-league
-    pseudo-matches at the prior rate. 0.0 when there is no evidence at
-    all (no non-cameo match and no prior)."""
-    denom = n_raw_q + k
-    if denom <= 0:
-        return 0.0
-    return (sum_raw_q + k * prior_per90) / denom
-
-
-def recent5_qualifying_raw(df, stat_col):
-    """Recent5AvgRaw candidate from a chronologically ordered history frame:
-    the mean raw stat over the non-cameo matches among the player's last
-    5. Returns None when the window is mostly cameos (>= RECENT5_CAMEO_LIMIT
-    cameos -- no recent full-match signal exists) or holds fewer than
-    RECENT5_MIN_QUALIFYING non-cameo matches (a short window whose "recent
-    form" would otherwise rest on a single match); the caller then falls
-    back to the cameo-filtered AvgRaw, so the feature can never collapse
-    to a zero- or one-match average."""
-    last5 = df.tail(5)
-    if int((last5["Minutes"] < RAW_CAMEO_MIN).sum()) >= RECENT5_CAMEO_LIMIT:
-        return None
-    qual = last5[last5["Minutes"] >= RAW_CAMEO_MIN][stat_col]
-    if len(qual) < RECENT5_MIN_QUALIFYING:
-        return None
-    return float(qual.mean())
-
-
-def recent5_qualifying_per90(df, per90_col):
-    """Recent5AvgPer90 candidate from a chronologically ordered history frame:
-    the mean per-90 over the QUALIFYING (>= 60 minute) matches among the
-    player's last 5 appearances. Returns None when fewer than
-    RECENT5_MIN_QUALIFYING of them qualify -- the caller then falls back to
-    the player's career AvgPer90, mirroring how Recent5AvgRaw falls back to
-    AvgRaw. Cameo per-90s are extrapolation noise (3 actions in 1 minute ->
-    270 per-90) and belong in no per-90 feature."""
-    last5 = df.tail(5)
-    qual = last5[last5["Minutes"] >= QUALIFYING_MINUTES_P90][per90_col]
-    if len(qual) < RECENT5_MIN_QUALIFYING:
-        return None
-    return float(qual.mean())
 
 
 def precompute_player_features(pos_mask, stat_col, per90_col, threshold, detailed_positions,
@@ -648,24 +487,6 @@ def precompute_player_features(pos_mask, stat_col, per90_col, threshold, detaile
         }
     return features
 
-
-def estimate_std_and_pct(pos_feats):
-    """Nearest-neighbour estimator for two career-level statistics of
-    a player with a given in-dataset AvgPer90: StdPer90 (spread) and
-    PctAboveThreshold (target rate). Median of the 10 nearest PL
-    players (>=5 qualifying matches) sorted by career AvgPer90."""
-    stats = [(f["AvgPer90"], f["StdPer90"], f["PctAboveThreshold"])
-             for f in pos_feats.values() if f["MatchesPlayed"] >= 5]
-    if not stats: return lambda p: (4.0, 0.3)
-    stats = sorted(stats, key=lambda x: x[0])
-    avg_per90s = np.array([s[0] for s in stats])
-    std_per90s = np.array([s[1] for s in stats])
-    pct_aboves = np.array([s[2] for s in stats])
-    def estimate(per90):
-        idx = np.argsort(np.abs(avg_per90s - per90))[:10]
-        return (np.median(std_per90s[idx]),
-                np.median(pct_aboves[idx]))
-    return estimate
 
 
 def_player_feats_pure = precompute_player_features(matchlogs["IsDefender"], "DefStats_Def", "Per90_Def", 10, DEFENDER_DETAILED_POS)
@@ -884,167 +705,6 @@ MID_FEATURE_COLS = [c for c in MID_FEATURE_COLS if c != "OpponentAvgStat"] + ["O
 # This mirrors real-world deployment (train on history, predict the future)
 # and gives an honest estimate of generalisation performance.
 
-def stratified_reliability(proba, y, matches_played, label, n_bins=5, min_cell=25):
-    """Reliability check stratified by MatchesPlayed (individual-evidence strength).
-
-    Aggregate ECE can hide evidence-dependent miscalibration: a low-evidence
-    player pushed up toward the mean and a high-evidence player pushed down
-    toward the mean land in the same predicted-probability bin and cancel
-    each other out. This checks calibration, prediction spread, and
-    discrimination WITHIN evidence buckets, cross-tabulates observed rates
-    by (probability bin x evidence bucket), and formally tests
-    (likelihood-ratio) whether P(target | prediction) depends on
-    MatchesPlayed. The compression signature is observed rates RISING with
-    MatchesPlayed in the top probability bins and FALLING in the bottom
-    bins -- i.e. the same prediction meaning different things depending on
-    how much individual evidence backs it."""
-    p = np.asarray(proba, dtype=float)
-    yv = np.asarray(y)
-    mp = np.asarray(matches_played, dtype=float)
-
-    bucket_labels = ["0-9", "10-29", "30-79", "80-149", "150+"]
-    buckets = pd.cut(mp, bins=[-0.5, 9.5, 29.5, 79.5, 149.5, np.inf], labels=bucket_labels)
-    bucket_masks = {lab: np.asarray(buckets == lab) for lab in bucket_labels}
-    active = [lab for lab in bucket_labels if bucket_masks[lab].sum() > 0]
-
-    # Per-bucket calibration, prediction spread, within-bucket discrimination.
-    # A model that properly trusts individual evidence should show BOTH:
-    # prediction spread (p_std) growing with MatchesPlayed, and within-bucket
-    # AUC growing with MatchesPlayed (more evidence -> more discrimination).
-    summary = {"buckets": {}, "lrt": None}
-    print(f"\n  Reliability by MatchesPlayed bucket:")
-    print(f"  {'bucket':<10s} {'n':>6s} {'obs':>6s} {'pred':>6s} {'gap':>6s} {'p_std':>6s} {'AUC':>6s} {'Brier':>7s}")
-    for lab in active:
-        m = bucket_masks[lab]
-        obs, pred = yv[m].mean(), p[m].mean()
-        summary["buckets"][lab] = {"n": int(m.sum()), "obs": float(obs), "pred": float(pred)}
-        try:
-            auc = roc_auc_score(yv[m], p[m])
-        except ValueError:
-            auc = float("nan")
-        print(f"  {lab:<10s} {m.sum():>6d} {obs:>6.3f} {pred:>6.3f} {pred - obs:>+6.3f} "
-              f"{p[m].std():>6.3f} {auc:>6.3f} {brier_score_loss(yv[m], p[m]):>7.3f}")
-
-    # Observed rate by (probability bin x evidence bucket): the compression
-    # signature lives HERE, not in the aggregate numbers above. If the model
-    # under-trusts strong evidence, high-evidence players inside a given
-    # probability bin will hit MORE often than low-evidence players in the
-    # same bin (and vice versa in the bottom bins).
-    interior = np.unique(np.quantile(p, np.linspace(0, 1, n_bins + 1)[1:-1]))
-    if len(interior) > 0:
-        pbin = np.digitize(p, interior)
-        nb = len(interior) + 1
-        print(f"\n  Observed target rate by (predicted-probability bin x MatchesPlayed bucket):")
-        hdr = f"  {'prob bin':<18s} {'n':>5s} {'pred':>6s} {'all':>6s}"
-        hdr += "".join(f" {lab:>9s}" for lab in active)
-        print(hdr)
-        bin_ranges = {}
-        for b in range(nb):
-            m = pbin == b
-            if m.sum() == 0:
-                continue
-            lo = interior[b - 1] if b > 0 else p.min()
-            hi = interior[b] if b < len(interior) else p.max()
-            bin_ranges[b] = (lo, hi)
-            row = f"  [{lo:.3f}, {hi:.3f})".ljust(19) + f"{m.sum():>5d} {p[m].mean():>6.3f} {yv[m].mean():>6.3f}"
-            for lab in active:
-                mm = m & bucket_masks[lab]
-                row += f" {yv[mm].mean():>9.3f}" if mm.sum() >= min_cell else f" {'--':>9s}"
-            print(row)
-
-        # Direct compression test: within each probability bin, compare
-        # observed rates for lowest- vs highest-evidence players. Same bin,
-        # different evidence -- a consistent nonzero gap means predictions
-        # carry different meaning depending on sample size.
-        lo_lab, hi_lab = active[0], active[-1]
-        print(f"\n  Within-bin evidence gaps (observed rate, {hi_lab} minus {lo_lab} MatchesPlayed):")
-        for b, (lo, hi) in bin_ranges.items():
-            m = pbin == b
-            lo_m = m & bucket_masks[lo_lab]
-            hi_m = m & bucket_masks[hi_lab]
-            if lo_m.sum() < min_cell or hi_m.sum() < min_cell:
-                continue
-            gap = yv[hi_m].mean() - yv[lo_m].mean()
-            print(f"    [{lo:.3f}, {hi:.3f}): {yv[hi_m].mean():.3f} (n={hi_m.sum():>4d}) vs "
-                  f"{yv[lo_m].mean():.3f} (n={lo_m.sum():>4d}) -> gap {gap:+.3f}")
-
-    # Formal omnibus test: LRT of y ~ logit(p) against y ~ logit(p) * bucket.
-    # (Caveat: rows cluster within players and matches, so the p-value is
-    # anti-conservative -- treat a small p as a flag, not proof.)
-    # Skipped when y has only one class (e.g. forward 2026 with 0 positives)
-    # — logistic regression requires at least 2 classes.
-    if len(active) > 1 and len(np.unique(yv)) > 1:
-        pc = np.clip(p, 1e-6, 1 - 1e-6)
-        lp = np.log(pc / (1 - pc))
-        lp = (lp - lp.mean()) / (lp.std() + 1e-12)
-        dummies = np.column_stack([bucket_masks[lab].astype(float) for lab in active])
-        X_red = np.column_stack([np.ones(len(p)), lp])
-        extra = [dummies[:, j] for j in range(1, len(active))]
-        extra += [lp * dummies[:, j] for j in range(1, len(active))]
-        X_full = np.column_stack([X_red] + extra)
-
-        def _loglik(X):
-            clf = LogisticRegression(C=1e8, max_iter=5000)
-            clf.fit(X, yv)
-            ph = np.clip(clf.predict_proba(X)[:, 1], 1e-12, 1 - 1e-12)
-            return float(np.sum(yv * np.log(ph) + (1 - yv) * np.log(1 - ph)))
-
-        lrt = 2.0 * (_loglik(X_full) - _loglik(X_red))
-        dof = X_full.shape[1] - X_red.shape[1]
-        p_val = float(1.0 - chi2.cdf(lrt, dof))
-        print(f"\n  LRT (calibration independent of MatchesPlayed): chi2={lrt:.2f}, df={dof}, p={p_val:.4f}")
-        if p_val < 0.05:
-            print("  -> P(target | pred) differs by evidence level: evidence-dependent bias present.")
-        else:
-            print("  -> No detectable evidence-dependent miscalibration at the 5% level.")
-        summary["lrt"] = {"chi2": lrt, "dof": dof, "p": p_val}
-    return summary
-
-
-def _report_metrics(proba, y_val, X_val, feature_cols, label):
-    """Metrics + MatchesPlayed-stratified reliability for a scored validation
-    frame -- shared by the freshly-trained and already-trained (ablation)
-    validation paths. Returns the stratified-reliability summary, if any."""
-    ll = log_loss(y_val, proba, labels=[0, 1])
-    # AUC is undefined when y_true has only one class (e.g. forward 2026
-    # with 0 positives among a tiny validation set); guard with NaN.
-    try:
-        auc = roc_auc_score(y_val, proba)
-    except ValueError:
-        auc = float("nan")
-    brier = brier_score_loss(y_val, proba)
-
-    # Expected calibration error (10 equal-width bins)
-    n_bins = 10
-    bin_edges = np.linspace(0, 1, n_bins + 1)
-    ece = 0.0
-    for b in range(n_bins):
-        mask = (proba >= bin_edges[b]) & (proba < bin_edges[b + 1])
-        if b == n_bins - 1:
-            mask = mask | (proba == bin_edges[b + 1])
-        if mask.sum() == 0:
-            continue
-        ece += mask.sum() * abs(y_val[mask].mean() - proba[mask].mean())
-    ece /= len(y_val)
-
-    print(f"\n{'=' * 60}")
-    print(f"OUT-OF-TIME VALIDATION: {label}")
-    print(f"{'=' * 60}")
-    print(f"  Val: {len(y_val)} records | target rate: {y_val.mean():.3f}")
-    print(f"  Log loss:  {ll:.4f}")
-    print(f"  AUC:       {auc:.4f}")
-    print(f"  Brier:     {brier:.4f}")
-    print(f"  ECE:       {ece:.4f}")
-
-    # Stratified reliability check -- aggregate ECE can hide compression
-    # (a low-evidence player pushed up toward the mean and a high-evidence
-    # player pushed down toward the mean land in the same probability bin
-    # and cancel out), so check calibration within MatchesPlayed buckets.
-    summary = None
-    if "MatchesPlayed" in feature_cols:
-        mp_idx = feature_cols.index("MatchesPlayed")
-        summary = stratified_reliability(proba, y_val, X_val[:, mp_idx], label)
-    return summary
 
 
 # ── Hyperparameter grids and model configs ──────────────────────────
@@ -1083,261 +743,6 @@ _MODEL_CONFIGS["HGB_MONOTONIC"] = (
 _DEFENDER_MODEL_NAME = "HGB_MONOTONIC"
 
 
-# ── Calibration wrapper ──────────────────────────────────────────────
-class _CalibratedModel:
-    """Base model + standalone isotonic calibrator.
-    predict_proba applies scaler (if set) then calibrates the raw output.
-    Replaces CalibratedClassifierCV with an explicit cross_val_predict
-    pipeline so calibration is a single isotonic fit on OOF predictions
-    from the *tuned* model, not an ensemble of 5 internally-refitted
-    copies."""
-    def __init__(self, base_model, calibrator, scaler=None):
-        self.base_model = base_model
-        self.calibrator = calibrator
-        self.scaler = scaler
-
-    def predict_proba(self, X):
-        if self.scaler is not None:
-            X = self.scaler.transform(X)
-        raw = self.base_model.predict_proba(X)[:, 1]
-        cal = self.calibrator.predict(raw)
-        return np.column_stack([1 - cal, cal])
-
-
-# ── Trained-model cache + parallel RF fits ──────────────────────────
-# Weekly runs retrained all 9 models even when nothing that determines
-# them had changed. tune_and_calibrate now consults a disk cache keyed
-# on a content hash of EVERYTHING that determines the artifact:
-#   * md5 of predict.py itself -- any code edit invalidates the cache
-#   * sklearn/numpy versions
-#   * model class, label, tuning path (do_tune), default params, and
-#     the random_state/cv/n_iter call arguments
-#   * the training frame itself (X and y bytes) -- NOT the input-file
-#     md5s: fixtures.csv, minutes_probabilities.csv and match_results.csv
-#     change weekly but feed only the prediction loops, never training
-#     rows, so keying on them would force pointless retrains; conversely
-#     any edit to player_match_stats.csv / players_current.csv /
-#     transfers.csv that changes a frame's contents changes X and
-#     invalidates naturally. Input-file md5s are still written to
-#     input_fingerprints.json each run for diagnostics ("why did the
-#     cache miss?").
-# The payload stores base model + calibrator + scaler + best_params as
-# plain sklearn objects (not the _CalibratedModel wrapper, which lives
-# in __main__ and would be unpicklable elsewhere). Stale entries from
-# earlier weeks are pruned once all nine trainings are done.
-# DEFCON_MODEL_CACHE=0 disables the cache entirely (forced retrain);
-# DEFCON_RF_N_JOBS overrides the RF fit parallelism (default -1 = all
-# cores; with random_state fixed, n_jobs is result-invariant).
-_CACHE_ENABLED = config.get("DEFCON_MODEL_CACHE")
-_CACHE_DIR = paths.CACHE / "defcon"
-_PREDICT_SOURCE_MD5 = hashlib.md5(Path(__file__).read_bytes()).hexdigest()
-# The defender head's parameters and calibration live here, so an edit must retrain too (§189).
-_DEFENDER_SOURCE_MD5 = hashlib.md5((Path(__file__).parent / "defender_model.py").read_bytes()).hexdigest()
-_RF_N_JOBS = config.get("DEFCON_RF_N_JOBS")
-_CACHE_USED_KEYS = set()
-_CACHE_INITIALISED = False
-
-
-def _md5_file(path):
-    h = hashlib.md5()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(1 << 20), b""):
-            h.update(chunk)
-    return h.hexdigest()
-
-
-def _initialise_model_cache():
-    """Create the cache dir and record input-file md5s once per run
-    (diagnostics only -- cache keys are content-based, see above)."""
-    global _CACHE_INITIALISED
-    if _CACHE_INITIALISED or not _CACHE_ENABLED:
-        return
-    _CACHE_INITIALISED = True
-    _CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    fingerprints = {name: _md5_file(_DATA / name)
-                    for name in ("player_match_stats.csv", "players_current.csv",
-                                 "transfers.csv", "fixtures.csv",
-                                 "minutes_probabilities.csv", "match_results.csv")
-                    if (_DATA / name).exists()}
-    payload = {"written": time.strftime("%Y-%m-%d %H:%M:%S"),
-               "predict_source_md5": _PREDICT_SOURCE_MD5,
-               "files": fingerprints}
-    tmp = _CACHE_DIR / "input_fingerprints.json.tmp"
-    tmp.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-    os.replace(tmp, _CACHE_DIR / "input_fingerprints.json")
-
-
-def _model_cache_key(X, y, model_cls, label, do_tune, default_params,
-                     random_state, cv, n_iter):
-    """md5 over everything that determines the trained artifact."""
-    h = hashlib.md5()
-    h.update(_PREDICT_SOURCE_MD5.encode())
-    h.update(_DEFENDER_SOURCE_MD5.encode())
-    h.update(f"sklearn={sklearn.__version__};numpy={np.__version__}".encode())
-    h.update(f"{model_cls.__name__}|{label}|tune={int(bool(do_tune))}".encode())
-    h.update(repr(sorted((default_params or {}).items())).encode())
-    h.update(f"rs={random_state}|cv={cv}|n_iter={n_iter}|cir={int(_centered_calibration(label))}".encode())
-    h.update(f"X{X.shape}|{X.dtype}|".encode())
-    h.update(X.tobytes())
-    h.update(f"y{y.shape}|{y.dtype}|".encode())
-    h.update(y.tobytes())
-    return h.hexdigest()
-
-
-def _cache_path_for(label, key):
-    slug = re.sub(r"[^A-Za-z0-9]+", "_", label).strip("_")
-    return _CACHE_DIR / f"{slug}__{key}.pkl.gz"
-
-
-def _load_cached_model(path, label):
-    """Return (calibrated, scaler, best_params) from the cache, or None
-    on any failure (corrupt entry, unpicklable payload) -- cache
-    problems must never break a run, only cost a retrain."""
-    try:
-        with gzip.open(path, "rb") as f:
-            payload = pickle.load(f)
-        return (_CalibratedModel(payload["base_model"], payload["calibrator"],
-                                 payload["scaler"]),
-                payload["scaler"], payload["best_params"])
-    except Exception as exc:
-        print(f"  [{label}] cache entry unreadable ({exc}) -- retraining")
-        try:
-            path.unlink()
-        except OSError:
-            pass
-        return None
-
-
-def _store_cached_model(path, label, production, calibrator, scaler,
-                        best_params):
-    """Persist a freshly trained artifact atomically (tmp + rename) so a
-    crash mid-write can never leave a corrupt cache entry behind."""
-    payload = {"base_model": production, "calibrator": calibrator,
-               "scaler": scaler, "best_params": best_params}
-    tmp = path.with_name(path.name + ".tmp")
-    try:
-        with gzip.open(tmp, "wb", compresslevel=1) as f:
-            pickle.dump(payload, f)
-        os.replace(tmp, path)
-    except Exception as exc:
-        print(f"  [{label}] cache write failed ({exc}) -- continuing uncached")
-        try:
-            tmp.unlink()
-        except OSError:
-            pass
-
-
-def _prune_model_cache():
-    """Delete entries whose keys the current run did not produce: last
-    week's training frames are strictly superseded, so their cached
-    models can never be hit again (and the cache sits in OneDrive-synced
-    storage, so dead weight is real sync churn). Runs after the last of
-    the nine trainings."""
-    if not (_CACHE_ENABLED and _CACHE_DIR.exists()):
-        return
-    kept = removed = 0
-    freed = 0
-    for f in sorted(_CACHE_DIR.glob("*.pkl.gz")):
-        if f.name in _CACHE_USED_KEYS:
-            kept += 1
-        else:
-            freed += f.stat().st_size
-            f.unlink()
-            removed += 1
-    for f in sorted(_CACHE_DIR.glob("*.tmp")):
-        f.unlink()
-    print(f"Model cache: {kept} entr{'y' if kept == 1 else 'ies'} kept, "
-          f"{removed} stale pruned ({freed / 1e6:.1f} MB freed)")
-
-
-def tune_and_calibrate(X, y, model_cls, param_grid, label, cv=5,
-                       random_state=42, n_iter=30, do_tune=True,
-                       default_params=None):
-    """Tune hyperparameters via RandomizedSearchCV, then calibrate the
-    tuned model with cross_val_predict + isotonic regression.
-
-    Steps:
-      1. Tune: RandomizedSearchCV(n_iter, cv, scoring=neg_log_loss) to
-         find best hyperparameters on the training data.
-      2. Calibrate: cross_val_predict with the same fold structure to
-         generate out-of-fold probabilities; fit IsotonicRegression on
-         OOF p vs y.
-      3. Final model: train the tuned model on ALL training data; attach
-         the calibrator for inference.
-
-    Returns (_CalibratedModel, scaler, best_params).
-    The _CalibratedModel wraps scaler + base_model + calibrator so
-    predict_proba accepts raw (unscaled) feature arrays.
-
-    Results are served from the model cache when the content key
-    matches a stored artifact (see the model-cache section above); RF
-    fits run with n_jobs=_RF_N_JOBS, which with random_state fixed is
-    result-invariant and purely faster."""
-    _initialise_model_cache()
-    cache_path = None
-    if _CACHE_ENABLED:
-        key = _model_cache_key(X, y, model_cls, label, do_tune,
-                               default_params, random_state, cv, n_iter)
-        cache_path = _cache_path_for(label, key)
-        if cache_path.exists():
-            cached = _load_cached_model(cache_path, label)
-            if cached is not None:
-                _CACHE_USED_KEYS.add(cache_path.name)
-                print(f"  [{label}] cache hit -- skipping training "
-                      f"(key {key[:12]})")
-                return cached
-    t_start = time.time()
-
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
-    skf = StratifiedKFold(n_splits=cv, shuffle=True, random_state=random_state)
-
-    # Step 1: Tune hyperparameters
-    if do_tune and param_grid:
-        search = RandomizedSearchCV(
-            model_cls(random_state=random_state),
-            param_grid, n_iter=n_iter, cv=skf,
-            scoring="neg_log_loss", random_state=random_state, n_jobs=4,
-        )
-        search.fit(X_scaled, y)
-        best_params = search.best_params_
-        print(f"  [{label}] tuning best: {best_params}")
-    else:
-        best_params = default_params or {}
-        print(f"  [{label}] skipping tuning (using defaults)")
-
-    # RF fits parallelise across trees (result-invariant with the fixed
-    # random_state). The search estimator above stays single-threaded so
-    # its n_jobs=4 candidate parallelism is not oversubscribed.
-    def _make(params):
-        p = dict(params)
-        p["random_state"] = random_state
-        if model_cls is RandomForestClassifier:
-            p["n_jobs"] = _RF_N_JOBS
-        return model_cls(**p)
-
-    # Step 2: OOF calibration on the tuned model
-    base_for_cv = _make(best_params)
-    oof_proba = cross_val_predict(
-        base_for_cv, X_scaled, y, cv=skf, method="predict_proba",
-    )
-    oof_p = np.clip(oof_proba[:, 1], 1e-6, 1 - 1e-6)
-    calibrator = CenteredIsotonic() if _centered_calibration(label) else IsotonicRegression(out_of_bounds="clip")
-    calibrator.fit(oof_p, y)
-
-    # Step 3: Train final production model on ALL training data
-    production = _make(best_params)
-    production.fit(X_scaled, y)
-
-    print(f"  [{label}] trained on {len(y)} records")
-    if cache_path is not None:
-        _store_cached_model(cache_path, label, production, calibrator,
-                            scaler, best_params)
-        _CACHE_USED_KEYS.add(cache_path.name)
-        print(f"  [{label}] cached for next run (key {key[:12]})")
-    print(f"  [{label}] training wall time {time.time() - t_start:.1f}s")
-    return _CalibratedModel(production, calibrator, scaler), scaler, best_params
-
 
 def evaluate_oot(X_train, y_train, X_val, y_val, feature_cols, label, model_name):
     """Train on earlier seasons, evaluate on the most recent season.
@@ -1355,7 +760,7 @@ def evaluate_oot(X_train, y_train, X_val, y_val, feature_cols, label, model_name
 
     # Wrapper handles scaling internally; pass raw validation features.
     proba = calibrated.predict_proba(X_val)[:, 1]
-    summary = _report_metrics(proba, y_val, X_val, feature_cols, label)
+    summary = report_metrics(proba, y_val, X_val, feature_cols, label)
 
     # Feature importances from the production base model
     base = calibrated.base_model
@@ -1368,14 +773,6 @@ def evaluate_oot(X_train, y_train, X_val, y_val, feature_cols, label, model_name
     print()
     return calibrated, scaler, summary
 
-
-def score_validation(calibrated, X_val, y_val, feature_cols, label):
-    """Score a validation frame with an already-trained model -- used for
-    the priors-ON vs priors-OFF ablation, where training rows are identical
-    under both configs and only the validation features differ.
-    The _CalibratedModel wrapper handles scaling internally."""
-    proba = calibrated.predict_proba(X_val)[:, 1]
-    return _report_metrics(proba, y_val, X_val, feature_cols, label)
 
 
 print("\n" + "=" * 60)
@@ -1550,15 +947,6 @@ _sum_mid_off = score_validation(mid_model_b,
                                 _val_b_off_mid[MID_FEATURE_COLS].values, _val_b_off_mid["Target"].values,
                                 MID_FEATURE_COLS, f"Midfielder/Forward (Season {_SEASON_CURRENT}, priors OFF -- ablation)")
 
-# Compact falsifiable-test comparison: the two numbers the mechanism claim
-# makes a directional prediction about.
-def _mech_gap(s):
-    b = (s or {}).get("buckets", {}).get("0-9")
-    return f"gap {b['pred'] - b['obs']:+.3f} (n={b['n']})" if b else "no 0-9 rows"
-
-def _mech_lrt(s):
-    lrt = (s or {}).get("lrt")
-    return f"LRT chi2={lrt['chi2']:.2f}, p={lrt['p']:.4f}" if lrt else "LRT n/a"
 
 print("\n" + "=" * 60)
 print("PRIOR-MECHANISM CHECK (falsifiable test)")
@@ -1569,8 +957,8 @@ print("0-9 gap and LRT shrink from priors OFF to priors ON in the Season "
 for _label, _s_on, _s_off in [("Defender", _sum_def_on, _sum_def_off),
                               ("Midfielder/Forward", _sum_mid_on, _sum_mid_off)]:
     print(f"\n  {_label}, Season {_SEASON_CURRENT} validation:")
-    print(f"    priors OFF: {_mech_gap(_s_off)} | {_mech_lrt(_s_off)}")
-    print(f"    priors ON:  {_mech_gap(_s_on)} | {_mech_lrt(_s_on)}")
+    print(f"    priors OFF: {mech_gap(_s_off)} | {mech_lrt(_s_off)}")
+    print(f"    priors ON:  {mech_gap(_s_on)} | {mech_lrt(_s_on)}")
 
 # Micro-report: the prior-carrying rows themselves -- did prior seeding move
 # their predictions toward their observed outcomes, and did high-weight
@@ -1632,7 +1020,7 @@ for team in PROMOTED_TEAMS:
 def train_and_evaluate(df, label, model_name, feature_cols):
     """Train the specified model with optional hyperparameter tuning, then
     calibrate with cross_val_predict + isotonic regression. Returns
-    (_CalibratedModel, scaler, model_name)."""
+    (CalibratedModel, scaler, model_name)."""
     X = df[feature_cols].values
     y = df["Target"].values
     model_cls, param_grid, default_params = _MODEL_CONFIGS[model_name]
@@ -1656,7 +1044,7 @@ fwd_model, fwd_scaler, fwd_model_name = train_and_evaluate(df_fwd, "Forward", "R
 # All nine trainings (six validation-battery + three production) are
 # done; entries left over from earlier runs used superseded training
 # frames and can never be hit again -- prune them now.
-_prune_model_cache()
+prune_model_cache()
 
 # ── Build player profiles for prediction ──────────────────────────────
 print("\n" + "=" * 60)
@@ -1879,7 +1267,7 @@ for match_id, team, opponent, venue in fixture_teams:
 pred_df = pd.DataFrame(pred_rows)
 print(f"Total prediction rows: {len(pred_df)}")
 
-# Batch predict -- _CalibratedModel handles scaling internally.
+# Batch predict -- CalibratedModel handles scaling internally.
 def_mask = pred_df["_model"] == "def"
 if def_mask.any():
     X_def = pred_df.loc[def_mask, DEF_FEATURE_COLS].values
