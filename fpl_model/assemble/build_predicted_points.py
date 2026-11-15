@@ -51,10 +51,6 @@ PTS_PER_GOAL = {"G": 10, "D": 6, "M": 5, "F": 4}
 CS_PTS = {"G": 4, "D": 4, "M": 1, "F": 0}
 GK_POSITIONS = {"G", "GK"}
 
-# Fixture save rate (CHANGELOG §162, scripts/keeper_saves.py). KEEPER_SAVE_FIXTURE=0 reverts.
-SAVE_FIXTURE_ON = os.environ.get("KEEPER_SAVE_FIXTURE", "1") != "0"
-# Yellow and red cards (CHANGELOG §175, scripts/card_points.py). CARD_POINTS=0 reverts.
-CARD_POINTS_ON = os.environ.get("CARD_POINTS", "1") != "0"
 
 
 def expected_points_per_three_saves(expected_saves):
@@ -168,41 +164,39 @@ def main():
         return 0.0
     app_pts = sim_features.apply(get_apppts, axis=1)
 
-    save_rates = gk_saves_per_90
-    if SAVE_FIXTURE_ON:
-        history = pd.read_csv(TEAM_RATINGS_HISTORY_FILE, encoding="utf-8-sig", low_memory=False)
-        save_rates = gk_saves_per_90 * save_fixture_multiplier(
-            sim_features["Expected_Goals_Conceded"], save_fixture_reference(history)
-        )
+    # Fixture save rate (CHANGELOG §162, fpl_model/keeper_saves.py)
+    history = pd.read_csv(TEAM_RATINGS_HISTORY_FILE, encoding="utf-8-sig", low_memory=False)
+    save_rates = gk_saves_per_90 * save_fixture_multiplier(
+        sim_features["Expected_Goals_Conceded"], save_fixture_reference(history)
+    )
     gk_save_pts = expected_goalkeeper_save_points(
         save_rates, sim_features["xMins"]
     ) * is_gk
 
-    card_pts = 0.0
-    if CARD_POINTS_ON:
-        rates = current_rates(players_current)
-        club_played = rates.attrs["club_played"]
-        names = players_current.drop_duplicates(["Web_Name", "Team"])[["Web_Name", "Team", "Player"]].rename(columns={"Player": "_full"})
-        carded = sim_features[["Web_Name", "Team"]].merge(names, on=["Web_Name", "Team"], how="left").merge(
-            rates.drop_duplicates("Player"), left_on="_full", right_on="Player", how="left")
-        assert len(carded) == len(sim_features), "card join fanned out"
-        unmatched = int(carded["Yellows_90"].isna().sum())
-        if unmatched:
-            print(f"WARNING: {unmatched} forecast rows have no card rate; they get none")
-        missing_clubs = sorted(set(sim_features["Team"]) - set(club_played))
-        if missing_clubs and club_played:
-            print(f"WARNING: no league matches this season found for {missing_clubs}; club match counts from 1")
-        # Club match number of each fixture: matches played + its place among the club's forecast fixtures.
-        fixtures = sim_features[["Team", "GW", "Round"]].drop_duplicates().sort_values(["Team", "Round", "GW"])
-        fixtures["_club_match"] = fixtures.groupby("Team").cumcount() + 1 + fixtures["Team"].map(club_played).fillna(0)
-        club_match = sim_features[["Team", "GW", "Round"]].merge(fixtures, on=["Team", "GW", "Round"], how="left")["_club_match"]
-        share = None
-        if "cameo_minutes" in rates.attrs and ROLE_MIX == "forecast":
-            raw = sim_features["xMins_Raw"] if "xMins_Raw" in sim_features else sim_features["xMins"]
-            share = forecast_cameo_share(sim_features["P1"], sim_features["P60"], raw, rates.attrs["cameo_minutes"])
-        yellows_90 = fixture_yellows_90(carded, club_match.values, share)
-        card_pts = expected_card_points(np.nan_to_num(yellows_90), carded["Reds_90"].fillna(0).values,
-                                        sim_features["xMins"].values)
+    # Yellow and red cards (CHANGELOG §175, fpl_model/card_points.py)
+    rates = current_rates(players_current)
+    club_played = rates.attrs["club_played"]
+    names = players_current.drop_duplicates(["Web_Name", "Team"])[["Web_Name", "Team", "Player"]].rename(columns={"Player": "_full"})
+    carded = sim_features[["Web_Name", "Team"]].merge(names, on=["Web_Name", "Team"], how="left").merge(
+        rates.drop_duplicates("Player"), left_on="_full", right_on="Player", how="left")
+    assert len(carded) == len(sim_features), "card join fanned out"
+    unmatched = int(carded["Yellows_90"].isna().sum())
+    if unmatched:
+        print(f"WARNING: {unmatched} forecast rows have no card rate; they get none")
+    missing_clubs = sorted(set(sim_features["Team"]) - set(club_played))
+    if missing_clubs and club_played:
+        print(f"WARNING: no league matches this season found for {missing_clubs}; club match counts from 1")
+    # Club match number of each fixture: matches played + its place among the club's forecast fixtures.
+    fixtures = sim_features[["Team", "GW", "Round"]].drop_duplicates().sort_values(["Team", "Round", "GW"])
+    fixtures["_club_match"] = fixtures.groupby("Team").cumcount() + 1 + fixtures["Team"].map(club_played).fillna(0)
+    club_match = sim_features[["Team", "GW", "Round"]].merge(fixtures, on=["Team", "GW", "Round"], how="left")["_club_match"]
+    share = None
+    if "cameo_minutes" in rates.attrs and ROLE_MIX == "forecast":
+        raw = sim_features["xMins_Raw"] if "xMins_Raw" in sim_features else sim_features["xMins"]
+        share = forecast_cameo_share(sim_features["P1"], sim_features["P60"], raw, rates.attrs["cameo_minutes"])
+    yellows_90 = fixture_yellows_90(carded, club_match.values, share)
+    card_pts = expected_card_points(np.nan_to_num(yellows_90), carded["Reds_90"].fillna(0).values,
+                                    sim_features["xMins"].values)
     sim_features["CardPts"] = np.round(card_pts, 3)
 
     sim_features["AppPts"] = app_pts.round(3)

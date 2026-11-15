@@ -5,8 +5,8 @@ multiplier 1, so the position rate. Reds are pooled by position. FPL scoring: a 
 yellow in that match, otherwise a yellow is -1. Settings are frozen by validate_card_points.py.
 
 Since §195: starts and cameos get separate group rates, mixed by the player's recent cameo share of minutes
-(§193; CARD_ROLE_SPLIT=0 reverts), and a player one yellow short of a ban before its cut-off gets
-x SUSPENSION_THETA on the yellow rate (§191; CARD_SUSPENSION=0 reverts). Reds are unchanged.
+(§193), and a player one yellow short of a ban before its cut-off gets
+x SUSPENSION_THETA on the yellow rate (§191). Reds are unchanged.
 """
 from fpl_model import paths
 import os
@@ -96,8 +96,7 @@ def expected_card_points(yellows_90, reds_90, expected_minutes):
         * np.asarray(expected_minutes, dtype=float) / 90
 
 
-# Starts and cameos at separate rates (§193, §195). CARD_ROLE_SPLIT=0 reverts to one rate.
-ROLE_SPLIT_ON = os.environ.get("CARD_ROLE_SPLIT", "1") != "0"
+# Starts and cameos at separate rates (§193, §195).
 # The mix of a fixture's minutes. "forecast" (default): cameo minutes = (P1 - P60) x the mean cameo length,
 # from that fixture's minutes forecast, so a returning starter isn't charged as a substitute. "trailing": the
 # tested §193 arm F stand-in, the cameo share of the last five club matches since the player's first
@@ -105,10 +104,9 @@ ROLE_SPLIT_ON = os.environ.get("CARD_ROLE_SPLIT", "1") != "0"
 ROLE_MIX = os.environ.get("CARD_ROLE_MIX", "forecast")
 MIX_WINDOW, MIX_MIN = 5, 3
 
-# Suspension threat (§191, §195). CARD_SUSPENSION=0 reverts.
-SUSPENSION_ON = os.environ.get("CARD_SUSPENSION", "1") != "0"
+# Suspension threat (§191, §195).
 # Actual / forecast yellows on brink rows, 2018-2023 (§191). Reproduce with
-# `python scripts/validate_card_suspension.py`: results.json "theta" in data/validation/card_suspension_20261102/.
+# `python -m research.general.validate_card_suspension`: results.json "theta" in data/validation/card_suspension_20261102/.
 SUSPENSION_THETA = 0.851
 # Premier League bans: (season yellows before the match, last club match the threat applies to). 5 by match 19,
 # 10 by match 32, 15 at any point.
@@ -177,20 +175,19 @@ def current_rates(players_current):
     season_y = d[d.Season == last].groupby("Player").yellow.sum().to_dict()
     out["Season_Yellows"] = [int(season_y.get(p, 0)) for p in players_current["Player"]]
     out["Yellows_90_Start"] = out["Yellows_90_Cameo"] = out["Cameo_Share"] = np.nan
-    if ROLE_SPLIT_ON:
-        d = with_roles(d)
-        rt = d[d.Season >= last - 2].groupby(["group", "role"])[["yellow", "n90"]].sum()
-        level_role = (rt.yellow / rt.n90).to_dict()
-        d["e_r"] = trailing_level(d, "yellow", by=("group", "role")) * d.n90
-        _, mult_role = decayed_multiplier(d, "yellow", "e_r", K, final=True)
-        m = [mult_role.get(p, 1.0) for p in players_current["Player"]]
-        out["Yellows_90_Start"] = [level_role[(g, "S")] * x for g, x in zip(groups, m)]
-        out["Yellows_90_Cameo"] = [level_role[(g, "C")] * x for g, x in zip(groups, m)]
-        if ROLE_MIX == "trailing":
-            shares = cameo_shares(d)
-            out["Cameo_Share"] = [shares.get(p, np.nan) for p in players_current["Player"]]
-        cameos = d[(d.Season >= last - 2) & ~d.start]
-        out.attrs["cameo_minutes"] = float(cameos.Minutes.mean())
+    d = with_roles(d)
+    rt = d[d.Season >= last - 2].groupby(["group", "role"])[["yellow", "n90"]].sum()
+    level_role = (rt.yellow / rt.n90).to_dict()
+    d["e_r"] = trailing_level(d, "yellow", by=("group", "role")) * d.n90
+    _, mult_role = decayed_multiplier(d, "yellow", "e_r", K, final=True)
+    m = [mult_role.get(p, 1.0) for p in players_current["Player"]]
+    out["Yellows_90_Start"] = [level_role[(g, "S")] * x for g, x in zip(groups, m)]
+    out["Yellows_90_Cameo"] = [level_role[(g, "C")] * x for g, x in zip(groups, m)]
+    if ROLE_MIX == "trailing":
+        shares = cameo_shares(d)
+        out["Cameo_Share"] = [shares.get(p, np.nan) for p in players_current["Player"]]
+    cameos = d[(d.Season >= last - 2) & ~d.start]
+    out.attrs["cameo_minutes"] = float(cameos.Minutes.mean())
     out.attrs["club_played"] = club_matches_played(d)
     return out
 
@@ -212,17 +209,15 @@ def fixture_yellows_90(rates, club_match, cameo_share=None):
     Suspension: x SUSPENSION_THETA while season yellows sit one short of a ban before that ban's cut-off (§191).
     """
     y = rates["Yellows_90"].to_numpy(dtype=float)
-    if ROLE_SPLIT_ON:
-        share = rates["Cameo_Share"].to_numpy(dtype=float) if cameo_share is None else np.asarray(cameo_share, dtype=float)
-        split = (1 - share) * rates["Yellows_90_Start"].to_numpy(dtype=float) + share * rates["Yellows_90_Cameo"].to_numpy(dtype=float)
-        y = np.where(np.isfinite(split), split, y)
-    if SUSPENSION_ON:
-        n = rates["Season_Yellows"].to_numpy(dtype=float)
-        c = np.asarray(club_match, dtype=float)
-        brink = np.zeros(len(y), dtype=bool)
-        for count, cut in BRINK:
-            brink |= (n == count) & (c <= cut)
-        y = np.where(brink, SUSPENSION_THETA * y, y)
+    share = rates["Cameo_Share"].to_numpy(dtype=float) if cameo_share is None else np.asarray(cameo_share, dtype=float)
+    split = (1 - share) * rates["Yellows_90_Start"].to_numpy(dtype=float) + share * rates["Yellows_90_Cameo"].to_numpy(dtype=float)
+    y = np.where(np.isfinite(split), split, y)
+    n = rates["Season_Yellows"].to_numpy(dtype=float)
+    c = np.asarray(club_match, dtype=float)
+    brink = np.zeros(len(y), dtype=bool)
+    for count, cut in BRINK:
+        brink |= (n == count) & (c <= cut)
+    y = np.where(brink, SUSPENSION_THETA * y, y)
     return y
 
 

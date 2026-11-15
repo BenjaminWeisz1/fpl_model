@@ -41,11 +41,6 @@ class FplOnlyAssistTests(unittest.TestCase):
             self.assertEqual(foa.mode(d)[0], "fallback")
             (d / "sofascore_status.json").write_text(json.dumps({"usable_for_model": True}), encoding="utf-8")
             self.assertEqual(foa.mode(d)[0], "model")
-            os.environ["FPL_ONLY_ASSISTS"] = "0"
-            try:
-                self.assertEqual(foa.mode(d)[0], "off")
-            finally:
-                del os.environ["FPL_ONLY_ASSISTS"]
 
     def test_live_rates_cover_every_current_player(self):
         path = foa._DATA / "fpl_only_assist_rates.csv"

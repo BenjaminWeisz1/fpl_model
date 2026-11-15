@@ -8,7 +8,7 @@ build_pass_band_rates.py), shrunk toward the position prior, through the frozen 
 fpl_only_assists.py. Penalties won count for the share a teammate takes: the player's own share
 is the mean of penalty_share.csv's GW columns (0 when he is not listed). Without Sofascore
 history he gets the prior, so the model's position mean. When Sofascore is not usable every
-player gets the position fallback; with FPL_ONLY_ASSISTS=0 every rate is 0.
+player gets the position fallback.
 
 Run locally (before build_simulation_features.py):
     python build_fpl_only_assist_rates.py
@@ -70,10 +70,8 @@ def main():
         share = float(share_of.get(p.Web_Name, 0.0) or 0.0)
         if mode == "model":
             value = foa.rate(p.Pos, reb, pen, share)
-        elif mode == "fallback":
-            value = foa.FALLBACK[p.Pos]
         else:
-            value = 0.0
+            value = foa.FALLBACK[p.Pos]
         rows.append({"Player": p.Player, "Web_Name": p.Web_Name, "Team": p.Team, "Pos": p.Pos, "Mode": mode,
                      "Sofascore_Appearances": apps, "History_Minutes": round(mins),
                      "Rebound_Rate": round(reb, 5), "Pens_Rate": round(pen, 5), "Pen_Share": round(share, 3),

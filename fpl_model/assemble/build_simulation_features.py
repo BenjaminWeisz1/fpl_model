@@ -49,13 +49,12 @@ DEFCON_P90_MAX = 0.98
 # Substitute uplift on expected short appearances (CHANGELOG §100–§102). The goal/assist loop learns
 # starter-equivalent per-90 rates; cameos run hotter (fresh legs, open games), so expected 1-59 minute
 # appearances, (P1 - P60) x SHORT_MINUTES (simulate_bonus.AVG_MINUTES_SHORT), get the minutes-weighted
-# uplift of 2017-2024 short appearances (67% of their minutes from substitutes). GOAL_SUB_UPLIFT=0 turns it off.
+# uplift of 2017-2024 short appearances (67% of their minutes from substitutes).
 SUB_SHORT_UPLIFT = {"npxG": 1.2003, "xAG": 1.1964}
 SHORT_MINUTES = minute_bands()[1]
-SUB_UPLIFT_ON = os.environ.get("GOAL_SUB_UPLIFT", "1") == "1"
 # Every per-90 rate here is per recorded minute, and recorded minutes stop at 90 (CHANGELOG §177). FPL Review's
 # xMins run on a longer clock, so xMins is rescaled to the recorded one and xMins_Raw keeps FPL Review's.
-# P1 and P60 come from the raw lookup. XMINS_RECORDED=0 reverts.
+# P1 and P60 come from the raw lookup.
 
 
 def invert_mu(prob, k, lo=1e-6, hi=60):
@@ -124,7 +123,7 @@ def main():
 
     # FPL-only assists per 90 (rebounds, deflections, penalties won, forced own goals; CHANGELOG
     # §92), keyed on the full Player name. Added unscaled to the fixture-scaled conventional rate,
-    # as tested in §91. All zeros when FPL_ONLY_ASSISTS=0 (build_fpl_only_assist_rates.py).
+    # as tested in §91. Built by build_fpl_only_assist_rates.py.
     if not FPL_ONLY_ASSISTS_FILE.exists():
         raise FileNotFoundError(f"{FPL_ONLY_ASSISTS_FILE.name} missing; run build_fpl_only_assist_rates.py first")
     fpl_only_lookup = pd.read_csv(FPL_ONLY_ASSISTS_FILE, encoding="utf-8-sig").set_index("Player")["FPLOnly_Ast90"].to_dict()
@@ -179,7 +178,7 @@ def main():
             # (Opp_Pred_NPG remains correct for the clean-sheet calculation below,
             # where we genuinely want "goals expected to be scored against us".)
             opp_defense = defense_rating_lookup.get(fixture_row["Opponent"], avg_defense_rating)
-            short_frac = (min(max(p1 - p60, 0.0) * SHORT_MINUTES, xmins) / xmins) if (SUB_UPLIFT_ON and xmins > 0) else 0.0
+            short_frac = (min(max(p1 - p60, 0.0) * SHORT_MINUTES, xmins) / xmins) if xmins > 0 else 0.0
             sub_uplift_npg = 1 + (SUB_SHORT_UPLIFT["npxG"] - 1) * short_frac
             sub_uplift_ast = 1 + (SUB_SHORT_UPLIFT["xAG"] - 1) * short_frac
             # (opponent defence / mean)^beta: the multiplier dampened as in the rating loop (§123)

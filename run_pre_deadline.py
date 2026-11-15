@@ -65,7 +65,7 @@ STAGES = [
         "summary_files": ["pass_band_rates.csv"],
     },
     # FPL-only assist rates (§92): rebounds, deflections, penalties won, forced own goals.
-    # Position fallback when Sofascore is not usable; zeros with FPL_ONLY_ASSISTS=0.
+    # Position fallback when Sofascore is not usable.
     {
         "label": "FPL-only assist rates",
         "script": SCRIPTS / "bonus" / "build_fpl_only_assist_rates.py",

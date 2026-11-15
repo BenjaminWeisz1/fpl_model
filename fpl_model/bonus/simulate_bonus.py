@@ -6,15 +6,11 @@ official tie-breaking rules, and averages bonus points across draws.
 
 The explicit terms here must match what build_residual_bps_baseline.py
 subtracts from actual BPS, so no component is counted twice (CHANGELOG §64).
-BONUS_LEGACY_ACCOUNTING=1 restores the pre-§64 terms (D-only goals conceded on
-60+ draws, keeper saves scaled by 0.35).
 
 Each draw's total BPS is rounded to an integer before ranking, as real BPS is, so
-ties for a bonus place occur (CHANGELOG §70). BONUS_INTEGER_BPS=0 restores
-continuous totals, under which every simulated match pays exactly 6 points.
+ties for a bonus place occur (CHANGELOG §70).
 
 A team's goals conceded are built from the opposing players' simulated goals (CHANGELOG §145).
-BONUS_COHERENCE=0 restores independent draws.
 
 Keeper saves use the fixture multiplier of keeper_saves.py on the pooled rate, as points do
 (CHANGELOG §165). BONUS_SAVE_FIXTURE=0 restores one rate for every keeper.
@@ -43,9 +39,6 @@ TEAM_RATINGS_HISTORY_FILE = paths.CURRENT / "team_ratings_history.csv"
 FIXTURE_GOALS_FILE = paths.CURRENT / "fixture_goal_predictions.csv"
 OUT_FILE = paths.CURRENT / "bonus_predictions.csv"
 
-LEGACY_ACCOUNTING = os.environ.get("BONUS_LEGACY_ACCOUNTING", "0") == "1"
-INTEGER_BPS = os.environ.get("BONUS_INTEGER_BPS", "1") == "1"
-COHERENCE = os.environ.get("BONUS_COHERENCE", "1") == "1"
 SAVE_FIXTURE_ON = os.environ.get("BONUS_SAVE_FIXTURE", "1") == "1"  # fixture save rate (§165)
 
 N_DRAWS = 3000
@@ -55,8 +48,6 @@ _PLAYERS = pd.read_csv(_DATA / "players_current.csv", encoding="utf-8-sig")
 AVG_GK_SAVES_PER_90 = goalkeeper_event_rates(_PLAYERS)  # the rate points use
 PEN_SAVE_RATE = goalkeeper_pen_save_rate(_PLAYERS)
 PEN_ATTEMPTS_PER_NPG, PEN_CONVERSION = penalty_rates()
-# Saves were also inside the keeper residual before §64; the 0.35 partly offset that.
-GK_SAVE_BPS_SCALE = 0.35 if LEGACY_ACCOUNTING else 1.0
 PASS_BANDS = np.array([0, 2, 4, 6])
 RESIDUAL_MODE_FILE = paths.CURRENT / "residual_bps_mode.json"
 
@@ -129,16 +120,12 @@ def simulate_match(match_players, exp_gc_home, exp_gc_away, home_team, n_draws):
     defcon_bps = defcon_count // 3
 
     home_mask = team == home_team
-    if COHERENCE:
-        # Team goals conceded = the opponents' simulated goals + a remainder for own goals and
-        # unlisted players, so scorers and clean sheets agree (CHANGELOG §71, §145).
-        e_player = npg90 * (p60 * AVG_MINUTES_FULL + (p1 - p60) * AVG_MINUTES_SHORT) / 90 + pen_att * PEN_CONVERSION
-        scored = goals + pen_scored
-        goals_conceded_home = scored[~home_mask].sum(axis=0) + rng.poisson(max(exp_gc_home - e_player[~home_mask].sum(), 0), n_draws)
-        goals_conceded_away = scored[home_mask].sum(axis=0) + rng.poisson(max(exp_gc_away - e_player[home_mask].sum(), 0), n_draws)
-    else:
-        goals_conceded_home = rng.poisson(exp_gc_home, n_draws)
-        goals_conceded_away = rng.poisson(exp_gc_away, n_draws)
+    # Team goals conceded = the opponents' simulated goals + a remainder for own goals and
+    # unlisted players, so scorers and clean sheets agree (CHANGELOG §71, §145).
+    e_player = npg90 * (p60 * AVG_MINUTES_FULL + (p1 - p60) * AVG_MINUTES_SHORT) / 90 + pen_att * PEN_CONVERSION
+    scored = goals + pen_scored
+    goals_conceded_home = scored[~home_mask].sum(axis=0) + rng.poisson(max(exp_gc_home - e_player[~home_mask].sum(), 0), n_draws)
+    goals_conceded_away = scored[home_mask].sum(axis=0) + rng.poisson(max(exp_gc_away - e_player[home_mask].sum(), 0), n_draws)
     team_goals_conceded = np.where(home_mask[:, None], goals_conceded_home[None, :], goals_conceded_away[None, :])
 
     # Current 2026/27 keeper save model: 2 BPS per save; penalty saves are scored as 7 BPS
@@ -150,7 +137,7 @@ def simulate_match(match_players, exp_gc_home, exp_gc_away, home_team, n_draws):
     gk_save_bps = np.zeros_like(minutes_bps, dtype=float)
     if np.any(gk_mask):
         # The residual excludes exactly these save terms (§64), so the official rate applies
-        # unscaled. The legacy 0.35 scale offset saves that were also left in the residual.
+        # unscaled.
         gk_active = gk_mask[:, None] & played_full
         save_mult = match_players["GK_Save_Mult"].values if "GK_Save_Mult" in match_players else np.ones(n)
         gk_save_rate = np.clip(AVG_GK_SAVES_PER_90 * save_mult[gk_mask][:, None] * minute_frac[gk_mask], 0, None)
@@ -159,23 +146,19 @@ def simulate_match(match_players, exp_gc_home, exp_gc_away, home_team, n_draws):
 
         pen_save_prob = np.where(gk_active, PEN_SAVE_RATE, 0.0)
         pen_save_draw = rng.random((n, n_draws)) < pen_save_prob
-        gk_pen_save_bps = np.where(gk_active & pen_save_draw, PEN_SAVE_BPS, 0) * GK_SAVE_BPS_SCALE
-        gk_save_bps = np.where(gk_active, gk_saves * SAVE_BPS, 0) * GK_SAVE_BPS_SCALE
+        gk_pen_save_bps = np.where(gk_active & pen_save_draw, PEN_SAVE_BPS, 0)
+        gk_save_bps = np.where(gk_active, gk_saves * SAVE_BPS, 0)
         gk_save_bps = gk_save_bps + gk_pen_save_bps
 
     cs_eligible = played_full & (team_goals_conceded == 0)
     cs_bps = cs_eligible * cs_bps_rate[:, None]
 
-    if LEGACY_ACCOUNTING:
-        gc_bps_rate = np.where(pos == "D", GC_BPS, 0)
-        gc_bps = played_full * team_goals_conceded * gc_bps_rate[:, None]
-    else:
-        # BPS deducts goals conceded while on the pitch at any minutes; a shorter
-        # draw sees each team goal with probability minute_frac.
-        gc_bps_rate = np.where(np.isin(pos, ["D", "G"]), GC_BPS, 0)
-        on_pitch_gc = np.where(played_full, team_goals_conceded,
-                               rng.binomial(team_goals_conceded, minute_frac))
-        gc_bps = played_any * on_pitch_gc * gc_bps_rate[:, None]
+    # BPS deducts goals conceded while on the pitch at any minutes; a shorter
+    # draw sees each team goal with probability minute_frac.
+    gc_bps_rate = np.where(np.isin(pos, ["D", "G"]), GC_BPS, 0)
+    on_pitch_gc = np.where(played_full, team_goals_conceded,
+                           rng.binomial(team_goals_conceded, minute_frac))
+    gc_bps = played_any * on_pitch_gc * gc_bps_rate[:, None]
 
     residual_bps = rng.normal(resid_mean[:, None], resid_std[:, None], size=(n, n_draws))
     residual_bps = np.where(played_any, residual_bps, 0)
@@ -192,8 +175,7 @@ def simulate_match(match_players, exp_gc_home, exp_gc_away, home_team, n_draws):
 
     total_bps = (minutes_bps + goal_bps + assist_bps + pen_goal_bps + pen_miss_bps
                  + defcon_bps + cs_bps + gc_bps + residual_bps + gk_save_bps + pass_band_bps)
-    if INTEGER_BPS:
-        total_bps = np.rint(total_bps)  # integer BPS, so ties occur (§70)
+    total_bps = np.rint(total_bps)  # integer BPS, so ties occur (§70)
 
     bonus = assign_bonus(total_bps)
     return bonus.mean(axis=1), goals.mean(axis=1), assists.mean(axis=1)

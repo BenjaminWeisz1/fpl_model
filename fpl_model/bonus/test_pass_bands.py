@@ -39,17 +39,12 @@ class PassBandTests(unittest.TestCase):
     def test_no_history_gives_position_prior(self):
         np.testing.assert_allclose(pb.shrunk(np.zeros(4), "F"), pb.PRIOR["F"])
 
-    def test_active_follows_status_and_switches(self):
+    def test_active_follows_sofascore_status(self):
         with tempfile.TemporaryDirectory() as tmp:
             data = Path(tmp)
             self.assertFalse(pb.active(data)[0])
             (data / "sofascore_status.json").write_text(json.dumps({"usable_for_model": True}))
-            with patch.dict(os.environ, {"BONUS_PASS_BANDS": "1", "BONUS_LEGACY_ACCOUNTING": "0"}):
-                self.assertTrue(pb.active(data)[0])
-            with patch.dict(os.environ, {"BONUS_PASS_BANDS": "0"}):
-                self.assertFalse(pb.active(data)[0])
-            with patch.dict(os.environ, {"BONUS_PASS_BANDS": "1", "BONUS_LEGACY_ACCOUNTING": "1"}):
-                self.assertFalse(pb.active(data)[0])
+            self.assertTrue(pb.active(data)[0])
             (data / "sofascore_status.json").write_text(json.dumps({"usable_for_model": False, "lag_rounds": 3}))
             self.assertFalse(pb.active(data)[0])
 

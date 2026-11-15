@@ -19,25 +19,24 @@ def match_players():
     return pd.DataFrame(rows)
 
 
-def run(coherent, exp_gc, seed=7, n=4000):
-    original = simulate_bonus.COHERENCE
-    simulate_bonus.COHERENCE = coherent
+def run(players, exp_gc, seed=7, n=4000):
     simulate_bonus.rng = np.random.default_rng(seed)
-    try:
-        return simulate_bonus.simulate_match(match_players(), exp_gc, exp_gc, "A", n)[0]
-    finally:
-        simulate_bonus.COHERENCE = original
+    return simulate_bonus.simulate_match(players, exp_gc, exp_gc, "A", n)[0]
 
 
 def test_scorers_take_the_clean_sheet_away():
-    # exp_gc = 0: independent draws give both sides a clean sheet every time, coherence only when no opponent scores.
-    on, off = run(True, 0.0), run(False, 0.0)
-    back = match_players()["Pos"].isin(["G", "D"]).to_numpy()
-    assert on[back].sum() < off[back].sum()
+    # With expected goals conceded 0, goals conceded come only from the opponents' simulated goals, so team A's
+    # back line earns more bonus when team B's players cannot score.
+    players = match_players()
+    blunt = players.copy()
+    team_b = blunt["Team"] == "B"
+    blunt.loc[team_b, ["NPG90_scaled", "PenAttempts"]] = 0.0
+    back_a = ((players["Team"] == "A") & players["Pos"].isin(["G", "D"])).to_numpy()
+    assert run(players, 0.0)[back_a].sum() < run(blunt, 0.0)[back_a].sum()
 
 
 def test_seed_reproducible():
-    assert (run(True, 1.2) == run(True, 1.2)).all()
+    assert (run(match_players(), 1.2) == run(match_players(), 1.2)).all()
 
 
 if __name__ == "__main__":

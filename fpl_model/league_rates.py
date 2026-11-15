@@ -55,10 +55,7 @@ def recorded_clock_scale(rows):
 
     Computed from this week's xMins, so it follows FPL Review if its clock changes. The median of team-gameweek
     totals keeps a double or blank gameweek from moving it. `rows` needs Team, Round and xMins_Raw.
-    XMINS_RECORDED=0 reverts (§177).
     """
-    if os.environ.get("XMINS_RECORDED", "1") == "0":
-        return 1.0
     return RECORDED_TEAM_MINUTES / rows.groupby(["Team", "Round"])["xMins_Raw"].sum().median()
 
 

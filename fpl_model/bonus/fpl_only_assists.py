@@ -15,7 +15,6 @@ observed 2025+ position rate.
 
 Fitted on all 2025+ FPL-era rows (12,377 outfield player-matches; production_fit_A3.json in
 data/validation/fpl_only_assists_20261028/). Do not re-estimate without a new pre-registration.
-FPL_ONLY_ASSISTS=0 switches the component off.
 """
 from fpl_model import paths
 import json
@@ -38,9 +37,7 @@ FALLBACK = {"D": 0.02144, "M": 0.04100, "F": 0.04006, "G": 0.00109}
 
 
 def mode(data=_DATA):
-    """(mode, reason): 'model', 'fallback' (position rates) or 'off'."""
-    if os.environ.get("FPL_ONLY_ASSISTS", "1") != "1":
-        return "off", "FPL_ONLY_ASSISTS=0"
+    """(mode, reason): 'model', or 'fallback' (position rates) when Sofascore is not usable."""
     path = data / "sofascore_status.json"
     if not path.exists():
         return "fallback", "sofascore_status.json missing"

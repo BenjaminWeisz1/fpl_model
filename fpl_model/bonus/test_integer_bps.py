@@ -27,15 +27,8 @@ class IntegerBpsTests(unittest.TestCase):
 
     def test_rounding_creates_ties(self):
         simulate_bonus.rng = np.random.default_rng(0)
-        with patch.object(simulate_bonus, "INTEGER_BPS", True):
-            bonus = simulate_bonus.simulate_match(near_tied_match(), 0.0, 0.0, "A", 20)[0]
+        bonus = simulate_bonus.simulate_match(near_tied_match(), 0.0, 0.0, "A", 20)[0]
         np.testing.assert_array_equal(bonus, [3, 3, 1, 0])
-
-    def test_switch_off_restores_continuous_totals(self):
-        simulate_bonus.rng = np.random.default_rng(0)
-        with patch.object(simulate_bonus, "INTEGER_BPS", False):
-            bonus = simulate_bonus.simulate_match(near_tied_match(), 0.0, 0.0, "A", 20)[0]
-        np.testing.assert_array_equal(bonus, [3, 2, 1, 0])
 
 
 if __name__ == "__main__":

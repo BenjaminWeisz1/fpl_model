@@ -12,16 +12,15 @@ The residual is actual BPS minus exactly the terms simulate_bonus.py adds
 explicitly, so every component is counted once (CHANGELOG §64): goals conceded
 for D/G at any minutes, keeper saves on 60+ minute rows at the simulator's save
 scale, and the defcon count // 3 (D: CBI+Tkl, M/F: CBI+Tkl+Recov). Keep these
-definitions in step with simulate_bonus.py. BONUS_LEGACY_ACCOUNTING=1 restores
-the pre-§64 subtraction (Tkl*2 + CBI//3 + Recov//3, no goals conceded or saves).
+definitions in step with simulate_bonus.py. `add_known_bps(legacy=True)` gives the
+pre-§64 subtraction (Tkl*2 + CBI//3 + Recov//3, no goals conceded or saves) for research.
 
 When pass bands are active (pass_bands.active, CHANGELOG §68) the residual also
 excludes actual Sofascore pass-band BPS and uses position-specific shrinkage
 K_REM; residual_bps_mode.json records which mode was used, and simulate_bonus.py
 refuses to run if its inputs disagree.
 
-Since §146 the fit also uses the previous season, centred on the current season-position mean;
-BONUS_RESIDUAL_HISTORY=0 restores current-season rows only.
+Since §146 the fit also uses the previous season, centred on the current season-position mean.
 
 Run locally:
     python build_residual_bps_baseline.py
@@ -43,18 +42,15 @@ STATS_FILE = paths.CURRENT / "player_match_stats.csv"  # consolidated file
 PLAYERS_CURRENT_FILE = paths.CURRENT / "players_current.csv"
 OUT_FILE = paths.CURRENT / "residual_bps_baseline.csv"
 
-LEGACY_ACCOUNTING = os.environ.get("BONUS_LEGACY_ACCOUNTING", "0") == "1"
-RESIDUAL_HISTORY = os.environ.get("BONUS_RESIDUAL_HISTORY", "1") == "1"  # §146: also fit on the previous season
 MIN_POS_ROWS_TO_CENTRE = 50
 
 CS_BPS = CLEAN_SHEET_BPS
-GK_SAVE_BPS_SCALE = 0.35 if LEGACY_ACCOUNTING else 1.0  # must match simulate_bonus.py
 
 MIN_MATCHES_FOR_OWN_STD = 5
 SHRINKAGE_MATCHES = 10
 
 
-def add_known_bps(frame, legacy=LEGACY_ACCOUNTING, save_scale=GK_SAVE_BPS_SCALE):
+def add_known_bps(frame, legacy=False, save_scale=1.0):
     """Add the explicitly simulated BPS components and their sum, `known_bps`."""
     frame = frame.copy()
     full = frame["Minutes"] >= 60
@@ -170,7 +166,7 @@ def main():
     df["residual"] = df["BPS"] - cbi_adjustment - df["known_bps"]
     latest = int(df["Season"].max())
     current_df = df[df["Season"] == latest]
-    previous_rows = df[df["Season"] == latest - 1] if RESIDUAL_HISTORY else pd.DataFrame()
+    previous_rows = df[df["Season"] == latest - 1]  # §146: also fit on the previous season
     rule_df = pd.concat([current_df, previous_rows], ignore_index=True)
     if rule_df.empty:
         raise ValueError("No FPL_API rows available to build residual BPS baseline")
@@ -190,12 +186,12 @@ def main():
     if not previous_rows.empty:
         rule_df = centre_previous_season(rule_df, latest)
     with open(_DATA / "residual_bps_mode.json", "w", encoding="utf-8") as h:
-        json.dump({"pass_bands": use_bands, "reason": reason, "legacy_accounting": LEGACY_ACCOUNTING}, h, indent=2)
+        json.dump({"pass_bands": use_bands, "reason": reason}, h, indent=2)
 
     # ---- per-player aggregation with position-level shrinkage ----
     out, pos_defaults = aggregate_residuals(rule_df, shrinkage)
 
-    print(f"Accounting: {'legacy (pre-§64)' if LEGACY_ACCOUNTING else 'consistent (§64)'}; "
+    print(f"Accounting: consistent (§64); "
           f"pass bands {'on' if use_bands else 'off'} ({reason})")
     for _, prow in pos_defaults.iterrows():
         print(f"Position default ({prow['Pos_']}): mean={prow['pos_mean']:.2f}, std={prow['pos_std']:.2f}")

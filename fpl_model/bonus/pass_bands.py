@@ -10,8 +10,7 @@ effects. The residual excludes actual pass-band BPS and uses K_REM shrinkage.
 The constants were fixed by the §68 experiment (2018-2024 Sofascore and the
 2025/26 fit split) and must not be re-estimated from later outcomes without a new
 pre-registration. Pass bands are active only when Sofascore is usable
-(sofascore_status.json), the §64 accounting is in force and BONUS_PASS_BANDS is
-not 0; otherwise every stage falls back to the §64 model.
+(sofascore_status.json); otherwise every stage falls back to the §64 model.
 """
 from fpl_model import paths
 import json
@@ -36,10 +35,6 @@ K_REM = {"D": 17.666, "M": 15.100, "F": 21.311, "G": 100.0}
 
 def active(data=_DATA):
     """(bool, reason): whether pass bands replace the §64 residual-only model this run."""
-    if os.environ.get("BONUS_PASS_BANDS", "1") != "1":
-        return False, "BONUS_PASS_BANDS=0"
-    if os.environ.get("BONUS_LEGACY_ACCOUNTING", "0") == "1":
-        return False, "legacy accounting (pre-§64)"
     path = data / "sofascore_status.json"
     if not path.exists():
         return False, "sofascore_status.json missing"
