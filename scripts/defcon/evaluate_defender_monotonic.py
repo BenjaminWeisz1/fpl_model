@@ -27,7 +27,7 @@ from defender_model import POSITIVE_EVIDENCE, monotonic_params
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
-OUT = HERE / "experiment_20261020"
+OUT = HERE.parents[1] / "data" / "validation" / "defcon_experiment_20261020"
 DATA = ROOT / "data" / "current"
 OUT.mkdir(exist_ok=True)
 BASELINE = OUT / "baseline"

@@ -20,7 +20,7 @@ from recent_defcon import attach_recent_rates, feature_columns
 import evaluate_defender_history as fitting
 from evaluate_defender_monotonic import OUT as OLD, DATA, freeze_control, load_scope, predict, metrics, bootstrap
 
-OUT = Path(__file__).resolve().parent / "feature_experiment_20261020"
+OUT = Path(__file__).resolve().parent.parents[1] / "data" / "validation" / "defcon_feature_experiment_20261020"
 BASE_COLS = ["AvgPer90", "AvgRaw", "StdPer90", "MatchesPlayed", "Recent5AvgPer90", "Recent5AvgRaw", "PctAboveThreshold",
              "OpponentAvgStat", "TeamAvgStat", "VenueAvg", "IsHome", "Is_FPL_API", "Pos_CB", "Pos_FB", "Pos_WB", "Pos_LB", "Pos_RB"]
 ARMS = ["no_std", "ew", "no_std_ew", "lean"]

@@ -27,7 +27,7 @@ from defender_model import CenteredIsotonic, monotonic_params
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
-OUT = HERE / "overnight_20261031"
+OUT = HERE.parents[1] / "data" / "validation" / "defcon_overnight_20261031"
 OUT.mkdir(exist_ok=True)
 FRAMES = OUT / "frames.pkl"
 RF_MF = dict(n_estimators=400, max_depth=10, min_samples_leaf=3, max_features="sqrt")

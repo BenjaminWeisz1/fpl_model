@@ -22,7 +22,7 @@ import evaluate_defender_recency as R
 from evaluate_defender_monotonic import metrics, bootstrap, predict
 from recent_defcon import EW_HALF_LIFE
 
-OUT = R.HERE / "level_experiment_20261029"
+OUT = R.HERE.parents[1] / "data" / "validation" / "defcon_level_experiment_20261029"
 OUT.mkdir(exist_ok=True)
 
 

@@ -16,7 +16,7 @@ ROOT = HERE.parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 from defcon_scaling import nb_sf, prob_at_minutes
 
-OUT = HERE / "overnight_20261031"
+OUT = HERE.parents[1] / "data" / "validation" / "defcon_overnight_20261031"
 KEY = ["Season", "Player", "Team", "Opponent", "Venue"]
 HEADS = {"D": ("p_control", 10), "M": ("p_count", 12), "F": ("p_control", 12)}
 

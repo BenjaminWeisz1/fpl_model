@@ -25,7 +25,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / "data" / "current"
-EXPERIMENT = Path(__file__).resolve().parent / "experiment_20261020"
+EXPERIMENT = Path(__file__).resolve().parent.parents[1] / "data" / "validation" / "defcon_experiment_20261020"
 STUDY = ROOT / "data" / "validation" / "defcon_forward_20261020"
 MATCH_KEY = ["Season", "Home", "Away"]
 PLAYER_KEY = ["Season", "Team", "Opponent", "Venue", "Player"]

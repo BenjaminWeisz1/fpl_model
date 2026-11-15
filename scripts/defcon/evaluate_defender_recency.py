@@ -25,8 +25,8 @@ from evaluate_defender_monotonic import metrics, bootstrap, predict
 from recent_defcon import feature_columns
 
 HERE = Path(__file__).resolve().parent
-FEAT = HERE / "feature_experiment_20261020"
-OUT = HERE / "recency_experiment_20261029"
+FEAT = HERE.parents[1] / "data" / "validation" / "defcon_feature_experiment_20261020"
+OUT = HERE.parents[1] / "data" / "validation" / "defcon_recency_experiment_20261029"
 OUT.mkdir(exist_ok=True)
 BASE_COLS = ["AvgPer90", "AvgRaw", "StdPer90", "MatchesPlayed", "Recent5AvgPer90", "Recent5AvgRaw", "PctAboveThreshold",
              "OpponentAvgStat", "TeamAvgStat", "VenueAvg", "IsHome", "Is_FPL_API", "Pos_CB", "Pos_FB", "Pos_WB", "Pos_LB", "Pos_RB"]

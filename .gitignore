@@ -27,36 +27,10 @@ CHANGELOG.md
 CLAUDE.md
 AGENDA.md
 History.md
-KALMAN_FILTER.md
-TUNING.md
-pipeline_architecture_plan.md
-add_pctzero_feature.md
-fix_fixtures.MD
-OVERNIGHT_PLAN_*.md
+notes/
 
 # Hand-supplied style reference, not a pipeline output
 images/team-ratings.png
 
-# Research notes (literature reviews; not code)
-research_on_stat_usefulness.md
-fpl_feature_sourcing.md
-cold-start data sources.md
-
 # Third-party screenshots (bookmaker projections), not pipeline inputs
 images/Spreadex season projections/
-
-# Literature reviews written as research prompts (not code)
-Data Sources for Reconstructing the FPL Bonus Points System.md
-Fixture Congestion and Key-Player Absence Effect.md
-Promoted Teams Non Market-Priors Research.md
-Red-Card Effects Research.md
-What Makes a Premier League Player Hard to Replace.md
-What Predicts a New Arrival's First Premier League Season.md
-Yellow-Card Risk vs Minutes Played in the Premier League.md
-
-# Experiment outputs inside code folders (data; moved out in the cleanup)
-*.csv
-*.csv.gz
-*.xlsx
-scripts/**/SHA256SUMS
-scripts/defcon/tarkowski_diagnostic.txt
