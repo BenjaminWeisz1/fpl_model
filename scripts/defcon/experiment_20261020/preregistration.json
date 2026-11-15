@@ -1,0 +1,36 @@
+{
+  "recorded_before_candidate_fit": true,
+  "question": "Can monotonic regularized defender boosting remove backwards evidence effects without sacrificing out-of-time accuracy?",
+  "scope": "Defender head only; unchanged rows, features, targets, priors, scaling and isotonic calibration protocol. No source or market additions.",
+  "candidate": {
+    "class": "HistGradientBoostingClassifier",
+    "random_state": 42,
+    "max_iter": 300,
+    "learning_rate": 0.05,
+    "max_depth": 3,
+    "max_leaf_nodes": 7,
+    "min_samples_leaf": 50,
+    "l2_regularization": 10.0,
+    "early_stopping": false,
+    "increasing_constraints": ["AvgPer90", "AvgRaw", "Recent5AvgPer90", "Recent5AvgRaw", "PctAboveThreshold"]
+  },
+  "control": "Existing locked GBM with saved trained artifacts; verify training-frame cache keys and current Tarkowski 0.695 reproduction before comparing.",
+  "splits": {"A": "train seasons <2025, validate 2025", "B": "train seasons <2026, validate 2026 through GW7"},
+  "expected": {
+    "log_loss_candidate_minus_control": "-0.001 to -0.010 on 2025; same direction on 2026",
+    "auc_change": "within +/-0.01",
+    "monotonicity": "zero violations on the five constrained features",
+    "personal_update_tarkowski": "fall of 0 to 0.02 when applying the Chelsea evidence update with experience/spread/context fixed",
+    "weekly_evidence_p95": "at least 20% smaller absolute changes on 2025 (diagnostic, not an accuracy substitute)"
+  },
+  "ship_rule": {
+    "log_loss": "improve at least 0.001 on A or B, and neither split worsens by more than 0.002",
+    "brier": "neither split worsens by more than 0.002",
+    "auc": "neither split drops by more than 0.01",
+    "mechanism": "zero single-feature increasing-evidence reversals in validation audits; Tarkowski joint evidence update cannot increase probability when all five evidence features fall",
+    "failure": "retain incumbent default, retain experiment evidence, report rejection; do not select more parameters on these held-out results"
+  },
+  "calibration": "Same incumbent 5-fold shuffled stratified OOF isotonic fit. This preserves the control comparison; temporal calibration is a separate potential experiment.",
+  "weekly_diagnostic": "For adjacent appearances in held-out season, score the two pre-match evidence vectors using the same split model and the earlier row's nuisance/context features. This isolates changing evidence; it does not measure weekly model-refit instability.",
+  "limitations": ["2026 is partial", "Historical detailed positions and transfer estimators inherit existing pipeline assumptions", "No claim that constraints force all real-world weekly ratings to decline after every unsuccessful match"]
+}

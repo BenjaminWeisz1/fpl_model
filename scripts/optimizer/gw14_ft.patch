@@ -1,0 +1,102 @@
+--- /c/Users/bdwei/AppData/Local/Temp/claude/C--Users-bdwei-OneDrive-Desktop-Programz-fpl-model/cae95df0-9418-42b0-94d2-cabc696dda4d/scratchpad/ofs/dev/solver.py	2026-10-30 15:28:30.038843800 +0200
++++ scripts/optimizer/open_fpl_solver/dev/solver.py	2026-10-30 17:17:16.401387500 +0200
+@@ -340,6 +340,9 @@
+         horizon = MAX_GAMEWEEK + 1 - next_gw
+     gws = list(range(next_gw, last_gw + 1))
+     all_gw = [next_gw - 1, *gws]
++    # Local patch (see PINNED.md): FTs exist one week past the horizon, so a transfer saved in the last GW has value.
++    ft_end_gw = last_gw + 1
++    ft_gws = [*gws, ft_end_gw]
+     order = [0, 1, 2, 3]
+     price_modified_players = data["price_modified_players"]
+     ft_states = [0, 1, 2, 3, 4, 5]
+@@ -379,10 +382,10 @@
+         (p, w): transfer_out_regular[p, w] + (transfer_out_first[p, w] if p in price_modified_players else 0) for p in players for w in gws
+     }
+     in_the_bank = cont_vars(all_gw, name="itb", lb=0)
+-    fts = int_vars(all_gw, name="ft", lb=0, ub=5)
++    fts = int_vars([*all_gw, ft_end_gw], name="ft", lb=0, ub=5)
+     ft_above_ub = bin_vars(gws, name="ft_above")
+     ft_below_lb = bin_vars(gws, name="ft_below")
+-    fts_state = bin_vars(gws, ft_states, name="ft_state")
++    fts_state = bin_vars(ft_gws, ft_states, name="ft_state")
+     penalized_transfers = int_vars(gws, name="pt", lb=0)
+     aux = bin_vars(gws, name="aux")
+     transfer_count = int_vars(gws, name="trc", lb=0, ub=SQUAD_SIZE)
+@@ -425,7 +428,7 @@
+     m.addConstrs([squad[p, next_gw - 1] == 0 for p in players if p not in initial_squad])
+     m.addConstr(in_the_bank[next_gw - 1] == itb)
+     m.addConstr(fts[next_gw] == initial_ft * (1 - use_wc[next_gw]) + ft_base * use_wc[next_gw])
+-    m.addConstrs([fts[w] >= 1 for w in gws if w > next_gw])
++    m.addConstrs([fts[w] >= 1 for w in ft_gws if w > next_gw])
+ 
+     # Constraints
+     m.addConstrs([squad_count[w] == SQUAD_SIZE for w in gws])
+@@ -497,19 +500,19 @@
+     # Clamp the raw count into [1, 5] to get the FTs actually available next week.
+ 
+     # ft_above_ub[w] == 1  =>  fts[w + 1] == 5
+-    m.addConstrs([fts[w + 1] <= 5 + big_m * (1 - ft_above_ub[w]) for w in gws if w + 1 in gws])
+-    m.addConstrs([fts[w + 1] >= 5 - big_m * (1 - ft_above_ub[w]) for w in gws if w + 1 in gws])
++    m.addConstrs([fts[w + 1] <= 5 + big_m * (1 - ft_above_ub[w]) for w in gws])
++    m.addConstrs([fts[w + 1] >= 5 - big_m * (1 - ft_above_ub[w]) for w in gws])
+ 
+     # ft_below_lb[w] == 1  =>  fts[w + 1] == 1
+-    m.addConstrs([fts[w + 1] <= 1 + big_m * (1 - ft_below_lb[w]) for w in gws if w + 1 in gws])
+-    m.addConstrs([fts[w + 1] >= 1 - big_m * (1 - ft_below_lb[w]) for w in gws if w + 1 in gws])
++    m.addConstrs([fts[w + 1] <= 1 + big_m * (1 - ft_below_lb[w]) for w in gws])
++    m.addConstrs([fts[w + 1] >= 1 - big_m * (1 - ft_below_lb[w]) for w in gws])
+ 
+     # Neither indicator set  =>  fts[w + 1] == raw_gw_ft[w], i.e. the raw count was already in range
+-    m.addConstrs([fts[w + 1] - raw_gw_ft[w] <= big_m * (ft_above_ub[w] + ft_below_lb[w]) for w in gws if w + 1 in gws])
+-    m.addConstrs([raw_gw_ft[w] - fts[w + 1] <= big_m * (ft_above_ub[w] + ft_below_lb[w]) for w in gws if w + 1 in gws])
++    m.addConstrs([fts[w + 1] - raw_gw_ft[w] <= big_m * (ft_above_ub[w] + ft_below_lb[w]) for w in gws])
++    m.addConstrs([raw_gw_ft[w] - fts[w + 1] <= big_m * (ft_above_ub[w] + ft_below_lb[w]) for w in gws])
+ 
+-    m.addConstrs([fts[w] == sum_(fts_state[w, s] * s for s in ft_states) for w in gws])
+-    m.addConstrs([sum_(fts_state[w, s] for s in ft_states) == 1 for w in gws])
++    m.addConstrs([fts[w] == sum_(fts_state[w, s] * s for s in ft_states) for w in ft_gws])
++    m.addConstrs([sum_(fts_state[w, s] for s in ft_states) == 1 for w in ft_gws])
+ 
+     m.addConstrs([penalized_transfers[w] >= transfer_diff[w] for w in gws])
+ 
+@@ -796,8 +799,8 @@
+         ft_state_value[s] = ft_state_value.get(s - 1, 0) + ft_value_list.get(str(s), ft_value)
+     # print(f"Using FT state values of {ft_state_value}")
+     print(f"Using FT values of {ft_value_list}")
+-    gw_ft_value = {w: sum_(ft_state_value[s] * fts_state[w, s] for s in ft_states) for w in gws}
+-    gw_ft_gain = {w: gw_ft_value[w] - gw_ft_value.get(w - 1, 0) for w in gws}
++    gw_ft_value = {w: sum_(ft_state_value[s] * fts_state[w, s] for s in ft_states) for w in ft_gws}
++    gw_ft_gain = {w: gw_ft_value[w] - gw_ft_value.get(w - 1, 0) for w in ft_gws}
+ 
+     # Objectives
+     hit_cost = options.get("hit_cost", 4)
+@@ -819,7 +822,7 @@
+     if objective == "regular":
+         objective_expr = sum_(gw_total[w] for w in gws)
+     else:
+-        objective_expr = sum_(gw_total[w] * pow(decay_base, w - next_gw) for w in gws)
++        objective_expr = sum_(gw_total[w] * pow(decay_base, w - next_gw) for w in gws) + gw_ft_gain[ft_end_gw] * pow(decay_base, ft_end_gw - next_gw)
+     m.setObjective(objective_expr, sense=highspy.ObjSense.kMaximize)
+ 
+     report_decay_base = options.get("report_decay_base", [])
+@@ -907,6 +910,9 @@
+ 
+     for iteration in range(num_iterations):
+         val = run_solve(iteration)
++        # Local patch (see PINNED.md): constraints or the plan-difference cut can leave no solution; keep what was found.
++        if m.getModelStatus() in (highspy.HighsModelStatus.kInfeasible, highspy.HighsModelStatus.kUnboundedOrInfeasible):
++            break
+ 
+         # DataFrame generation
+         picks = []
+@@ -1068,6 +1074,9 @@
+                 "sell": sell_decisions,
+                 "chip": chip_decisions,
+                 "score": val(objective_expr),
++                "solve_status": m.modelStatusToString(m.getModelStatus()),
++                "mip_gap": m.getInfo().mip_gap,
++                "ft_end": val(fts[ft_end_gw]),
+                 "decay_metrics": {key: val(value) for key, value in decay_metrics.items()},
+             }
+         )

@@ -1,0 +1,49 @@
+--- a/dev/solver.py	2026-11-11 02:16:26.463893400 +0200
++++ b/dev/solver.py	2026-11-11 02:16:26.649684600 +0200
+@@ -488,28 +488,36 @@
+     raw_gw_ft = {w: fts[w] - transfer_count[w] + 1 - use_wc[w] - use_fh[w] for w in gws}
+     # Big-M only has to dominate the FT range, which is 0-5 plus transfers already made in current gw.
+     big_m = 20
++    # Local patch (ft_tight_m.patch, PINNED.md): option "ft_tight_big_m" gives each row the smallest M its variable
++    # bounds allow (fts in [0, 5], transfer_count in [0, SQUAD_SIZE], so raw_gw_ft in [raw_lo, raw_hi]). Same integer
++    # solutions, tighter LP relaxation.
++    raw_lo, raw_hi, ft_lo, ft_hi = -SQUAD_SIZE + 1, 5 + 1, 0, 5
++    tight = bool(options.get("ft_tight_big_m", False))
++
++    def bm(value):
++        return value if tight else big_m
+ 
+     # ft_above_ub[w] == 1  <=>  raw_gw_ft[w] > 5
+-    m.addConstrs([raw_gw_ft[w] >= 6 - big_m * (1 - ft_above_ub[w]) for w in gws])
+-    m.addConstrs([raw_gw_ft[w] <= 5 + big_m * ft_above_ub[w] for w in gws])
++    m.addConstrs([raw_gw_ft[w] >= 6 - bm(6 - raw_lo) * (1 - ft_above_ub[w]) for w in gws])
++    m.addConstrs([raw_gw_ft[w] <= 5 + bm(raw_hi - 5) * ft_above_ub[w] for w in gws])
+ 
+     # ft_below_lb[w] == 1  <=>  raw_gw_ft[w] < 1
+-    m.addConstrs([raw_gw_ft[w] <= 0 + big_m * (1 - ft_below_lb[w]) for w in gws])
+-    m.addConstrs([raw_gw_ft[w] >= 1 - big_m * ft_below_lb[w] for w in gws])
++    m.addConstrs([raw_gw_ft[w] <= 0 + bm(raw_hi) * (1 - ft_below_lb[w]) for w in gws])
++    m.addConstrs([raw_gw_ft[w] >= 1 - bm(1 - raw_lo) * ft_below_lb[w] for w in gws])
+ 
+     # Clamp the raw count into [1, 5] to get the FTs actually available next week.
+ 
+     # ft_above_ub[w] == 1  =>  fts[w + 1] == 5
+-    m.addConstrs([fts[w + 1] <= 5 + big_m * (1 - ft_above_ub[w]) for w in gws])
+-    m.addConstrs([fts[w + 1] >= 5 - big_m * (1 - ft_above_ub[w]) for w in gws])
++    m.addConstrs([fts[w + 1] <= 5 + bm(ft_hi - 5) * (1 - ft_above_ub[w]) for w in gws])
++    m.addConstrs([fts[w + 1] >= 5 - bm(5 - ft_lo) * (1 - ft_above_ub[w]) for w in gws])
+ 
+     # ft_below_lb[w] == 1  =>  fts[w + 1] == 1
+-    m.addConstrs([fts[w + 1] <= 1 + big_m * (1 - ft_below_lb[w]) for w in gws])
+-    m.addConstrs([fts[w + 1] >= 1 - big_m * (1 - ft_below_lb[w]) for w in gws])
++    m.addConstrs([fts[w + 1] <= 1 + bm(ft_hi - 1) * (1 - ft_below_lb[w]) for w in gws])
++    m.addConstrs([fts[w + 1] >= 1 - bm(1 - ft_lo) * (1 - ft_below_lb[w]) for w in gws])
+ 
+     # Neither indicator set  =>  fts[w + 1] == raw_gw_ft[w], i.e. the raw count was already in range
+-    m.addConstrs([fts[w + 1] - raw_gw_ft[w] <= big_m * (ft_above_ub[w] + ft_below_lb[w]) for w in gws])
+-    m.addConstrs([raw_gw_ft[w] - fts[w + 1] <= big_m * (ft_above_ub[w] + ft_below_lb[w]) for w in gws])
++    m.addConstrs([fts[w + 1] - raw_gw_ft[w] <= bm(ft_hi - raw_lo) * (ft_above_ub[w] + ft_below_lb[w]) for w in gws])
++    m.addConstrs([raw_gw_ft[w] - fts[w + 1] <= bm(raw_hi - ft_lo) * (ft_above_ub[w] + ft_below_lb[w]) for w in gws])
+ 
+     m.addConstrs([fts[w] == sum_(fts_state[w, s] * s for s in ft_states) for w in ft_gws])
+     m.addConstrs([sum_(fts_state[w, s] for s in ft_states) == 1 for w in ft_gws])

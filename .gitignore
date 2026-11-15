@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Local tool settings
+.claude/
+
+# Data: none of it is published (user decision 2026-11-15). Sources and fetchers are
+# documented in README.md; scraped data is for personal use only.
+data/
+cache/
+site/data/
+team_data.json
+*.pkl
+*.pkl.gz
+
+# Run evidence and one-off dev scripts
+*.log
+*.err
+*.bak
+_check_round.py
+
+# Internal documentation (development notes, not part of the published repo)
+CHANGELOG.md
+CLAUDE.md
+AGENDA.md
+History.md
+KALMAN_FILTER.md
+TUNING.md
+pipeline_architecture_plan.md
+add_pctzero_feature.md
+fix_fixtures.MD
+OVERNIGHT_PLAN_*.md
+
+# Hand-supplied style reference, not a pipeline output
+images/team-ratings.png
+
+# Research notes (literature reviews; not code)
+research_on_stat_usefulness.md
+fpl_feature_sourcing.md
+cold-start data sources.md
+
+# Third-party screenshots (bookmaker projections), not pipeline inputs
+images/Spreadex season projections/
+
+# Literature reviews written as research prompts (not code)
+Data Sources for Reconstructing the FPL Bonus Points System.md
+Fixture Congestion and Key-Player Absence Effect.md
+Promoted Teams Non Market-Priors Research.md
+Red-Card Effects Research.md
+What Makes a Premier League Player Hard to Replace.md
+What Predicts a New Arrival's First Premier League Season.md
+Yellow-Card Risk vs Minutes Played in the Premier League.md
+
+# Experiment outputs inside code folders (data; moved out in the cleanup)
+*.csv
+*.csv.gz
+*.xlsx
+scripts/**/SHA256SUMS
+scripts/defcon/tarkowski_diagnostic.txt

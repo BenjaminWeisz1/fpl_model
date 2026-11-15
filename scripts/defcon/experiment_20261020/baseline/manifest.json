@@ -1,0 +1,18 @@
+{
+  "inputs": {
+    "player_match_stats.csv": "bd3fadbb3528562d94a8bde23ce1deb944018bc1143a7f0b0c61a8df228cea42",
+    "players_current.csv": "947a5646c4847ecfc1824ceb480fd105b817385a6d6f28f2234489c3642c237d",
+    "transfers.csv": "4f919bc8a1648a6d5679d029704a133f83bace4eee14d05dac09ecb0ea500f6a",
+    "player_match_positions.csv": "c495db60af86dfca43108341a7ce2d76e6ad37e94903624c0781d3cc817d552f",
+    "fixtures.csv": "956861f3537511c64cbb6337bfee1d79773b4246df369df8e786aeecb6cfda64",
+    "match_results.csv": "bf4be1c307d53f2e85316341f58dee49c6c9252f8df64bb1202b61293d586420",
+    "minutes_probabilities.csv": "048b87ab6bb6992307d3be8f8b139dfab029a53aabd3ce57d332651f6d069bec"
+  },
+  "outputs": {
+    "defcon_average_probabilities.csv": "a2a3b3129d63fad8b6e63a9fcbd4642d9ee502a70e870d90809f99a720a1395e",
+    "player_ratings.csv": "74c0c5852cc16887cbbfb49b2cd94388f596858756cc95d8386aa3593ea1a38e",
+    "predictions_defensive.csv": "0391376bf305300514738a1d26996c62696c645c5662f1c1095ca7ed4e7f544f"
+  },
+  "source_sha256": "3b54d6b176e7eb1637a3c9cd8c84cf3267cd59cabc3bc492154233337de98b6c",
+  "preregistration_sha256": "908666f059d022f9efe63ded163d9089b1d09a03af051688c0d8b3a3a4b0872e"
+}

@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FPL Optimizer</title>
+<style>
+:root { --bg: #0b1622; --panel: #0f1d2b; --line: #1d3142; --text: #d8e4ee; --muted: #7f95a8; --accent: #ff2d62; --accent-dim: #4a1a2e; --out: #ff5f7e; --in: #22d39a; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.4 Consolas, "Cascadia Mono", Menlo, monospace; }
+main { max-width: 760px; margin: 0 auto; padding: 24px 16px 40px; }
+main.wide { max-width: none; }
+.top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 18px; }
+h1 { font-size: 18px; margin: 0; }
+.context { color: var(--muted); font-size: 13px; }
+h2 { font-size: 12px; letter-spacing: 1px; color: var(--muted); margin: 0; font-weight: 700; }
+.section { margin-bottom: 22px; }
+.heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; min-height: 32px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.box { border: 1px solid var(--line); background: var(--panel); border-radius: 6px; padding: 10px; min-height: 52px; }
+.empty { color: var(--muted); font-style: italic; text-align: center; padding: 6px; }
+.chip { display: inline-flex; gap: 8px; align-items: center; border: 1px solid var(--line); border-radius: 4px; padding: 3px 8px; margin: 2px 4px 2px 0; }
+.chip button, .remove { background: none; border: 0; color: var(--muted); cursor: pointer; font: inherit; padding: 0 2px; }
+.chip button:hover, .remove:hover { color: var(--out); }
+.search { position: relative; width: 100%; }
+input, select { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 6px 8px; font: inherit; }
+input:focus, select:focus { outline: 1px solid var(--muted); }
+.list { position: absolute; z-index: 5; left: 0; right: 0; top: 100%; max-height: 240px; overflow-y: auto; background: var(--panel); border: 1px solid var(--muted); border-radius: 4px; display: none; }
+.list.open { display: block; }
+.option { display: flex; justify-content: space-between; gap: 8px; padding: 5px 8px; cursor: pointer; }
+.option:hover, .option.active { background: var(--line); }
+.option small { color: var(--muted); white-space: nowrap; }
+.add { background: var(--accent-dim); color: #ff7f9e; border: 1px solid #6a2240; border-radius: 4px; padding: 5px 12px; font: inherit; cursor: pointer; }
+.move { display: grid; grid-template-columns: 90px 1fr 1fr 24px; gap: 10px; align-items: end; padding: 6px 0; }
+.move label { display: block; color: var(--muted); font-size: 11px; margin-bottom: 3px; }
+.remove { padding-bottom: 7px; }
+.actions { display: flex; justify-content: flex-end; gap: 12px; align-items: center; }
+.actions select { width: auto; }
+#start { background: var(--accent); color: #fff; border: 0; border-radius: 6px; padding: 12px 30px; font: inherit; font-weight: 700; cursor: pointer; }
+#start:disabled { opacity: .5; cursor: default; }
+.notice { border: 1px solid var(--out); color: var(--out); border-radius: 6px; padding: 10px 12px; margin-bottom: 16px; white-space: pre-wrap; }
+.loading { text-align: center; padding: 70px 0; color: var(--muted); }
+.spinner { width: 36px; height: 36px; margin: 0 auto 16px; border: 3px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+iframe { width: 100%; border: 0; display: block; }
+.back { margin-bottom: 12px; }
+[hidden] { display: none !important; }
+@media (max-width: 640px) { .pair { grid-template-columns: 1fr; } .move { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main id="page">
+  <div class="top"><h1>Forced decisions</h1><span class="context" id="context">Loading...</span></div>
+  <div class="notice" id="notice" hidden></div>
+
+  <div id="form">
+    <div class="pair section">
+      <div>
+        <div class="heading"><h2>TARGET / HOLD</h2></div>
+        <div id="hold-search"></div>
+        <div class="box" id="hold-box" style="margin-top:8px"></div>
+      </div>
+      <div>
+        <div class="heading"><h2>AVOID / SELL</h2></div>
+        <div id="avoid-search"></div>
+        <div class="box" id="avoid-box" style="margin-top:8px"></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="heading"><h2>PLANNED MOVES</h2><button class="add" id="add-move">+ Add Move</button></div>
+      <div class="box" id="moves"></div>
+    </div>
+    <div class="actions"><select id="mode" title="Solve mode"></select><button id="start" disabled>START SOLVE</button></div>
+  </div>
+
+  <div class="loading" id="loading" hidden><div class="spinner"></div><div>Solving 3 plans, usually a few minutes</div><div id="elapsed">0:00</div></div>
+
+  <div id="results" hidden>
+    <button class="add back" id="back">Back to decisions</button>
+    <iframe id="plans" title="Plans"></iframe>
+  </div>
+</main>
+<script>
+let state = null;
+const hold = [], avoid = [], moves = [];
+const $ = id => document.getElementById(id);
+const plain = text => text.normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/ß/g, "ss").replace(/ø/g, "o").toLowerCase();
+const byId = id => state.players.find(p => p.id === id);
+const label = p => `${p.name} (${p.team} ${p.pos})`;
+
+function picker(placeholder, onPick, initial) {
+  const wrap = document.createElement("div");
+  wrap.className = "search";
+  const input = document.createElement("input");
+  input.placeholder = placeholder;
+  input.value = initial ? label(initial) : "";
+  const list = document.createElement("div");
+  list.className = "list";
+  wrap.append(input, list);
+  let active = -1, shown = [];
+
+  function draw() {
+    const term = plain(input.value.trim());
+    shown = state.players.filter(p => !term || plain(`${p.name} ${p.team}`).includes(term)).slice(0, 40);
+    active = -1;
+    list.replaceChildren(...shown.map(p => {
+      const row = document.createElement("div");
+      row.className = "option";
+      const name = document.createElement("span");
+      name.textContent = `${p.name}${p.owned ? " *" : ""}`;
+      const info = document.createElement("small");
+      info.textContent = `${p.team} ${p.pos} £${p.price.toFixed(1)} ${p.xp.toFixed(1)} xP`;
+      row.append(name, info);
+      row.addEventListener("mousedown", event => { event.preventDefault(); choose(p); });
+      return row;
+    }));
+    list.classList.toggle("open", shown.length > 0);
+  }
+  function choose(p) {
+    list.classList.remove("open");
+    onPick(p, input);
+  }
+  function mark() {
+    [...list.children].forEach((row, i) => row.classList.toggle("active", i === active));
+    if (list.children[active]) list.children[active].scrollIntoView({ block: "nearest" });
+  }
+  input.addEventListener("focus", () => { input.select(); draw(); });
+  input.addEventListener("input", () => { if (input.value === "") onPick(null, input); draw(); });
+  input.addEventListener("blur", () => list.classList.remove("open"));
+  input.addEventListener("keydown", event => {
+    if (event.key === "ArrowDown") { active = Math.min(active + 1, shown.length - 1); mark(); event.preventDefault(); }
+    else if (event.key === "ArrowUp") { active = Math.max(active - 1, 0); mark(); event.preventDefault(); }
+    else if (event.key === "Enter" && shown.length) { choose(shown[Math.max(active, 0)]); event.preventDefault(); }
+    else if (event.key === "Escape") { list.classList.remove("open"); }
+  });
+  return wrap;
+}
+
+function drawChips(box, ids, emptyText) {
+  if (!ids.length) { box.innerHTML = `<div class="empty">${emptyText}</div>`; return; }
+  box.replaceChildren(...ids.map(id => {
+    const chip = document.createElement("span");
+    chip.className = "chip";
+    chip.textContent = label(byId(id));
+    const x = document.createElement("button");
+    x.textContent = "x";
+    x.title = "Remove";
+    x.addEventListener("click", () => { ids.splice(ids.indexOf(id), 1); drawAll(); });
+    chip.append(x);
+    return chip;
+  }));
+}
+
+function drawMoves() {
+  const box = $("moves");
+  if (!moves.length) { box.innerHTML = '<div class="empty">No forced transfers.</div>'; return; }
+  box.replaceChildren(...moves.map(move => {
+    const row = document.createElement("div");
+    row.className = "move";
+    const field = (text, element) => {
+      const cell = document.createElement("div");
+      const name = document.createElement("label");
+      name.textContent = text;
+      cell.append(name, element);
+      return cell;
+    };
+    const gw = document.createElement("select");
+    gw.append(...state.gws.map(w => new Option(`GW${w}`, w, false, w === move.gw)));
+    gw.addEventListener("change", () => { move.gw = Number(gw.value); });
+    const side = key => picker("Find a player", (p, input) => {
+      move[key] = p ? p.id : null;
+      if (p) input.value = label(p);
+    }, move[key] ? byId(move[key]) : null);
+    const remove = document.createElement("button");
+    remove.className = "remove";
+    remove.textContent = "x";
+    remove.title = "Remove move";
+    remove.addEventListener("click", () => { moves.splice(moves.indexOf(move), 1); drawMoves(); });
+    row.append(field("GW", gw), field("Transfer out", side("out")), field("Transfer in", side("in")), remove);
+    return row;
+  }));
+}
+
+function drawAll() {
+  drawChips($("hold-box"), hold, "No players selected.");
+  drawChips($("avoid-box"), avoid, "No players selected.");
+  drawMoves();
+}
+
+function addTo(ids, other) {
+  return (p, input) => {
+    if (!p) return;
+    if (!ids.includes(p.id)) ids.push(p.id);
+    const clash = other.indexOf(p.id);
+    if (clash >= 0) other.splice(clash, 1);
+    input.value = "";
+    drawAll();
+  };
+}
+
+function notice(message) {
+  $("notice").textContent = message || "";
+  $("notice").hidden = !message;
+}
+
+function show(view) {
+  $("form").hidden = view !== "form";
+  $("loading").hidden = view !== "loading";
+  $("results").hidden = view !== "results";
+  $("page").classList.toggle("wide", view === "results");
+}
+
+async function start() {
+  notice("");
+  if (moves.some(m => !m.out && !m.in)) { notice("Each planned move needs at least a transfer out or a transfer in."); return; }
+  show("loading");
+  const began = Date.now();
+  const timer = setInterval(() => {
+    const seconds = Math.floor((Date.now() - began) / 1000);
+    $("elapsed").textContent = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+  }, 1000);
+  try {
+    const response = await fetch("/api/solve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hold, avoid, moves, mode: $("mode").value }),
+    });
+    const result = await response.json();
+    if (!result.ok) { show("form"); notice(result.message); return; }
+    const frame = $("plans");
+    frame.onload = () => { frame.style.height = frame.contentDocument.documentElement.scrollHeight + "px"; };
+    frame.src = `/plans?t=${Date.now()}`;
+    show("results");
+  } catch (error) {
+    show("form");
+    notice(`Lost contact with the server: ${error.message}`);
+  } finally {
+    clearInterval(timer);
+    $("elapsed").textContent = "0:00";
+  }
+}
+
+async function load() {
+  state = await (await fetch("/api/state")).json();
+  if (state.error) { $("context").textContent = ""; notice(state.error); return; }
+  $("context").textContent = `GW${state.gws[0]}-${state.gws[state.gws.length - 1]} · ${state.fts} FT · ITB £${state.bank.toFixed(1)}M`;
+  $("hold-search").append(picker("Add player to target or hold", addTo(hold, avoid)));
+  $("avoid-search").append(picker("Add player to avoid or sell", addTo(avoid, hold)));
+  $("add-move").addEventListener("click", () => { moves.push({ gw: state.gws[0], out: null, in: null }); drawMoves(); });
+  $("mode").append(...state.modes.map(m => new Option(m.label, m.name, false, m.name === state.default_mode)));
+  $("start").addEventListener("click", start);
+  $("back").addEventListener("click", () => show("form"));
+  $("start").disabled = false;
+  drawAll();
+}
+load();
+</script>
+</body>
+</html>

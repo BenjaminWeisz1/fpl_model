@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FPL Model</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <span class="brand">FPL Model</span>
+    <a href="#projections" data-view="projections">Projections</a>
+    <a href="#ratings" data-view="ratings">Player ratings</a>
+    <a href="#teams" data-view="teams">Team ratings</a>
+    <a href="#fixtures" data-view="fixtures">Fixtures</a>
+    <a href="#solver" data-view="solver">Solver</a>
+  </nav>
+
+  <main>
+    <section id="view-projections" class="view">
+      <div class="controls">
+        <div class="control-row">
+          <input id="p-search" type="search" placeholder="Search player" aria-label="Search player">
+          <label>Stat
+            <select id="p-stat">
+              <option value="points">Points</option>
+              <option value="minutes">Minutes</option>
+              <option value="goals">Goals</option>
+              <option value="assists">Assists</option>
+              <option value="pens">Penalty share</option>
+              <option value="cs">Clean sheet %</option>
+              <option value="defcon">Defcon %</option>
+            </select>
+          </label>
+          <select id="p-pos" aria-label="Position"></select>
+          <select id="p-team" aria-label="Team"></select>
+          <span class="price" id="p-price"></span>
+          <span id="p-restore"></span>
+        </div>
+      </div>
+      <div class="table-wrap"><table id="p-table" class="heat"></table></div>
+    </section>
+
+    <section id="view-ratings" class="view">
+      <div class="controls">
+        <div class="control-row">
+          <input id="r-search" type="search" placeholder="Search player" aria-label="Search player">
+          <select id="r-pos" aria-label="Position"></select>
+          <select id="r-team" aria-label="Team"></select>
+          <select id="r-mins" aria-label="Minutes"></select>
+          <span class="price" id="r-price"></span>
+          <span id="r-restore"></span>
+          <button class="link" id="r-reset" hidden>reset penalty shares</button>
+        </div>
+      </div>
+      <div class="table-wrap"><table id="r-table" class="heat"></table></div>
+    </section>
+    <section id="view-teams" class="view">
+      <div class="teams-grid">
+        <div>
+          <h2>Team ratings</h2>
+          <div class="table-wrap"><table id="t-ratings" class="heat compact"></table></div>
+        </div>
+        <div>
+          <h2>Predicted final table</h2>
+          <div class="table-wrap"><table id="t-table" class="heat compact"></table></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-fixtures" class="view">
+      <div class="controls">
+        <div class="control-row">
+          <label>Mode <select id="f-mode"></select></label>
+          <span id="f-restore"></span>
+        </div>
+      </div>
+      <div class="table-wrap"><table id="f-table" class="heat compact fixtures"></table></div>
+    </section>
+    <section id="view-solver" class="view">
+      <p class="note" id="s-context"></p>
+      <div class="s-grid">
+        <div class="controls s-card">
+          <h2>Squad</h2>
+          <div class="group chips">
+            <button class="chip" data-source="id">FPL team ID</button>
+            <button class="chip" data-source="json">Paste JSON</button>
+            <button class="chip" data-source="file">team_data.json</button>
+          </div>
+          <div id="s-src-id" class="s-src">
+            <input id="s-id" type="search" inputmode="numeric" placeholder="Team ID" aria-label="FPL team ID">
+            <button class="s-btn" data-load>Load</button>
+            <p class="note">Rebuilt from FPL's public pages and checked against FPL's own bank, squad and hits. It can't see
+              extra free transfers FPL gives everyone, or a chip already activated for this week: paste the JSON then.</p>
+          </div>
+          <div id="s-src-json" class="s-src" hidden>
+            <textarea id="s-json" rows="6" placeholder="JSON in team_data.json's format (FPL's my-team page)" aria-label="Team JSON"></textarea>
+            <button class="s-btn" data-load>Load</button>
+          </div>
+          <div id="s-src-file" class="s-src" hidden>
+            <button class="s-btn" data-load>Load team_data.json</button>
+            <p class="note">The repo's saved file; refused if it was saved before the last deadline.</p>
+          </div>
+          <div id="s-team-msg" class="s-notice" hidden></div>
+          <div id="s-squad-wrap" hidden>
+            <p id="s-squad-head" class="s-head"></p>
+            <table id="s-squad" class="heat compact s-squad"></table>
+          </div>
+        </div>
+
+        <div class="controls s-card">
+          <h2>Solve</h2>
+          <div class="control-row">
+            <label>Horizon <select id="s-horizon"></select></label>
+            <label>Mode <select id="s-mode"></select></label>
+          </div>
+          <p class="note" id="s-mode-note"></p>
+          <h3>Chip weeks</h3>
+          <div class="control-row" id="s-chips"></div>
+          <p class="note">Fixed by you; the solver never picks a chip or its week.</p>
+          <h3>Forced decisions</h3>
+          <div class="s-pair">
+            <div><div class="label">Target / hold</div><div id="s-hold-pick"></div><div class="s-tags" id="s-hold"></div></div>
+            <div><div class="label">Avoid / sell</div><div id="s-avoid-pick"></div><div class="s-tags" id="s-avoid"></div></div>
+          </div>
+          <div class="label">Planned moves <button class="link" id="s-add-move">+ add</button></div>
+          <div id="s-moves"></div>
+          <div class="s-actions"><button class="s-btn primary" id="s-run" disabled>Solve</button></div>
+          <div id="s-run-msg" class="s-notice" hidden></div>
+        </div>
+      </div>
+
+      <div id="s-progress" class="controls s-card" hidden>
+        <div id="s-progress-text"></div>
+        <div class="s-track"><div id="s-bar" class="s-bar"></div></div>
+        <button class="link" id="s-cancel" hidden>cancel</button>
+        <details><summary class="label">solver output</summary><pre id="s-log"></pre></details>
+      </div>
+
+      <div id="s-result" hidden>
+        <h2 id="s-result-head"></h2>
+        <iframe id="s-plans" title="Plans"></iframe>
+      </div>
+    </section>
+  </main>
+
+  <script src="heatmap.js"></script>
+  <script src="app.js"></script>
+  <script src="solver.js"></script>
+</body>
+</html>
