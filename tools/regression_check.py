@@ -138,7 +138,9 @@ def _stage_list(box: Path) -> list[dict]:
 
 def _clean_env() -> dict:
     env = {k: v for k, v in os.environ.items() if not k.startswith(SWITCH_PREFIXES)}
-    env.update(PYTHONIOENCODING="utf-8", PYTHONHASHSEED="0", MPLBACKEND="Agg")
+    # Two forest workers instead of every core: each worker copies the training data, and a full-core
+    # retrain ran the machine out of memory twice. Forest results do not depend on n_jobs.
+    env.update(PYTHONIOENCODING="utf-8", PYTHONHASHSEED="0", MPLBACKEND="Agg", DEFCON_RF_N_JOBS="2")
     return env
 
 
