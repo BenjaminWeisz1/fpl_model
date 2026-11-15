@@ -10,7 +10,7 @@ from team_ratings_current.csv. Moved here from part 2's export_weekly_heatmaps.p
 version added each team's penalty goals from penalty_predictions.csv; that needs minutes.csv and the penalty share,
 which only part 2 has, so part 1 uses the league penalty rate, as clean sheets and the predicted table do.
 
-    python -u -X utf8 scripts/team_ratings/predicted_scores.py
+    python -u -X utf8 -m fpl_model.team_ratings.predicted_scores
 """
 import sys
 from pathlib import Path

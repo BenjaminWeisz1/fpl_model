@@ -29,7 +29,7 @@ Outputs:
   images/next_gameweek/next_gw_goal_involvement.png
   images/next_gameweek/next_gw_defcon.png
   images/next_gameweek/next_gw_predicted_points.png
-  (next_gw_predicted_scores.png is drawn in part 1 by scripts/team_ratings/predicted_scores.py)
+  (next_gw_predicted_scores.png is drawn in part 1 by fpl_model/team_ratings/predicted_scores.py)
 
 """
 import argparse
@@ -710,7 +710,7 @@ def next_gameweek_charts() -> None:
             subtitle="", filename="next_gameweek/next_gw_predicted_points.png",
             precision=2, show_legend=False,
         )
-    # Predicted scores moved to part 1: scripts/team_ratings/predicted_scores.py (2026-11-04).
+    # Predicted scores moved to part 1: fpl_model/team_ratings/predicted_scores.py (2026-11-04).
 
 
 # ── Entry point ────────────────────────────────────────────────────────────────

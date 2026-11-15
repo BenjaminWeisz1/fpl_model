@@ -9,7 +9,7 @@ at least 900 start minutes. Types: substitute appearances by minutes band, start
 early, starters playing 60-84. Start/sub from player_match_positions.csv (Understat Is_Starter).
 
 Run locally:
-    python screen_sub_uplift.py
+    python -m research.player_ratings.screen_sub_uplift
 """
 import json
 

@@ -8,7 +8,7 @@ total BPS before the official tie rules. First checks that assign_bonus applied
 to actual BPS reproduces actual FPL bonus.
 
 Run locally:
-    python validate_integer_bps.py
+    python -m research.bonus.validate_integer_bps
 """
 import hashlib
 import json

@@ -5,7 +5,7 @@ saves the three current training frames plus a dated, sequenced copy of the matc
 `fit_head` / `score` reproduce the production heads: monotonic HGB with centred isotonic for defenders, random
 forests with step isotonic for midfielders and forwards, calibrated on 5-fold out-of-fold predictions.
 
-Run: python -u -X utf8 scripts/defcon/overnight_frames.py
+Run: python -u -X utf8 -m research.defcon.overnight_frames
 """
 import os
 

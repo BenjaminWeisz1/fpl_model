@@ -2,7 +2,7 @@
 
 Not part of the adoption rule; a disclosed follow-up. Checks the saves data against Sofascore, then scores
 the later block with each season's level matched, so the control's stale level doesn't colour the result.
-Run: python -u -X utf8 scripts/assemble/validate_keeper_saves_later.py
+Run: python -u -X utf8 -m research.assemble.validate_keeper_saves_later
 """
 import json
 

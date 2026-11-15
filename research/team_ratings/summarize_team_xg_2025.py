@@ -6,7 +6,7 @@ mean predicted - actual NPG per team-match and the Poisson log-loss kernel; also
 checks that the 2023 and 2024 splits are identical between the two runs.
 
 Run locally (after both harness runs):
-    python summarize_team_xg_2025.py
+    python -m research.team_ratings.summarize_team_xg_2025
 """
 import json
 

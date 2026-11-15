@@ -9,7 +9,7 @@ date was the Premier League). Then scores, on 2017-2025 team-seasons, M0 (produc
 on 2013..s-1) and V11 (the same on 2011..s-1).
 
 Run locally:
-    python validate_money_pre2013.py
+    python -m research.team_ratings.validate_money_pre2013
 """
 import json
 

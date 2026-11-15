@@ -1,7 +1,7 @@
 """Item 3, AGENDA 2026-10-31 (CHANGELOG §151): how much would knowing the player's slot in advance be worth?
 
 Oracle = the held-out row's actual Pos_* dummies. Realistic = the player's previous match's dummies, as a forecast sees.
-Same fitted head for both. No production writes. Run: python -u -X utf8 scripts/defcon/evaluate_position_oracle.py
+Same fitted head for both. No production writes. Run: python -u -X utf8 -m research.defcon.evaluate_position_oracle
 """
 import os
 

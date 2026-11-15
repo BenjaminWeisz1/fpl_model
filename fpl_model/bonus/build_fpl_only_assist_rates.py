@@ -11,7 +11,7 @@ history he gets the prior, so the model's position mean. When Sofascore is not u
 player gets the position fallback.
 
 Run locally (before build_simulation_features.py):
-    python build_fpl_only_assist_rates.py
+    python -m fpl_model.bonus.build_fpl_only_assist_rates
 """
 
 import pandas as pd

@@ -1,7 +1,7 @@
 """
 Slower npxG smoothing for defenders only (CHANGELOG §235).
 
-    python validate_defender_npxg.py    # -> data/validation/defender_npxg_20261112/results.json
+    python -m research.player_ratings.validate_defender_npxg    # -> data/validation/defender_npxg_20261112/results.json
 
 Exact replay of production's npxG rule from the production log, with defender rows (match position CB, LB, RB, WB)
 taking a variant: a lower floor, the career average (floor 0) or a moving average over the last N appearances.

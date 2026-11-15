@@ -3,7 +3,7 @@
 Writes data/current/sofascore_player_extra.csv.gz (every statistics field, one row per listed player and match) and
 data/current/sofascore_missing_players.csv (the source's missingPlayers lists: who was out, with its type and reason).
 Reads data/raw/sofascore/matches/ only; no network; not a pipeline stage.
-Run: python -u -X utf8 scripts/fetch/export_sofascore_extra.py
+Run: python -u -X utf8 -m fpl_model.fetch.export_sofascore_extra
 """
 import json
 from collections import Counter

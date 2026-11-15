@@ -1,8 +1,8 @@
 """
 Separate prior weight for youth players in the goal/assist loop (CHANGELOG §126).
 
-    python validate_youth_k.py run     # one pre-match log per K_youth (GOAL_MODEL_PRIOR_K_YOUTH)
-    python validate_youth_k.py score   # youth entrants: train/test MSE; all-rows guard -> results.json
+    python -m research.player_ratings.validate_youth_k run     # one pre-match log per K_youth (GOAL_MODEL_PRIOR_K_YOUTH)
+    python -m research.player_ratings.validate_youth_k score   # youth entrants: train/test MSE; all-rows guard -> results.json
 """
 import json
 import os

@@ -2,7 +2,7 @@
 Position-update forms for entrants' starting ratings (CHANGELOG §247; protocol data/validation/position_rates_20261114/
 phase3/protocol.json, frozen before scoring).
 
-    python validate_position_forms.py <log> <priors_file> <window> <out_json>
+    python -m research.player_ratings.validate_position_forms <log> <priors_file> <window> <out_json>
         window: file | all | 3   (the position-rate table the log's starting ratings used)
 
 §238's exact linear replay, generalised. The loop is linear in its rating, so a change d to a segment's starting

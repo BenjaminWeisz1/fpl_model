@@ -2,7 +2,7 @@
 Set pieces in goal and assist ratings: size, stability, and what the current rating misses (CHANGELOG §196).
 Protocol: data/validation/set_piece_diagnostic_20261103/protocol.json. Diagnostic only; no production writes.
 
-    python diagnose_set_pieces.py      # needs validate_position_alpha.py run (its floor-0.025 log) for part C
+    python -m research.player_ratings.diagnose_set_pieces      # needs validate_position_alpha.py run (its floor-0.025 log) for part C
 """
 import json
 import sys

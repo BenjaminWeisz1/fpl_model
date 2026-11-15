@@ -2,7 +2,7 @@
 Arrivals' starting rating: let the position part follow the positions played at the new club (CHANGELOG §238).
 Protocol, frozen before scoring: data/validation/arrival_position_20261113/protocol.json.
 
-    python validate_arrival_position.py    # -> data/validation/arrival_position_20261113/results.json
+    python -m research.player_ratings.validate_arrival_position    # -> data/validation/arrival_position_20261113/results.json
 
 Exact replay of production's rule from the production pre-match log (§235's check_default.csv). The loop is linear in
 its rating, so a change d to an arrival's starting rating moves his rating before row t by s_t x d, s_t = the share

@@ -9,7 +9,7 @@ season's opponent effect and the venue effect. When pass bands are inactive
 to the §64 model.
 
 Run locally (after build_residual_bps_baseline.py):
-    python build_pass_band_rates.py
+    python -m fpl_model.bonus.build_pass_band_rates
 """
 
 import pandas as pd

@@ -1,6 +1,6 @@
 """Part 3, stage 1: export the personal website's data (website_plan.md) to site/data/*.json.
 
-    python scripts/site_export/export_site_data.py
+    python -m fpl_model.site_export.export_site_data
 
 Reads data/current outputs only; never fetches, fits or writes anything outside site/data/. Refuses stale
 outputs with save_gameweek_outputs.snapshot_plan, the check a full snapshot uses: predicted_points.csv must be

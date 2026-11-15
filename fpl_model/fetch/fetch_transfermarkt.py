@@ -1,7 +1,7 @@
 """One-off backfill: dcaribou/transfermarkt-datasets (CC0) tables, frozen to data/raw/transfermarkt/ (AGENDA 2026-10-31).
 
 Existing files are never replaced. A manifest records each file's SHA256, size and retrieval time. The source ends
-6 July 2026. Run: python -u -X utf8 scripts/fetch/fetch_transfermarkt.py
+6 July 2026. Run: python -u -X utf8 -m fpl_model.fetch.fetch_transfermarkt
 """
 import hashlib
 import json

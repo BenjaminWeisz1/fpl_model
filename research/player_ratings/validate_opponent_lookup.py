@@ -12,7 +12,7 @@ candidate_code/ of the run directory, and production build_player_ratings.py is 
   secondary MAE by tercile of the true opponent multiplier, rating level, final ratings.
 
 Run locally (after the logged runs):
-    python validate_opponent_lookup.py [--dir <run directory>]
+    python -m research.player_ratings.validate_opponent_lookup [--dir <run directory>]
 """
 import argparse
 import json

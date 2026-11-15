@@ -15,8 +15,8 @@ two tiers + early window, cluster bootstrap -- with a different signal:
   of beta * NPxG_Adj + (1 - beta) * NPG -- the model's own update target, in
   the NPG-per-match units of Attack/Defense_Rating and the money priors.
 
-Run (after scripts/fetch/fetch_clubelo.py):
-    python elo_prior_team_ratings.py
+Run (after fpl_model/fetch/fetch_clubelo.py):
+    python -m research.team_ratings.elo_prior_team_ratings
 Writes data/current/team_ratings_oot/elo_prior_report.txt + _summary.json.
 """
 from pathlib import Path

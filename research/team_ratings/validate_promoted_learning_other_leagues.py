@@ -7,7 +7,7 @@ boosted_run and §178's load_league / signal_prior_map unchanged.
 Protocol, rule and prediction: PROTOCOL.md in that folder, fixed before any
 arm was scored.
 
-    python -u -X utf8 scripts/team_ratings/validate_promoted_learning_other_leagues.py
+    python -u -X utf8 -m research.team_ratings.validate_promoted_learning_other_leagues
 """
 import hashlib
 import json

@@ -6,7 +6,7 @@ on the 380 fixtures before it, with each season's own BPS rules (goals conceded 
 2024; penalty saves were 15 before 2024 and 9 in 2024). Minutes are realized, as in §89.
 
 Run locally (after writing the pre-match rating log to RATING_LOG, see §144):
-    python validate_prematch_coherence_history.py
+    python -m research.bonus.validate_prematch_coherence_history
 """
 import hashlib
 import json

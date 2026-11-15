@@ -1,7 +1,7 @@
 """
 Score the §128 returners' prior candidate: baseline vs candidate pre-match logs (CHANGELOG §128).
 
-    python validate_returner_priors.py <dir with log_base.csv, log_cand.csv, returner_priors.csv>
+    python -m research.player_ratings.validate_returner_priors <dir with log_base.csv, log_cand.csv, returner_priors.csv>
 """
 import json
 import sys

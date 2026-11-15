@@ -18,8 +18,8 @@ workarounds). Understat xG stays its own model: it is only ever used through fit
 league translation factors, never spliced into PL match xG.
 
 Run locally:
-    python fetch_understat_leagues.py            # fetch what is missing, then write the manifest
-    python fetch_understat_leagues.py --manifest # manifest only, no downloads
+    python -m fpl_model.fetch.fetch_understat_leagues            # fetch what is missing, then write the manifest
+    python -m fpl_model.fetch.fetch_understat_leagues --manifest # manifest only, no downloads
 """
 import argparse
 import hashlib

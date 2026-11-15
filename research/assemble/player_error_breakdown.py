@@ -2,7 +2,7 @@
 
 Forecasts are pre-match rates at realized minutes, so this measures rate errors given minutes, not minutes errors.
 Diagnostic only; no production writes.
-Run: python -u -X utf8 scripts/assemble/player_error_breakdown.py
+Run: python -u -X utf8 -m research.assemble.player_error_breakdown
 """
 import json
 import unicodedata

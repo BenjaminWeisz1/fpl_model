@@ -1,7 +1,7 @@
 """
 Tagged arrivals (mid-season, two leagues) in the adopted groups with the production fitted prior (CHANGELOG §130).
 
-    python validate_tagged_priors.py
+    python -m research.player_ratings.validate_tagged_priors
 """
 import json
 

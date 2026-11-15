@@ -6,7 +6,7 @@ season, W2 plus the two previous seasons, earlier seasons centred on the current
 Rows, era rules, blocks and features as validate_prematch_coherence_history.py; coherence on.
 
 Run locally (uses the §144 rating log):
-    python validate_residual_window.py
+    python -m research.bonus.validate_residual_window
 """
 import hashlib
 import json

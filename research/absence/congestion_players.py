@@ -1,6 +1,6 @@
 """§155 supplements: rest counted from league matches only (the agenda's first step), and within-player output per 90 on
 short rest (exploratory; expected -3% to 0%). No production writes.
-Run: python -u -X utf8 scripts/absence/congestion_players.py
+Run: python -u -X utf8 -m research.absence.congestion_players
 """
 import json
 

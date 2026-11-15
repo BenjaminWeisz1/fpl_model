@@ -8,7 +8,7 @@ build_player_ratings.py whose multiplier is the opponent's pre-match Defense_Rat
              of the candidate multiplier; forward ranks.
 
 Run locally (after the candidate's logged run):
-    python validate_opponent_defence_mse.py
+    python -m research.player_ratings.validate_opponent_defence_mse
 """
 import json
 

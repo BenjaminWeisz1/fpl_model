@@ -1,180 +1,138 @@
 # FPL Model
 
-Weekly outputs are now archived automatically after both pipeline halves in
-`data/snapshots/<season>/GWxx/<UTC timestamp>_GWxx_<timing>_part<part>/`. Each run
-retains a separate snapshot of the original CSVs, gameweek-specific views and a
-SHA256 manifest. Ratings snapshots are saved after the post-gameweek run; full
-snapshots, including predicted points, are saved after the pre-deadline run.
-Timing says whether the snapshot was saved before that gameweek's FPL deadline:
-`pre_deadline`, `after_deadline` or `deadline_unknown`. Only a `pre_deadline`
-snapshot counts as a genuine forecast of that gameweek.
-
-To save another full snapshot before the deadline, run:
-
-```
-python save_gameweek_outputs.py
-```
-
-Use `--gameweek 8` to choose the gameweek (`run_post_gameweek.py` and
-`run_pre_deadline.py` accept it too), `--part 1` for ratings only, or
-`--include-images` to include the rendered charts. Full snapshots reject stale
-forecast origins or points assembled before newer inputs: run
-`python run_pre_deadline.py` first. `--verify <snapshot directory>` checks a saved
-snapshot. Existing snapshots are never overwritten; archives are kept locally
-and gitignored.
-
-A Fantasy Premier League points-prediction pipeline. Every week it:
-
-1. rates each Premier League team's attack and defence from match results,
-2. rates each player's non-penalty goals, assists and defensive contribution,
-3. forecasts minutes, penalties and clean sheets,
-4. simulates bonus points, and
-5. assembles everything into per-player, per-gameweek predicted points for
-   the next ten fixtures (the window is set once, in `fpl_model/forecast_horizon.py`).
-
-![Team ratings](images/team_ratings/team_ratings_overall.png)
+A Fantasy Premier League points-prediction pipeline. Every week it rates each Premier League team's attack and
+defence, rates every player's non-penalty goals, assists and defensive contributions, forecasts minutes, penalties,
+clean sheets and bonus points, and assembles them into expected FPL points per player for each of the next ten
+gameweeks. A transfer optimizer and a small local website sit on top. The aim is a forecast that is honest about what
+it knows: every model change is pre-registered and tested out of time against the model it would replace, and most
+candidates failed and were not adopted.
 
 ![Predicted points](images/predicted_points/predicted_points_all.png)
 
-![Goalkeeper predicted points](images/predicted_points/predicted_points_gk.png)
+![Team ratings](images/team_ratings/team_ratings_overall.png)
 
 ![Next gameweek goal involvement](images/next_gameweek/next_gw_goal_involvement.png)
 
-## The four models
+## How it fits together
+
+```mermaid
+flowchart LR
+    subgraph sources[Data sources]
+        FPL["FPL API"]
+        FBR["fbref archive 2017-24"]
+        FM["FotMob / Understat<br/>positions, shots, red cards"]
+        SS["Sofascore"]
+        TM["Transfermarkt<br/>squad values"]
+        FR["FPL Review<br/>expected minutes, penalty share"]
+    end
+    FPL --> PMS[("player_match_stats<br/>match_results")]
+    FBR --> PMS
+    FM --> PMS
+    PMS --> TR["Team ratings<br/>attack / defence per fixture"]
+    TM --> TR
+    TR --> PR["Player ratings<br/>npxG/90, xAG/90"]
+    PMS --> PR
+    PMS --> DC["Defcon model<br/>P(defensive contribution)"]
+    TR --> DC
+    FR --> MIN["Minutes, penalties,<br/>clean sheets"]
+    TR --> MIN
+    PR --> BON["Bonus simulation<br/>Monte Carlo BPS"]
+    DC --> BON
+    MIN --> BON
+    SS --> BON
+    PR --> PTS["Predicted points<br/>next ten gameweeks"]
+    DC --> PTS
+    MIN --> PTS
+    BON --> PTS
+    PTS --> OPT["Transfer optimizer"]
+    PTS --> SITE["Local website"]
+    OPT --> SITE
+```
 
 | Model | What it predicts | Documentation |
 |---|---|---|
-| Team ratings | Non-penalty goals for/against each team per fixture | [fpl_model/team_ratings/README.md](fpl_model/team_ratings/README.md) |
-| Goal/assist ratings | NPG/90 and Assists/90 for every player | [fpl_model/player_ratings/README.md](fpl_model/player_ratings/README.md) |
-| Defcon | P(defensive contribution clears a threshold) per fixture | [fpl_model/defcon/README.md](fpl_model/defcon/README.md) |
-| Predicted points | All facets combined into weekly FPL points | [fpl_model/assemble/README.md](fpl_model/assemble/README.md) |
+| Team ratings | Non-penalty goals for and against each team in each fixture (exponential smoothing with a preseason prior from squad values) | [fpl_model/team_ratings/README.md](fpl_model/team_ratings/README.md) |
+| Goal/assist ratings | Non-penalty xG and xA per 90 for every player, with priors for players arriving from other leagues | [fpl_model/player_ratings/README.md](fpl_model/player_ratings/README.md) |
+| Defcon | The probability that a player's defensive actions clear FPL's threshold in a fixture (three calibrated classifiers) | [fpl_model/defcon/README.md](fpl_model/defcon/README.md) |
+| Predicted points | Minutes, goals, assists, clean sheets, saves, cards, defcon and simulated bonus combined into FPL points | [fpl_model/assemble/README.md](fpl_model/assemble/README.md) |
 
-Supporting stages (each documented in its module docstring):
+## How the models are validated
 
-- `fpl_model/fetch/` — pulls squads, fixtures, results and live player stats
-  from the official FPL API.
-- `fpl_model/minutes_penalties_cs/` — turns the FPL Review expected-minutes
-  forecast into appearance and 60+-minute probabilities, and builds penalty
-  predictions from fixture goal forecasts plus the penalty-share table.
-- `fpl_model/bonus/` — a residual BPS baseline and a Monte Carlo bonus-points
-  simulation with official tie-breaking rules.
-- `fpl_model/export_weekly_heatmaps.py` — renders the weekly heatmaps and
-  next-gameweek charts into `images/team_ratings/`, `images/player_ratings/`,
-  `images/predicted_points/`, `images/next_gameweek/` and `images/fdr/`.
+A change to a production model has to earn its place. Before a test runs, the expected direction and size of the
+effect are written down. The candidate is then scored out of time (trained only on matches before the ones it
+predicts) against the incumbent, on the target that matters (for example the squared error of match npxG, or log loss
+on FPL's real defensive-contribution hits), with bootstrap intervals clustered by player. A candidate that misses its
+pre-registered bar is reported as a failure and not shipped. The experiments, including the many that failed, live in
+[`research/`](research/README.md).
 
-## Weekly flow
+Refactoring is checked differently: `tools/regression_check.py` runs every offline stage of the pipeline in a sandbox
+against frozen inputs and proves the outputs are unchanged, file by file.
 
-The pipeline runs in two halves, at two different points in the week.
+## Quickstart
 
-**Part 1 — as soon as the gameweek ends** (needs the network for its fetches):
+Python 3.11+ (developed on 3.13, Windows).
 
 ```
-python run_post_gameweek.py              # standard post-gameweek update
-python run_post_gameweek.py --preseason  # at season start (adds preseason ratings blend)
+pip install -e .[dev]
+python -m pytest          # tests that need the local data skip without it
+ruff check .
 ```
 
-Runs, in order: fetch squads/prices → fetch gameweek player stats → fetch
-fixtures and results → FotMob match pages (per-match positions, shots, red cards;
-Understat until it went down in 2026) → position crosswalk →
-penalty log from the shot data (fills `penalty_log.csv` and reconciles
-penalty goals in the match data) → team ratings update → preseason blend
-(`--preseason` only) → player goal/assist ratings → defcon predictions →
-player ratings export → part-1 heatmaps → fixture tickers (overall, attack, defense; `images/fdr/`) →
-predicted final table → next-gameweek predicted scores. Everything here depends only on what has already
-happened on the pitch. This is the slow half: budget 25–35 minutes, dominated
-by the defcon model.
-
-**Part 2 — later in the week**, once expected minutes and the penalty share
-have settled:
+The weekly run has three parts. They need the local `data/` folder (see below).
 
 ```
-python run_pre_deadline.py
+python run_post_gameweek.py   # part 1, after a gameweek: fetches, team and player ratings, defcon (~25-35 min)
+python run_pre_deadline.py    # part 2, before the deadline: minutes, penalties, bonus, predicted points (~2 min)
+python run_site_export.py     # part 3: export the website data and serve it at http://127.0.0.1:8766/
 ```
 
-Runs, in order: minutes probabilities → fixture goal predictions → penalty
-predictions → residual BPS baseline → simulation features → bonus simulation
-→ predicted points assembly → part-2 heatmaps. A couple of minutes in total.
-
-Manual inputs it expects to be current: `data/current/minutes.csv` and
-`data/current/review_pk_share.xlsx` (both from FPL Review) and
-`data/current/fixtures.csv`.
-
-Stage order matters in both halves — for example `fetch_fixtures_results.py`
-derives each new result's team xG from the player stats, so it warns and skips
-any fixture whose stats have not been fetched yet; and penalty predictions read
-the fixture goal file produced by the immediately preceding stage, so running
-them against a stale file would cover the wrong rounds. Either orchestrator
-halts at the first failing stage.
+Any single stage runs on its own as a module, e.g. `python -m fpl_model.player_ratings.build_player_ratings`. Settings
+that experiments switch through environment variables are declared in one place, `fpl_model/config.py`
+(`python -m fpl_model.config` lists them). Both orchestrators stop at the first failing stage, and each part ends by
+saving a timestamped snapshot of its outputs with a SHA-256 manifest, so a forecast made before a deadline can be
+scored later against what happened.
 
 ## Repository layout
 
 ```
-fpl_model/
-├── data/
-│   ├── raw/                   # original source data (fbref 2017-24, FPL-API 2025+ player stats)
-│   ├── current/               # the "live" files every script reads/writes
-│   └── archive/               # superseded files kept for traceability (not in the repo)
-├── scripts/
-│   ├── team_ratings/          # exponential smoothing, preseason blend, fixture goals
-│   ├── player_ratings/        # NPG/90 and assist ratings, transfers fill
-│   ├── defcon/                # defensive contribution threshold model
-│   ├── minutes_penalties_cs/  # minutes probabilities, penalty predictions
-│   ├── bonus/                 # residual BPS, Monte Carlo bonus simulation
-│   ├── assemble/              # simulation features, predicted points
-│   └── fetch/                 # FPL API fetchers
-├── images/                    # weekly heatmap exports (PNG), one folder per family
-├── pipeline_stages.py         # shared stage runner for both orchestrators
-├── run_post_gameweek.py       # part 1: fetches + the three model stages
-├── run_pre_deadline.py        # part 2: minutes -> predicted points
-├── requirements.txt
-└── README.md
+fpl_model/                 the package: every pipeline stage, as python -m fpl_model.<area>.<module>
+  fetch/                   one fetcher per source (FPL API, FotMob, Understat, Sofascore, Transfermarkt, ...)
+  team_ratings/            team attack/defence ratings, preseason priors, fixture goal predictions
+  player_ratings/          goal/assist rating loop, new-player priors, the player ratings card
+  defcon/                  defensive-contribution classifiers
+  minutes_penalties_cs/    minutes probabilities and penalty predictions
+  bonus/                   residual BPS baseline and the Monte Carlo bonus simulation
+  assemble/                simulation features and predicted points
+  optimizer/               transfer optimizer around a vendored open-fpl-solver
+  site_export/             JSON export for the website
+  config.py, paths.py      settings and data folders, each declared once
+research/                  experiments behind every model decision (never imported by the package)
+tools/                     regression check and applied one-off data migrations
+tests/                     architecture, configuration and snapshot tests (more sit beside their modules)
+site/                      the local website (static HTML/JS plus a small server)
+images/                    the weekly charts shown above
+run_post_gameweek.py, run_pre_deadline.py, run_site_export.py   the three weekly parts
 ```
 
-## Setup
+## Data
 
-Python 3.13 with:
+No data is in this repository. The pipeline reads a local `data/` folder: frozen historical downloads in
+`data/raw/`, the files each stage reads and writes in `data/current/`, snapshots in `data/snapshots/`. Some sources
+can only be collected by hand or in a browser, some have terms that rule out redistribution, and the fbref archive
+(Opta data for 2017-2024, no longer available there) could not be rebuilt. The weekly charts in `images/` are
+published.
 
-```
-pip install -r requirements.txt
-```
+Sources: the official FPL API (squads, fixtures, results, live stats); fbref (player match stats 2017-2024, saved once
+before Opta data left the site); FotMob and, until 2026, Understat (per-match positions, shots, red cards); Sofascore
+(player match statistics for the bonus model); Transfermarkt (squad market values for preseason priors);
+football-data.co.uk and ClubElo (research only); FPL Review (expected minutes and penalty shares, entered by hand);
+vaastav's Fantasy-Premier-League archive (FPL history 2017-2024).
 
-A full weekly run takes roughly 25–35 minutes, nearly all of it part 1's
-defcon model (about 20 minutes to train its models on fresh data, around 6
-minutes when its trained-model cache is warm). Every other stage completes in
-seconds to a couple of minutes, so part 2 is quick.
+## Credits
 
-## Data sources
-
-- **FPL API** (`fantasy.premierleague.com`) — squads, fixtures, results and
-  live gameweek stats. Public, no key required.
-- **fbref** — historical player match stats 2017–2024, saved once to
-  `data/raw/all_player_stats.csv`.
-- **FPL Review** — the ten-gameweek expected-minutes forecast (saved as
-  `data/current/minutes.csv`) and the penalty-share table (pasted into
-  `data/current/review_pk_share.xlsx`, cleaned by
-  `clean_penalty_share_paste.py`).
-
-Manually maintained inputs: `data/current/fixtures.csv` (upcoming fixtures)
-and the two FPL Review files above have no fetcher and are updated by hand.
-
-## Key consolidated data files
-
-| File | Contents |
-|---|---|
-| `data/current/match_results.csv` | Match results 2017–present (goals, NPG, penalties, NPxG) |
-| `data/current/fixtures.csv` | Upcoming fixtures for the next rounds (manual) |
-| `data/current/player_match_stats.csv` | Harmonized fbref + FPL-API player match stats |
-| `data/current/team_ratings_current.csv` | Latest attack/defence ratings per team |
-| `data/current/team_ratings_history.csv` | Per-match team ratings history |
-| `data/current/money_priors_by_season.csv` | Per-season money priors for the preseason blend |
-| `data/current/player_goal_assist_ratings.csv` | NPG/90 and Assists/90 per player |
-| `data/current/predictions_defensive.csv` | Fixture-level defcon probabilities |
-| `data/current/defcon_average_probabilities.csv` | Fixture-neutral 90-minute defcon probability |
-| `data/current/minutes_probabilities.csv` | Per-GW appearance and 60+-minute probabilities |
-| `data/current/penalty_predictions.csv` | Per-GW expected penalty goals/points |
-| `data/current/bonus_predictions.csv` | Per-GW expected bonus points |
-| `data/current/predicted_points.csv` | Final per-player, per-gameweek predicted points |
-| `data/current/player_ratings.csv` | Weekly ratings card: NPG, Assists, Defcon per player; players who have left the league are left out |
-| `data/current/gameweek_deadlines.csv` | Each gameweek's FPL deadline, written by `fetch_bootstrap.py`; snapshots use it for their timing tag |
-| `data/current/set_piece_orders.csv` | FPL's corner, free-kick and penalty orders, one row per player and gameweek, appended by `fetch_bootstrap.py` from GW10 (§196); data only, not yet used by a model |
-| `data/current/vaastav_name_overrides.csv` | Reviewed identities for `vaastav_player_match_history.csv`, applied by `build_vaastav_history.py` |
+- [open-fpl-solver](https://github.com/solioanalytics/open-fpl-solver) by Solio Analytics, vendored in
+  `fpl_model/optimizer/open_fpl_solver/` under the Apache License 2.0 (its `LICENSE` is kept there; local patches are
+  listed in `fpl_model/optimizer/PINNED.md`).
+- [vaastav/Fantasy-Premier-League](https://github.com/vaastav/Fantasy-Premier-League) for historical FPL data.
+- Understat, FotMob, Sofascore, Transfermarkt and fbref, whose data the models are built on; used for personal,
+  non-commercial analysis, with requests throttled and raw responses cached.

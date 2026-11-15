@@ -16,7 +16,7 @@ no model stage reads it. It is written before predicted_points.csv, so the snaps
 check sees it as an input of the same run.
 
 Run locally (after every individual facet script has been run):
-    python build_predicted_points.py
+    python -m fpl_model.assemble.build_predicted_points
 """
 
 import numpy as np

@@ -1,7 +1,7 @@
 """CHANGELOG §167: reruns §144, §146, §152 and §160 on the repaired identities, into new folders.
 
 The rating log stays the 2026-10-30 one, so differences come from the repair.
-Run: python -u -X utf8 scripts/bonus/rerun_after_name_repair.py
+Run: python -u -X utf8 -m research.bonus.rerun_after_name_repair
 """
 import sys
 from pathlib import Path

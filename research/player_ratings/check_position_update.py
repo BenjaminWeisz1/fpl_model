@@ -1,7 +1,7 @@
 """
 Check that build_player_ratings.py's entrant position update (CHANGELOG §249) reproduces §247's exact replay.
 
-    python check_position_update.py <log_off> <log_on> <priors_file> <out_json>
+    python -m research.player_ratings.check_position_update <log_off> <log_on> <priors_file> <out_json>
 
 log_off / log_on: GOAL_MODEL_PREMATCH_LOG runs with GOAL_MODEL_POS_UPDATE=0 / 1, same inputs, PYTHONHASHSEED=0.
 The replay (validate_position_forms.py, form F0, file rates, Kpos 1, c 0.4 npxG / 0.35 xAG) applied to log_off must

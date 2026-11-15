@@ -40,7 +40,7 @@ def shares(counts, prior):
     return (counts + prior / len(LINES)) / (counts.sum(1, keepdims=True) + prior)
 
 
-# Lowest log loss on seasons to 2023 (CHANGELOG §170). Reproduce with `python validate_role_shares.py`;
+# Lowest log loss on seasons to 2023 (CHANGELOG §170). Reproduce with `python -m research.player_ratings.validate_role_shares`;
 # don't refit without a new pre-registration.
 HALF_LIFE, PRIOR, RECENT_WEIGHT = 3, 0.1, 0.9
 

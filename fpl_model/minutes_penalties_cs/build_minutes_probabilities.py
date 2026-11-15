@@ -9,7 +9,7 @@ the P60 curve is already near-saturated, so clipping introduces negligible
 error versus extrapolating.
 
 Run locally:
-    python build_minutes_probabilities.py
+    python -m fpl_model.minutes_penalties_cs.build_minutes_probabilities
 """
 import re
 import sys

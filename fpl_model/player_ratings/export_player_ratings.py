@@ -11,12 +11,12 @@ Columns:
     Assists -- Assists/90 from player_goal_assist_ratings.csv
     Defcon  -- P(reach the defcon threshold in a full 90-minute match vs an
                average opponent), home and away averaged. Produced by
-               scripts/defcon/predict.py as defcon_average_probabilities.csv;
+               fpl_model/defcon/predict.py as defcon_average_probabilities.csv;
                defenders then carry the points factor (CHANGELOG §159), so this
                is a real FPL hit chance; blank for goalkeepers (out of scope
                for the defcon model).
 
-Players who have left the league are left out (scripts/player_availability.py).
+Players who have left the league are left out (fpl_model/player_availability.py).
 
 Identity gotcha: player_goal_assist_ratings.csv's "Player" column holds
 Web_Name values, NOT full names, while defcon_average_probabilities.csv uses
@@ -25,7 +25,7 @@ full player names -- players_current.csv bridges the two, keyed on
 Web_Names exist, e.g. Wesley/Malick Fofana).
 
 Run locally:
-    python export_player_ratings.py
+    python -m fpl_model.player_ratings.export_player_ratings
 """
 import sys
 import time
@@ -58,9 +58,9 @@ def _mtime(path):
 
 def main():
     ratings = pd.read_csv(
-        _require(RATINGS_FILE, "scripts/player_ratings/build_player_ratings.py"),
+        _require(RATINGS_FILE, "fpl_model/player_ratings/build_player_ratings.py"),
         encoding="utf-8-sig")
-    defcon = pd.read_csv(_require(DEFCON_FILE, "scripts/defcon/predict.py"))
+    defcon = pd.read_csv(_require(DEFCON_FILE, "fpl_model/defcon/predict.py"))
     players = pd.read_csv(PLAYERS_CURRENT_FILE, encoding="utf-8-sig")
 
     print(f"Inputs: player_goal_assist_ratings.csv (updated {_mtime(RATINGS_FILE)}), "

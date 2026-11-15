@@ -1,7 +1,7 @@
 """
 Youth prior: fitted multiplier on the position average (CHANGELOG §113).
 
-    python validate_youth_prior.py      # static rolling out-of-time test, position-group arm, loop check
+    python -m research.player_ratings.validate_youth_prior      # static rolling out-of-time test, position-group arm, loop check
 
 Reads the §112 K = 16 pre-match log (data/validation/prior_k_20261029/log_k16.csv); youth rows there do not
 depend on the new-player priors file. Writes data/validation/youth_prior_20261029/results.json.

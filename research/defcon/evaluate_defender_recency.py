@@ -3,7 +3,7 @@
 Control: the stored §46 production-configuration fits (feature_experiment_20261020/history_no_std_ew_<S>),
 whose predictions must reproduce validation_no_std_ew_<S>.csv. Candidate: the same configuration with
 training rows weighted 0.5^((S_last - season) / HALF_LIFE) in the GBM fit, the OOF predictions and the
-isotonic calibrator. No production writes. Run: python -u -X utf8 scripts/defcon/evaluate_defender_recency.py
+isotonic calibrator. No production writes. Run: python -u -X utf8 -m research.defcon.evaluate_defender_recency
 """
 import os
 

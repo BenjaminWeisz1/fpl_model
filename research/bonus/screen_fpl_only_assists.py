@@ -10,7 +10,7 @@ differ beyond chance (Poisson dispersion, split-half persistence), and how a pla
 relates to stable volumes (shots that can rebound, crosses, key passes, xA, fouls won).
 
 Run locally:
-    python screen_fpl_only_assists.py
+    python -m research.bonus.screen_fpl_only_assists
 """
 import json
 

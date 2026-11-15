@@ -21,7 +21,7 @@ FPL-era-free cards from the frozen fbref rows. Descriptive; selects candidates,
 adopts nothing.
 
 Run locally:
-    python screen_sofascore_components.py
+    python -m research.bonus.screen_sofascore_components
 """
 import json
 

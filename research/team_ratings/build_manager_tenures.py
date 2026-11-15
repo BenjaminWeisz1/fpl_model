@@ -3,7 +3,7 @@
 Writes data/current/manager_tenures.csv: one row per spell, Premier League 2017/18-2025/26. Spells under MIN_SPELL matches
 that sit between two spells of the same manager are one-off stand-ins (Ian Woan, Everton 2023/24) and are folded into the
 surrounding spell, flagged in Stand_Ins. 2026/27 changes must be added by hand; the source ends in July 2026.
-Also runs the §158 check on team residuals. Run: python -u -X utf8 scripts/team_ratings/build_manager_tenures.py
+Also runs the §158 check on team residuals. Run: python -u -X utf8 -m research.team_ratings.build_manager_tenures
 """
 import json
 

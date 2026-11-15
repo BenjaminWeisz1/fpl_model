@@ -12,7 +12,7 @@ To add a new season's money priors: append rows to money_priors_by_season.csv
 (Season, Team, Money_GF, Money_GA) rather than creating a new standalone file.
 
 Run locally:
-    python update_team_ratings.py
+    python -m fpl_model.team_ratings.update_team_ratings
 """
 
 import pandas as pd

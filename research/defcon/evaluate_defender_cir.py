@@ -2,7 +2,7 @@
 
 Reuses the §106 level-adjusted frame and fits (level_experiment_20261029/level_<S>.pkl.gz): the base models are
 identical; only the calibrator changes. The OOF scores are recomputed with the same deterministic CV and checked
-against the stored isotonic calibrator. No production writes. Run: python -u -X utf8 scripts/defcon/evaluate_defender_cir.py
+against the stored isotonic calibrator. No production writes. Run: python -u -X utf8 -m research.defcon.evaluate_defender_cir
 """
 import os
 

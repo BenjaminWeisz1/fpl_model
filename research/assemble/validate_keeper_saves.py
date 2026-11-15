@@ -1,7 +1,7 @@
 """CHANGELOG §162: keeper saves by fixture and by team, against production's single pooled rate.
 
 Walk-forward test, rate error at realized minutes. Test only; no production writes.
-Run: python -u -X utf8 scripts/assemble/validate_keeper_saves.py
+Run: python -u -X utf8 -m research.assemble.validate_keeper_saves
 """
 import json
 from pathlib import Path

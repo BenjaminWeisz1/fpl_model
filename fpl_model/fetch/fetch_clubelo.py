@@ -19,8 +19,8 @@ the author's continuation after) at 1 June of the season's starting year.
 CLUBELO_SOURCE=api restores the original API snapshots (day before the first match).
 
 Run locally:
-    python fetch_clubelo.py           # mirror: coverage check only
-    CLUBELO_SOURCE=api python fetch_clubelo.py
+    python -m fpl_model.fetch.fetch_clubelo           # mirror: coverage check only
+    CLUBELO_SOURCE=api python -m fpl_model.fetch.fetch_clubelo
 """
 import sys
 import time

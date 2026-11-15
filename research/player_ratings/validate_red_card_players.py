@@ -2,7 +2,7 @@
 Player-level red-card adjustment in the goal/assist loop (CHANGELOG §136): score the two pre-match logs.
 
     GOAL_MODEL_RED_CARD=0|1 GOAL_MODEL_PREMATCH_LOG=.../log_rc{0,1}.csv build_player_ratings.py   (run first)
-    python validate_red_card_players.py    # -> data/validation/red_card_20261030/player/results.json
+    python -m research.player_ratings.validate_red_card_players    # -> data/validation/red_card_20261030/player/results.json
 
 MSE of match npxG / xAG (weighted, as validate_opp_beta.py) on rows from matches without a red card, where the targets
 are identical in both runs; goalkeepers excluded. Rule: adopt unless either target's 2023-2026 MSE worsens by > 0.05%.

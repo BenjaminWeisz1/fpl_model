@@ -26,7 +26,7 @@ Usage: copy-paste from FPL Review into Excel, save as review_pk_share.xlsx
 in this folder, then run this script.
 
 Run locally:
-    python clean_penalty_share_paste.py
+    python -m fpl_model.minutes_penalties_cs.clean_penalty_share_paste
 """
 import re
 

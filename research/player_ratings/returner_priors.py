@@ -4,7 +4,7 @@ New-league priors for returning players (`second season` rows) from the producti
 For a Championship returner: the FotMob-path model if FotMob matches him in his last season, else the §103
 manual-path model on his transfers.csv values; x the §104 xAG era scale from 2025. Frozen parameters only.
 
-    python returner_priors.py <out.csv>
+    python -m research.player_ratings.returner_priors <out.csv>
 """
 import json
 import sys

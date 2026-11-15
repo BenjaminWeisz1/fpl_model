@@ -8,7 +8,7 @@ production money_priors_by_season.csv for 2017-2025. Stage 1 scores the priors o
 (only if stage 1 passes) runs §206's update_team_ratings.py comparison.
 
 Run locally:
-    python validate_money_prior_outliers.py
+    python -m research.team_ratings.validate_money_prior_outliers
 """
 import json
 import sys

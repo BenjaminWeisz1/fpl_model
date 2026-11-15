@@ -9,7 +9,7 @@ unchanged; only the dependence between scorers and clean sheets / goals conceded
 Noise floor: production with seed 43 vs seed 42. Uses the current part-2 inputs.
 
 Run locally:
-    python shadow_team_goal_coherence.py
+    python -m research.bonus.shadow_team_goal_coherence
 """
 import hashlib
 

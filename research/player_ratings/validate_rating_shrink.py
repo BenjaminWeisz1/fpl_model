@@ -1,7 +1,7 @@
 """
 Goal/assist ratings shrunk toward their position group at forecast time (CHANGELOG §122). Offline on a pre-match log.
 
-    python validate_rating_shrink.py [log.csv]
+    python -m research.player_ratings.validate_rating_shrink [log.csv]
 """
 import json
 import sys

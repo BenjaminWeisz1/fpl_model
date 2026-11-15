@@ -1,5 +1,5 @@
 """Defender experience bands on real FPL hits (CHANGELOG §192). Protocol: data/validation/defender_experience_20261102/protocol.json.
-Reads item 6's arm A predictions. No production writes. Run: python -u -X utf8 scripts/defcon/diagnose_defender_experience.py
+Reads item 6's arm A predictions. No production writes. Run: python -u -X utf8 -m research.defcon.diagnose_defender_experience
 """
 import json
 

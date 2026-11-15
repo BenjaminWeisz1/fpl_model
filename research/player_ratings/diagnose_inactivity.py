@@ -8,7 +8,7 @@ more seasons since the previous appearance. Ratio = sum predicted / sum actual p
 bootstrap on the difference from bin 0.
 
 Run locally (after the logged run):
-    python diagnose_inactivity.py
+    python -m research.player_ratings.diagnose_inactivity
 """
 import json
 

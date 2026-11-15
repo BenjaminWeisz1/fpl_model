@@ -1,8 +1,8 @@
 """
 Scoring for the position-rates overnight session (CHANGELOG §245-§247; data/validation/position_rates_20261114/).
 
-    python validate_position_rates.py phase1     # §245: new control log v the earlier controls, descriptive
-    python validate_position_rates.py phase2     # §246: slot rates v the file, pre-registered (phase2/protocol.json)
+    python -m research.player_ratings.validate_position_rates phase1     # §245: new control log v the earlier controls, descriptive
+    python -m research.player_ratings.validate_position_rates phase2     # §246: slot rates v the file, pre-registered (phase2/protocol.json)
 
 Entrants. A player's logged rows are split into segments at each point the loop takes a transfers.csv rating: his
 first logged row (the latest transfers.csv row with Season <= that row's season, as the loop picks it) and the first

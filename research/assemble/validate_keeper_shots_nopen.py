@@ -3,7 +3,7 @@
 Same rule and fixed shrinkage as arm K. No per-kick xGOT is held, so penalties are removed by estimate: a kick has
 xGOT about 0.86 when scored (58 single-shot takers) and an assumed 0.80 when saved (7 misses and saves averaged 0.70).
 NP GP = GP - 0.80 x saved + 0.14 x penalties not saved. Constants fixed before scoring. No production writes.
-Run: python -u -X utf8 scripts/assemble/validate_keeper_shots_nopen.py
+Run: python -u -X utf8 -m research.assemble.validate_keeper_shots_nopen
 """
 import json
 

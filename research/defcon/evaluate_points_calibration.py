@@ -1,6 +1,6 @@
 """§153: scale each head's implied 90-minute defcon mean so scaled probabilities match FPL's real Defensive_Contribution hits.
 One factor per head, fitted on one FPL-era season's held-out rows, tested on the other. No production writes.
-Run: python -u -X utf8 scripts/defcon/evaluate_points_calibration.py
+Run: python -u -X utf8 -m research.defcon.evaluate_points_calibration
 """
 import json
 from pathlib import Path

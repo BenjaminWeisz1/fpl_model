@@ -48,7 +48,7 @@ earlier starter row (Understat included). `Source` says which provider a row cam
 empty on FotMob rows.
 
 Pure CSV transform (no network); deterministic. Run locally:
-    python build_position_crosswalk.py
+    python -m fpl_model.fetch.build_position_crosswalk
 """
 import difflib
 import re

@@ -8,7 +8,7 @@ missing is noted but not applied here --
 that's a bonus-points-facet concern, handled when we build that model.
 
 Run locally (after predict_fixture_goals.py):
-    python build_penalty_predictions.py
+    python -m fpl_model.minutes_penalties_cs.build_penalty_predictions
 """
 
 import pandas as pd

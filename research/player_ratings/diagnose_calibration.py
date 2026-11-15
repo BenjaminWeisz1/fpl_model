@@ -2,7 +2,7 @@
 Goal/assist calibration by rating decile, cameo share and opponent tercile, jointly (CHANGELOG §121).
 Diagnostic only; reads a GOAL_MODEL_PREMATCH_LOG log with the Opp_Factor and Is_Starter columns.
 
-    python diagnose_calibration.py [log.csv]
+    python -m research.player_ratings.diagnose_calibration [log.csv]
 """
 import json
 import sys

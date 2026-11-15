@@ -3,7 +3,7 @@
 Replaces OpponentAvgStat with actions conceded / the expected actions of the players who faced that opponent, using only
 earlier matches, shrunk, recency-weighted and by position group; also tests the opponent's pre-match Attack_Rating and
 expected possession (Sofascore pass share) as pressure features. Hyperparameters are chosen on 2018-2021 rows only.
-No production writes. Run: python -u -X utf8 scripts/defcon/evaluate_opponent_adjustment.py
+No production writes. Run: python -u -X utf8 -m research.defcon.evaluate_opponent_adjustment
 """
 import os
 

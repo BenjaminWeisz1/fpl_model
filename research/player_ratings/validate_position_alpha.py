@@ -2,8 +2,8 @@
 Goal/assist loop: learning-rate floor by position (CHANGELOG §196).
 Protocol, frozen before scoring: data/validation/position_alpha_20261103/protocol.json.
 
-    python validate_position_alpha.py run     # one pre-match log per floor (GOAL_MODEL_ALPHA); production untouched
-    python validate_position_alpha.py score   # per-(group, target) floor on 2018-2023, test 2024-2026; results.json
+    python -m research.player_ratings.validate_position_alpha run     # one pre-match log per floor (GOAL_MODEL_ALPHA); production untouched
+    python -m research.player_ratings.validate_position_alpha score   # per-(group, target) floor on 2018-2023, test 2024-2026; results.json
 """
 import json
 import os

@@ -1,6 +1,6 @@
 """Tests for the fixed-chip rules (chips.py) and the replay's chip helpers (§226).
 
-    python -m unittest scripts/optimizer/test_chips.py
+    python -m unittest fpl_model/optimizer/test_chips.py
 """
 import unittest
 

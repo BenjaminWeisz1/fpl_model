@@ -1,5 +1,5 @@
 """Key-player absence tests, pre-registered in CHANGELOG §154. Diagnostic: no production writes.
-Run after build_absence_frame.py: python -u -X utf8 scripts/absence/validate_absence.py
+Run after build_absence_frame.py: python -u -X utf8 -m research.absence.validate_absence
 """
 import json
 from pathlib import Path

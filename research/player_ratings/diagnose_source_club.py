@@ -7,7 +7,7 @@ multiplier exp(c z) on the prior minimising squared match error; c < 0 means str
 "Clear" (fixed before the first run): a group of 50+ arrivals with a 95% player-bootstrap interval for c below zero.
 
 Run locally:
-    python diagnose_source_club.py <pre-match log>
+    python -m research.player_ratings.diagnose_source_club <pre-match log>
 """
 import json
 import sys

@@ -8,7 +8,7 @@ Local_Player (player_match_stats.csv and the current code's pre-match log). Roll
 folds inside 2017-2024; validity is checked before any arm is compared.
 
 Run locally (after fetch_vaastav.py):
-    python validate_fpl_only_assists_history.py
+    python -m research.bonus.validate_fpl_only_assists_history
 """
 import json
 

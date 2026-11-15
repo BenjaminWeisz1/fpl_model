@@ -1,6 +1,6 @@
 """Tests for export_site_data.py: the site's numbers must equal the CSVs they come from (website_plan.md).
 
-    python -m unittest scripts/site_export/test_export_site_data.py
+    python -m unittest fpl_model/site_export/test_export_site_data.py
 """
 import json
 import math

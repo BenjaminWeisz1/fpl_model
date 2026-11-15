@@ -1,7 +1,7 @@
 """CHANGELOG §163, after the first run: is the 2025-26 gain real or level, and what is goalsPrevented?
 
 Not part of the adoption rule; a disclosed follow-up.
-Run: python -u -X utf8 scripts/assemble/validate_keeper_shots_later.py
+Run: python -u -X utf8 -m research.assemble.validate_keeper_shots_later
 """
 import json
 

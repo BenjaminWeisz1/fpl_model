@@ -15,7 +15,7 @@ Validity is checked before any comparison exists (§89): rating coverage first, 
 the incumbent alone and its bonus per match, and only then the coherent arm.
 
 Run locally (after writing the pre-match rating log to RATING_LOG, see §72/§89):
-    python validate_prematch_coherence.py
+    python -m research.bonus.validate_prematch_coherence
 """
 import hashlib
 import json

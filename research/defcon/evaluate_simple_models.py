@@ -3,7 +3,7 @@
 Arms: count (negative-binomial GLM on rate, team, opponent, venue, position), smoothing (opponent-adjusted exponential
 smoothing, a floor), logistic (regularised logistic regression). Each ends in the same 5-fold isotonic calibration on
 training seasons. Uses item 1's frames and predictions as the incumbent. No production writes.
-Run: python -u -X utf8 scripts/defcon/evaluate_simple_models.py
+Run: python -u -X utf8 -m research.defcon.evaluate_simple_models
 """
 import os
 

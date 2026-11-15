@@ -15,7 +15,7 @@ Only fills BLANK Team_Attack_Rating cells -- leaves any already-populated
 values untouched, so this is safe to re-run as you add more players.
 
 Run locally:
-    python fill_transfer_team_ratings.py
+    python -m fpl_model.player_ratings.fill_transfer_team_ratings
 """
 
 import pandas as pd

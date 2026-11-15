@@ -129,7 +129,7 @@ Outputs (data/current/team_ratings_oot/): sym_report.txt,
 sym_summary.json, sym_alpha_grid.csv.
 
 Run locally:
-    python symmetric_update_team_ratings.py
+    python -m research.team_ratings.symmetric_update_team_ratings
 """
 import json
 import math

@@ -9,7 +9,7 @@ permanent moves), Free Hit (a separate legal squad within bank + selling value; 
 Bench Boost (all 15 score, no bench weights), Triple Captain (captain x3). After a Wildcard or Free Hit the free
 transfers carry over unchanged. The chip weeks must be exactly the ones fixed in constraints.json.
 
-    python -u -X utf8 scripts/optimizer/replay_plans.py [plan_folder]
+    python -u -X utf8 -m fpl_model.optimizer.replay_plans [plan_folder]
 
 With no folder it uses the GW folder solved most recently. The gameweeks come from that folder's projection.csv.
 """

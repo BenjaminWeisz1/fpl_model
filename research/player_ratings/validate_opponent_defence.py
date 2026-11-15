@@ -9,7 +9,7 @@ opponent's pre-match Defense_Rating / season mean, keyed on Season/Team/Opponent
   secondary  MAE by tercile of the candidate multiplier; final-rating changes.
 
 Run locally (after the logged run):
-    python validate_opponent_defence.py [--dir <run directory>]
+    python -m research.player_ratings.validate_opponent_defence [--dir <run directory>]
 """
 import argparse
 import json

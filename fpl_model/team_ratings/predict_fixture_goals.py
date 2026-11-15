@@ -5,7 +5,7 @@ forward with current team ratings. This is a building block other facets
 (penalty goals, clean sheets) both consume -- not a standalone deliverable.
 
 Run locally:
-    python predict_fixture_goals.py
+    python -m fpl_model.team_ratings.predict_fixture_goals
 """
 
 import pandas as pd

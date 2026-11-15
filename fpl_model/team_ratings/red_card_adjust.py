@@ -22,8 +22,8 @@ Base: 2017-2024 fbref team xG - 0.79 x summed player PKatt (2022-2024 also x the
 NPxG_Adj / base: the user's source reads a little higher there); 2025+ summed player npxG (kept current by
 penalty_reconcile).
 
-    python red_card_adjust.py            # writes data/current/red_card_factors.csv and prints a check
-    python red_card_adjust.py --apply    # also writes NPxG_Adj of every red-card match into match_results.csv
+    python -m fpl_model.team_ratings.red_card_adjust            # writes data/current/red_card_factors.csv and prints a check
+    python -m fpl_model.team_ratings.red_card_adjust --apply    # also writes NPxG_Adj of every red-card match into match_results.csv
 """
 import argparse
 import json

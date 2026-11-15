@@ -35,7 +35,7 @@ outcomes, defcon threshold hits, bonus points, and goalkeeper saves.
 Goalkeeper save rates are pooled from played FPL API goalkeeper history,
 identified through `player_match_positions.csv`, scaled by expected minutes and
 by the fixture: (expected goals conceded)^0.66, normalised to keep the pooled
-level (CHANGELOG §162; `KEEPER_SAVE_FIXTURE=0` reverts). The bonus simulation uses
+level (CHANGELOG §162). The bonus simulation uses
 the same multiplier (§165; `BONUS_SAVE_FIXTURE=0` reverts). Save points use the expected Poisson value of one point per three saves. The
 separate five-point penalty-save award is not forecast because its observed rate
 does not improve held-out point error over predicting zero.
@@ -60,8 +60,8 @@ defcon, minutes and penalty stages.
 
 ## Card points
 
-`build_predicted_points.py` adds `CardPts` per gameweek: -(yellows/90 + 3 x reds/90) x xMins/90, from `fpl_model/card_points.py` (CHANGELOG 175). A yellow rate is the position rate x the player's shrunk record; a new player gets the position rate. Reds are pooled by position. `CARD_POINTS=0` reverts. Since CHANGELOG 195: starts and cameos have their own yellow rates, mixed per fixture by (P1 - P60) x mean cameo length / raw xMins (`CARD_ROLE_SPLIT=0` reverts; `CARD_ROLE_MIX=trailing` uses the last five club matches instead), and a player one yellow short of a ban before its cut-off gets x 0.851 on the yellow rate (`CARD_SUSPENSION=0` reverts).
+`build_predicted_points.py` adds `CardPts` per gameweek: -(yellows/90 + 3 x reds/90) x xMins/90, from `fpl_model/card_points.py` (CHANGELOG 175). A yellow rate is the position rate x the player's shrunk record; a new player gets the position rate. Reds are pooled by position. Since CHANGELOG 195: starts and cameos have their own yellow rates, mixed per fixture by (P1 - P60) x mean cameo length / raw xMins (`CARD_ROLE_MIX=trailing` uses the last five club matches instead), and a player one yellow short of a ban before its cut-off gets x 0.851 on the yellow rate.
 
 ## xMins clock
 
-FPL Review's xMins sum to about 1,043 per team; recorded minutes sum to 990 (CHANGELOG 177). `build_simulation_features.py` writes `xMins` on the recorded clock and keeps `xMins_Raw`. The scale is computed each run: 11 x 90 / the median team-gameweek total of FPL Review's xMins (`recorded_clock_scale`). `XMINS_RECORDED=0` reverts.
+FPL Review's xMins sum to about 1,043 per team; recorded minutes sum to 990 (CHANGELOG 177). `build_simulation_features.py` writes `xMins` on the recorded clock and keeps `xMins_Raw`. The scale is computed each run: 11 x 90 / the median team-gameweek total of FPL Review's xMins (`recorded_clock_scale`).

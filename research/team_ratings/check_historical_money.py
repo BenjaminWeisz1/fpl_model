@@ -1,7 +1,7 @@
 """
 Data checks on historical_money.csv (CHANGELOG §209). Read-only diagnostic: duplicates, goals against Transfermarkt
 games, squad values against Transfermarkt pre-season matchday squads (§206 team_seasons.csv), year-on-year share jumps,
-wage-v-value mismatches. Run from the project root: python scripts/team_ratings/check_historical_money.py
+wage-v-value mismatches. Run from the project root: python -m research.team_ratings.check_historical_money
 """
 import numpy as np
 import pandas as pd

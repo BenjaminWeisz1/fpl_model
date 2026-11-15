@@ -1,5 +1,5 @@
 """Goal/assist calibration after the rating (CHANGELOG §156). Offline on a pre-match log; no production writes.
-python -u -X utf8 scripts/player_ratings/validate_rating_calibration.py
+python -u -X utf8 -m research.player_ratings.validate_rating_calibration
 """
 import json
 import sys

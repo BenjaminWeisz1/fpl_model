@@ -1,6 +1,6 @@
 """Fixture congestion, pre-registered in CHANGELOG §155 (AGENDA 2026-10-31 item 6). Diagnostic: no production writes.
 Calendar: all competitions from Transfermarkt plus the League Cup from openfootball, 2018/19-2025/26. Outcome: team npxG
-difference minus the pre-match rating prediction. Run: python -u -X utf8 scripts/absence/validate_congestion.py
+difference minus the pre-match rating prediction. Run: python -u -X utf8 -m research.absence.validate_congestion
 """
 import json
 import re

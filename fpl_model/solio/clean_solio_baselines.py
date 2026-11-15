@@ -31,7 +31,7 @@ Never halts the pipeline: any failure is written to the status file and the scri
 failed run deletes the previous run's table so a stale one can't be snapshotted.
 
 Run locally:
-    python clean_solio_baselines.py [--gameweek N]
+    python -m fpl_model.solio.clean_solio_baselines [--gameweek N]
 """
 import argparse
 import json

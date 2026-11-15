@@ -1,7 +1,7 @@
 """CHANGELOG §161 amendment, Arm C: a slow team-level ratio from past matches only, with diagnostics of Arm A and A-pre.
 
 Test only; no production writes.
-Run: python -u -X utf8 scripts/assemble/validate_team_coherence_trailing.py
+Run: python -u -X utf8 -m research.assemble.validate_team_coherence_trailing
 """
 import json
 

@@ -1,4 +1,4 @@
-"""Tests for solve_modes.py on a toy model named like the pinned solver's (python -m unittest scripts/optimizer/test_solve_modes.py)."""
+"""Tests for solve_modes.py on a toy model named like the pinned solver's (python -m unittest fpl_model/optimizer/test_solve_modes.py)."""
 import unittest
 
 import highspy

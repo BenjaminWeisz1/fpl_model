@@ -1,5 +1,5 @@
 """Suspension threat and yellow cards (CHANGELOG §191). Protocol: data/validation/card_suspension_20261102/protocol.json.
-No production writes. Run: python -u -X utf8 scripts/validate_card_suspension.py
+No production writes. Run: python -u -X utf8 -m research.general.validate_card_suspension
 """
 import json
 

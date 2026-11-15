@@ -1,6 +1,6 @@
 """CP-SAT feasibility test (SOLVER_SPEED_PLAN.md task 1, §227). Research only: writes nothing production reads.
 
-    python -u -X utf8 scripts/optimizer/cpsat_test.py --instance gw11_h10 --workers 8 --seed 0 --secs 1800
+    python -u -X utf8 -m research.optimizer.cpsat_test --instance gw11_h10 --workers 8 --seed 0 --secs 1800
 
 Reads the plan-1 model exported by `benchmark_solver.py export` (exactly what HiGHS solves) and converts it to an
 integer CP-SAT model by hand, so nothing depends on OR-Tools' floating-point MIP import:

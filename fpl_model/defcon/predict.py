@@ -259,7 +259,7 @@ RECENCY_DECAY = 0.8  # exponential decay factor per season
 # only coarse D/M/F for FPL-era rows (2025+) -- so every FPL-era row, including
 # all Split A/B validation rows and every inference vector, had all-zero Pos_*
 # dummies while fbref training rows carried real ones (a train/serve split).
-# player_match_positions.csv (scripts/fetch/build_position_crosswalk.py) maps
+# player_match_positions.csv (fpl_model/fetch/build_position_crosswalk.py) maps
 # Understat's per-match formation slot onto the same row identity, giving FPL-era
 # rows the detailed slot too. It is used ONLY for the dummies: IsDefender /
 # IsMidfielderOrForward / IsForward, the target and the dataset a row joins still
@@ -1401,7 +1401,7 @@ print(f"  Total unique D/M/F players: {n_ml + n_tr + n_youth}")
 
 # ── Average-opponent 90-minute defcon (player_ratings.csv artifact) ────
 # A fixture-neutral defcon probability for the weekly player_ratings.csv
-# export (assembled by scripts/player_ratings/export_player_ratings.py):
+# export (assembled by fpl_model/player_ratings/export_player_ratings.py):
 # P(defcon >= threshold | full 90-minute match vs an average opponent).
 # The model's raw probability IS the 90-minute probability -- training
 # targets are defined at 90 minutes, and the NB minutes machinery above

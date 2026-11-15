@@ -1,8 +1,8 @@
 """
 Out-of-time test of the FotMob path for new-player priors (CHANGELOG §116).
 
-    python validate_fotmob_priors.py coverage   # matching and season counts only (no fitting, no outcomes scored)
-    python validate_fotmob_priors.py test       # rolling S = 2023..2026, arms, decision -> results.json
+    python -m research.player_ratings.validate_fotmob_priors coverage   # matching and season counts only (no fitting, no outcomes scored)
+    python -m research.player_ratings.validate_fotmob_priors test       # rolling S = 2023..2026, arms, decision -> results.json
 
 Incumbent = each arrival's first logged rating in the §112 K = 16 log (production rules, §104 out-of-time priors),
 with the §104 FPL-era xAG scale for the adopted §103 groups. Static loop-scale scoring as §103.

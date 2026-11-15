@@ -1,10 +1,10 @@
 """
 Out-of-time test of refitted new-player priors (CHANGELOG §119).
 
-    python validate_prior_refit.py arm A    # §116 model refit on the current log -> preds_A.npz
-    python validate_prior_refit.py arm B    # + coefficient / scoring-level anchoring -> preds_B.npz
-    python validate_prior_refit.py arm C    # B with the scoring-level exponent fixed at 1 (§231) -> preds_C.npz
-    python validate_prior_refit.py score    # per-group comparison with the production incumbent -> results.json
+    python -m research.player_ratings.validate_prior_refit arm A    # §116 model refit on the current log -> preds_A.npz
+    python -m research.player_ratings.validate_prior_refit arm B    # + coefficient / scoring-level anchoring -> preds_B.npz
+    python -m research.player_ratings.validate_prior_refit arm C    # B with the scoring-level exponent fixed at 1 (§231) -> preds_C.npz
+    python -m research.player_ratings.validate_prior_refit score    # per-group comparison with the production incumbent -> results.json
                                             # (arms scored: PRIOR_REFIT_ARMS, default "A,B")
 """
 import json

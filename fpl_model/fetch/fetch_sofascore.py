@@ -430,7 +430,7 @@ def manifest(client, seasons, discovery_errors, failures, summary):
     complete = all(c['discovery_unverified'] == 0 and c['missing'] == 0 for c in counts.values())
     result = {'updated_at': now(), 'complete': complete, 'seasons': counts, 'summary': summary,
               'requests_this_run': client.requests, 'request_observations': client.observations,
-              'resume_command': 'python -u -X utf8 scripts/fetch/fetch_sofascore.py --access-evidence PATH'}
+              'resume_command': 'python -u -X utf8 -m fpl_model.fetch.fetch_sofascore --access-evidence PATH'}
     atomic_json(client.raw / 'manifest.json', result)
     return result
 

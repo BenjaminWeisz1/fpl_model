@@ -9,7 +9,7 @@ residual refitted on 2026 GW1-7 only. The frozen files are hash-checked and
 never modified.
 
 Run locally:
-    python score_frozen_bonus_forecast.py
+    python -m research.bonus.score_frozen_bonus_forecast
 """
 import hashlib
 import json

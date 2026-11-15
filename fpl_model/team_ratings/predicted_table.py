@@ -12,7 +12,7 @@ are Poisson, independent, with the production means:
 Ratings are today's team_ratings_current.csv for every remaining match (no updating along the way), so the table is
 an expected value, not a simulation of how ratings would move.
 
-    python -u -X utf8 scripts/team_ratings/predicted_table.py
+    python -u -X utf8 -m fpl_model.team_ratings.predicted_table
 """
 from pathlib import Path
 

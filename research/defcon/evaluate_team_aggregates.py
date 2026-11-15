@@ -1,7 +1,7 @@
 """Session B item 6 (CHANGELOG §190): defcon team/venue/opponent averages, training v serving definition.
 
 Protocol, frozen before scoring: data/validation/defcon_team_aggregates_20261102/protocol.json. No production writes.
-Run: python -u -X utf8 scripts/defcon/evaluate_team_aggregates.py [extract|run|score]
+Run: python -u -X utf8 -m research.defcon.evaluate_team_aggregates [extract|run|score]
 """
 import os
 

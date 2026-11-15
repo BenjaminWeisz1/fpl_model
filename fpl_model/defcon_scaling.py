@@ -7,7 +7,7 @@ probability back to an implied mean defcon rate through the NB(r=3*mu, p=0.75)
 relationship used throughout this project, scale the mean by xMins/90, then
 recompute the probability at the scaled mean.
 
-``scripts/defcon/predict.py`` does the inversion itself and writes both the
+``fpl_model/defcon/predict.py`` does the inversion itself and writes both the
 unscaled probability (``Probability_at_90min``) and its own scaled column; the
 inverted mean is then carried through ``simulation_features.csv`` as
 ``Defcon_Mu90``. Anything in part 2 of the pipeline that needs a point-estimate

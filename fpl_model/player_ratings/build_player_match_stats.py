@@ -30,7 +30,7 @@ Column mapping:
     This file deliberately keeps the RAW native values (the BPS baseline
     models FPL's actual bonus scoring from FPL-native counts); the defcon
     model reconciles the scales at load time (see _FPL_STAT_SCALE in
-    scripts/defcon/predict.py).
+    fpl_model/defcon/predict.py).
 
 One-off, already run: refuses to run while player_match_stats.csv exists. Don't delete it to get past that.
 """

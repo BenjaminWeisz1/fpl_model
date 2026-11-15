@@ -2,7 +2,7 @@
 
 Reuses production ingestion/features and saved incumbent models without running
 the pipeline or writing production outputs. Freezes the control before any edit
-to predict.py. Run with python -u -X utf8 scripts/defcon/evaluate_defender_monotonic.py.
+to predict.py. Run with python -u -X utf8 -m research.defcon.evaluate_defender_monotonic.
 """
 import os
 

@@ -10,7 +10,7 @@ Part 1, one step ahead walk-forward on T1 = 2023-2024 and T2 = 2025-2026, consta
 fitted on 2018-2022. Part 2, bonus safety check on §68's windows (constants 2018-2024).
 
 Run locally:
-    python validate_position_pass_bands.py
+    python -m research.bonus.validate_position_pass_bands
 """
 import hashlib
 import json

@@ -9,7 +9,7 @@ kickoff_time), fixtures.csv, players_raw.csv and raw.json (the season's bootstra
 holds the team names). Personal, non-commercial use; plain requests with a 1 s pause.
 
 Run locally:
-    python fetch_vaastav.py
+    python -m fpl_model.fetch.fetch_vaastav
 """
 import hashlib
 import json

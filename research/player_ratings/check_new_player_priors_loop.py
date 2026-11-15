@@ -1,7 +1,7 @@
 """
 Shadow checks of the new-player priors in the rating loop (CHANGELOG §103-§105).
 
-    python check_new_player_priors_loop.py
+    python -m research.player_ratings.check_new_player_priors_loop
 
 1. Switch off (GOAL_MODEL_NEW_PRIORS=0) reproduces the baseline log and ratings exactly.
 2. Switch on: players without an adopted prior row have identical pre-match rows and final ratings; no NaN.

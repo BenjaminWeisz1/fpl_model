@@ -1,8 +1,8 @@
 """
 Evidence-weighted starting weight K for new arrivals (CHANGELOG §232).
 
-    python validate_evidence_k.py identity <log>   # replay at K = 16 must reproduce the logged ratings
-    python validate_evidence_k.py score <log>      # grid on train, test on later entrants -> results.json
+    python -m research.player_ratings.validate_evidence_k identity <log>   # replay at K = 16 must reproduce the logged ratings
+    python -m research.player_ratings.validate_evidence_k score <log>      # grid on train, test on later entrants -> results.json
 
 The loop's update for one player depends only on his own rows (opponent, venue and substitute factors are fixed
 per row), so a different K schedule can be replayed exactly from a pre-match log: per row, factor f = pred_90 /

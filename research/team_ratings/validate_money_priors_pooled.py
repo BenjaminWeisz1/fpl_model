@@ -9,7 +9,7 @@ a scratch copy with the chosen arm's priors, level-matched per season to product
 walk-forward Poisson log loss 2017-2025.
 
 Run locally:
-    python validate_money_priors_pooled.py            # stage 1, then stage 2 if the rule passes
+    python -m research.team_ratings.validate_money_priors_pooled            # stage 1, then stage 2 if the rule passes
 """
 import json
 import sys

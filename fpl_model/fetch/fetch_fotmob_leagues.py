@@ -1,9 +1,9 @@
 """
 Freeze FotMob league-season player stat lists for new-player priors (CHANGELOG §115, §116).
 
-    python fetch_fotmob_leagues.py                 # every league in LEAGUES, seasons FIRST_SEASON .. CURRENT_SEASON-1
-    python fetch_fotmob_leagues.py --league Championship --season 2025
-    python fetch_fotmob_leagues.py --refresh-pages # re-read league pages (new season IDs)
+    python -m fpl_model.fetch.fetch_fotmob_leagues                 # every league in LEAGUES, seasons FIRST_SEASON .. CURRENT_SEASON-1
+    python -m fpl_model.fetch.fetch_fotmob_leagues --league Championship --season 2025
+    python -m fpl_model.fetch.fetch_fotmob_leagues --refresh-pages # re-read league pages (new season IDs)
 
 Source rules (CHANGELOG §115): FotMob's robots.txt disallows www.fotmob.com/api/* for generic agents, so this
 reads only the public league stats page (www.fotmob.com/leagues/<id>/stats/<slug>, for its season IDs) and the

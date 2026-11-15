@@ -12,7 +12,7 @@ League matchday squad for the new club, effective after that match; departure co
 2017-2025. The rating loop is update_team_ratings.py's, copied, with only the adjustment hook added.
 
 Run locally:
-    python validate_transfer_money_updates.py
+    python -m research.team_ratings.validate_transfer_money_updates
 """
 import json
 

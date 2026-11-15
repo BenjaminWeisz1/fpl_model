@@ -11,7 +11,7 @@ Replicates the exact blending logic from the main script:
     script handles a team's first-ever appearance.
 
 Run locally:
-    python compute_preseason_ratings.py
+    python -m fpl_model.team_ratings.compute_preseason_ratings
 """
 
 import pandas as pd

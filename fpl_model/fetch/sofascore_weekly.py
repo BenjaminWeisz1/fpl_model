@@ -25,7 +25,7 @@ document.body.innerText. Manual saves: the raw page JSON named
 (data/validation/sofascore_revision_check_20261028). See SOFASCORE.md.
 
 Run locally:
-    python sofascore_weekly.py plan | import | build | status
+    python -m fpl_model.fetch.sofascore_weekly plan | import | build | status
 """
 import argparse
 import hashlib

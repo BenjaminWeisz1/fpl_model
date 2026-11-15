@@ -1,8 +1,8 @@
 """CHANGELOG §164: does non-penalty xGOT improve career goal conversion? Test only; no production writes.
 
 Needs a pre-match log first:
-  GOAL_MODEL_PREMATCH_LOG=data/validation/conversion_xgot_20261101/log.csv python build_player_ratings.py
-Run: python -u -X utf8 scripts/player_ratings/validate_conversion_xgot.py
+  GOAL_MODEL_PREMATCH_LOG=data/validation/conversion_xgot_20261101/log.csv python -m fpl_model.player_ratings.build_player_ratings
+Run: python -u -X utf8 -m research.player_ratings.validate_conversion_xgot
 """
 import json
 

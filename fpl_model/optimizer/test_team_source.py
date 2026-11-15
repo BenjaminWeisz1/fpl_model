@@ -1,5 +1,5 @@
 """Tests for team_source.py and solver_jobs.py's pure parts, on fake FPL responses (no network):
-python -m unittest scripts/optimizer/test_team_source.py"""
+python -m unittest fpl_model/optimizer/test_team_source.py"""
 import copy
 import unittest
 

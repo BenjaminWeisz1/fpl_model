@@ -1,9 +1,9 @@
 """Solver speed benchmark (website_plan.md, "Speed: research plan"; §226). Research only: writes nothing that
 production reads.
 
-    python -u -X utf8 scripts/optimizer/benchmark_solver.py build
-    python -u -X utf8 scripts/optimizer/benchmark_solver.py run --instance gw11_h10 --variant base
-    python -u -X utf8 scripts/optimizer/benchmark_solver.py report
+    python -u -X utf8 -m research.optimizer.benchmark_solver build
+    python -u -X utf8 -m research.optimizer.benchmark_solver run --instance gw11_h10 --variant base
+    python -u -X utf8 -m research.optimizer.benchmark_solver report
 
 build   freezes the test instances under data/optimizer/benchmark/instances/<name>/: bootstrap-static, fixtures,
         projection.csv and team_data.json, so every run sees identical inputs. GW9 and GW10 reuse the projection and

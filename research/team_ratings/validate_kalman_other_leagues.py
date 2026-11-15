@@ -8,8 +8,8 @@ data/validation/kalman_other_leagues_20261102/. Reuses the §24 engine
 Protocol, gate and predictions: PROTOCOL.md in that folder, fixed before any
 arm was scored. `--check` prints data coverage and scores no arm.
 
-    python -u -X utf8 scripts/team_ratings/validate_kalman_other_leagues.py --check
-    python -u -X utf8 scripts/team_ratings/validate_kalman_other_leagues.py
+    python -u -X utf8 -m research.team_ratings.validate_kalman_other_leagues --check
+    python -u -X utf8 -m research.team_ratings.validate_kalman_other_leagues
 """
 import argparse
 import hashlib

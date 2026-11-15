@@ -1,10 +1,10 @@
 """
 Writes data/current/new_player_priors.csv: goal/assist priors for players new to the PL (CHANGELOG §103).
 
-    python build_new_player_priors.py          # apply the frozen parameters (production)
-    python build_new_player_priors.py --fit    # refit and freeze the parameters (one-off; needs a new
+    python -m fpl_model.player_ratings.build_new_player_priors          # apply the frozen parameters (production)
+    python -m fpl_model.player_ratings.build_new_player_priors --fit    # refit and freeze the parameters (one-off; needs a new
                                                # pre-registration, as the frozen bonus constants do)
-    python build_new_player_priors.py --fit-fotmob   # refit and freeze the FotMob-path model (§116; same caveat)
+    python -m fpl_model.player_ratings.build_new_player_priors --fit-fotmob   # refit and freeze the FotMob-path model (§116; same caveat)
 
 Rows: every `transfers.csv` row with blank Notes, a non-PL League, a non-GK position and Season >= 2017.
 An arrival from La Liga, Bundesliga, Serie A, Ligue 1 or the RFPL is automated: his last three seasons come
@@ -14,7 +14,7 @@ league factor. `Adopted` marks the league groups that passed the §103 test; bui
 only those rows.
 
 FotMob path (CHANGELOG §116): an arrival in a group adopted there (the Championship) whom FotMob's frozen league
-lists (`data/raw/fotmob/`, `scripts/fetch/fetch_fotmob_leagues.py`) match by name in his League's previous season
+lists (`data/raw/fotmob/`, `fpl_model/fetch/fetch_fotmob_leagues.py`) match by name in his League's previous season
 takes the FotMob-path model instead (`new_player_prior_params_fotmob.json`): up to three FotMob seasons in any of
 22 leagues.
 

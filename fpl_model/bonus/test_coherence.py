@@ -1,7 +1,7 @@
 """Team-goal coherence in simulate_match (CHANGELOG §145).
 
 Run locally:
-    python test_coherence.py
+    python -m fpl_model.bonus.test_coherence
 """
 import numpy as np
 import pandas as pd

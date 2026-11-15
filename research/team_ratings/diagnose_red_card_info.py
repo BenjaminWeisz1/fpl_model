@@ -6,7 +6,7 @@ Per team-match 2018-2026, from team_ratings_history.csv (chronological file orde
 by OLS on two indicators for the team's previous match in the same season: it had a player sent off, and its opponent
 did. SEs clustered by team-season. Report only.
 
-    python diagnose_red_card_info.py     # -> data/validation/red_card_20261030/red_card_info.json
+    python -m research.team_ratings.diagnose_red_card_info     # -> data/validation/red_card_20261030/red_card_info.json
 """
 import json
 

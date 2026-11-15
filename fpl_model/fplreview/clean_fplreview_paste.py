@@ -35,7 +35,7 @@ Never halts the pipeline: any failure is written to the status file and the scri
 failed run deletes the previous run's projections so a stale table can't be snapshotted.
 
 Run locally:
-    python clean_fplreview_paste.py [--gameweek N]
+    python -m fpl_model.fplreview.clean_fplreview_paste [--gameweek N]
 """
 import argparse
 import json

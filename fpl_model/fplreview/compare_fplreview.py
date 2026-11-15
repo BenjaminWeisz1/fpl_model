@@ -33,9 +33,9 @@ Outputs in data/fplreview/comparisons/<snapshot name or "current">/:
                         (log scale, ours on theirs) say how much narrower our team spread is
 
 Run locally:
-    python compare_fplreview.py                      # latest GW snapshot with FPL Review data
-    python compare_fplreview.py --snapshot <folder>
-    python compare_fplreview.py --current            # data/current, before a snapshot exists
+    python -m fpl_model.fplreview.compare_fplreview                      # latest GW snapshot with FPL Review data
+    python -m fpl_model.fplreview.compare_fplreview --snapshot <folder>
+    python -m fpl_model.fplreview.compare_fplreview --current            # data/current, before a snapshot exists
 """
 import argparse
 import json

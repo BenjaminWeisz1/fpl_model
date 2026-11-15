@@ -25,7 +25,7 @@ From 2026 (CHANGELOG §197) the penalties of those seasons come from FotMob inst
 FotMob additions are audited in penalty_log_fotmob_additions.csv. Understat files of those seasons are not read.
 
 Run locally (after fetch_fotmob_matches.py and build_position_crosswalk.py):
-    python penalty_log_understat.py [--dry-run]
+    python -m fpl_model.fetch.penalty_log_understat [--dry-run]
 """
 import argparse
 import json

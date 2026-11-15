@@ -8,7 +8,7 @@ APPENDED to this same file (e.g. from money_ratings_2027.csv once that's
 built), rather than a new standalone money_ratings_YYYY.csv file each year.
 
 Run locally (once):
-    python build_money_priors_lookup.py
+    python -m fpl_model.team_ratings.build_money_priors_lookup
 
 DO NOT RERUN (CHANGELOG §200-§202): the source's 2017-2024 values were fitted in-sample; the lookup's 2017-2024
 rows are now past-only (rebuild_money_priors_past_only.py), and rerunning this would bring the leak back.

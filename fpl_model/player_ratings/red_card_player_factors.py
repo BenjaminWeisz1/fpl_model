@@ -13,7 +13,7 @@ From 2026 (CHANGELOG §197) the matches come from FotMob (fotmob_match_positions
 above over his FotMob shots; FotMob does not record who assisted a shot, so xAG always takes the minutes factor.
 His minutes run from kick-off (or his entry) to his substitution, his own dismissal or the match end.
 
-    python red_card_player_factors.py     # -> data/current/red_card_player_factors.csv
+    python -m fpl_model.player_ratings.red_card_player_factors     # -> data/current/red_card_player_factors.csv
 """
 import json
 

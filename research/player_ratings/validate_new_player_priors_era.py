@@ -2,7 +2,7 @@
 FPL-era scale correction for the new-player priors (CHANGELOG §104).
 
 Reuses the §103 out-of-time candidate predictions (test_predictions.csv) and the same arrivals dataset.
-    python validate_new_player_priors_era.py
+    python -m research.player_ratings.validate_new_player_priors_era
 """
 import json
 

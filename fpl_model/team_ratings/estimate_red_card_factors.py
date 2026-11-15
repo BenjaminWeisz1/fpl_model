@@ -8,7 +8,7 @@ log(pre-match predicted goals x duration / 90) estimates the man-advantage effec
 difference, clock bin and home. Factor = exp(-coef): the weight that turns a man-advantage segment's xG into its
 11 v 11 equivalent. Only relative sizes of Understat xG enter, never its level. SEs clustered by match.
 
-    python estimate_red_card_factors.py      # -> data/validation/red_card_20261030/factors_estimate.json
+    python -m fpl_model.team_ratings.estimate_red_card_factors      # -> data/validation/red_card_20261030/factors_estimate.json
 """
 import json
 

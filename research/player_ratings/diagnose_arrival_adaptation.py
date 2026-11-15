@@ -1,7 +1,7 @@
 """
 First-season adaptation check for new arrivals (CHANGELOG §231 part 2; diagnostic only).
 
-    python diagnose_arrival_adaptation.py <pre-match log> <out.json>
+    python -m research.player_ratings.diagnose_arrival_adaptation <pre-match log> <out.json>
 
 Arrivals: blank-Notes non-PL outfield rows of transfers.csv in their first PL season (as the prior dataset,
 `new_player_priors.in_scope_transfers` / `attach_outcomes`). Controls: players with an earlier PL season.

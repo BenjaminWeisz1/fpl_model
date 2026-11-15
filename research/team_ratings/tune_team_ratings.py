@@ -46,7 +46,7 @@ Outputs (data/current/team_ratings_oot/): tuning_grid.csv (all 1,002
 rows incl. baseline), tuning_report.txt, tuning_summary.json.
 
 Run locally:
-    python tune_team_ratings.py
+    python -m research.team_ratings.tune_team_ratings
 """
 import itertools
 import json

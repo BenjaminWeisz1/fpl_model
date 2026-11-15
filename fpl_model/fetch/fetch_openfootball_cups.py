@@ -1,6 +1,6 @@
 """One-off backfill: EFL Cup results 2018/19-2024/25 from openfootball/england (CC0), frozen to data/raw/openfootball/.
 Fills Transfermarkt's League Cup gap (AGENDA 2026-10-31). Existing files are never replaced.
-Run: python -u -X utf8 scripts/fetch/fetch_openfootball_cups.py
+Run: python -u -X utf8 -m fpl_model.fetch.fetch_openfootball_cups
 """
 import hashlib
 import json

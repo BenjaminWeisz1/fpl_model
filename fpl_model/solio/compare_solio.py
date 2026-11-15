@@ -44,10 +44,10 @@ Outputs in data/solio/comparisons/<snapshot name or "current">/:
     top_differences.csv  the largest gaps among regulars, per stat
 
 Run locally:
-    python compare_solio.py                      # latest pre-deadline GW snapshot with usable Solio data
-    python compare_solio.py --snapshot <folder>
-    python compare_solio.py --current            # data/current, before a snapshot exists
-    python compare_solio.py --current --rounds 5 # only the first five rounds of our forecast
+    python -m fpl_model.solio.compare_solio                      # latest pre-deadline GW snapshot with usable Solio data
+    python -m fpl_model.solio.compare_solio --snapshot <folder>
+    python -m fpl_model.solio.compare_solio --current            # data/current, before a snapshot exists
+    python -m fpl_model.solio.compare_solio --current --rounds 5 # only the first five rounds of our forecast
 """
 import argparse
 import json

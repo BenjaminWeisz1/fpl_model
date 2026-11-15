@@ -140,7 +140,7 @@ Outputs (data/current/team_ratings_oot/): kalman_report.txt,
 kalman_summary.json, kalman_grid.csv (301 rows incl. the ES reference).
 
 Run locally:
-    python kalman_team_ratings.py
+    python -m research.team_ratings.kalman_team_ratings
 """
 import itertools
 import json

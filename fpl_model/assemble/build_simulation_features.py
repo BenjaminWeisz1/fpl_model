@@ -6,7 +6,7 @@ predictions, and clean sheet probabilities -- ready for the bonus
 simulation to consume directly.
 
 Run locally (after all the individual facet scripts):
-    python build_simulation_features.py
+    python -m fpl_model.assemble.build_simulation_features
 """
 
 import numpy as np

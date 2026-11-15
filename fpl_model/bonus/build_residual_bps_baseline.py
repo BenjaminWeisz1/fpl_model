@@ -23,7 +23,7 @@ refuses to run if its inputs disagree.
 Since §146 the fit also uses the previous season, centred on the current season-position mean.
 
 Run locally:
-    python build_residual_bps_baseline.py
+    python -m fpl_model.bonus.build_residual_bps_baseline
 """
 import json
 

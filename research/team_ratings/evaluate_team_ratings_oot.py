@@ -89,14 +89,14 @@ experimental modes are exclusive: one change at a time.
 
 Usage
 -----
-  python evaluate_team_ratings_oot.py --label baseline --save
+  python -m research.team_ratings.evaluate_team_ratings_oot --label baseline --save
       First run: establishes the stored baseline.
 
-  python evaluate_team_ratings_oot.py --alpha 0.06 --label exp1_v1 --save
+  python -m research.team_ratings.evaluate_team_ratings_oot --alpha 0.06 --label exp1_v1 --save
       Experiment: overrides hyperparameters; automatically prints a
       before/after comparison against the stored baseline.
 
-  python evaluate_team_ratings_oot.py --compare exp1_v1 ...
+  python -m research.team_ratings.evaluate_team_ratings_oot --compare exp1_v1 ...
       Compare against any stored run.
 
 Results are stored in data/current/team_ratings_oot/<label>.json with

@@ -1,6 +1,6 @@
 """Local page for the transfer optimizer: set forced decisions, press Start Solve, see the three plans.
 
-    python scripts/optimizer/optimizer_app.py
+    python -m fpl_model.optimizer.optimizer_app
 
 Serves app.html on 127.0.0.1 only and opens it in the browser. Start Solve runs run_optimizer.py (in the solve mode
 picked beside the button; solve_modes.py) and replay_plans.py,

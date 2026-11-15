@@ -12,7 +12,7 @@ Window A fits 2025/26 on its first 266 fixtures and tests the last 114; window B
 fits 2026/27 GW1-4 and tests GW5-7. GW8 (fit GW1-7) is descriptive only.
 
 Run locally:
-    python validate_bonus_accounting.py
+    python -m research.bonus.validate_bonus_accounting
 """
 import hashlib
 import json

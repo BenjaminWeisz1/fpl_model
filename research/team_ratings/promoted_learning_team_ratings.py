@@ -12,7 +12,7 @@ predicted one step ahead -- because the harness's frozen score cannot see an
 in-season learning change. (m, N) chosen per cutoff from seasons before it.
 
 Run:
-    python promoted_learning_team_ratings.py
+    python -m research.team_ratings.promoted_learning_team_ratings
 Writes data/current/team_ratings_oot/promoted_learning_report.txt + _summary.json.
 """
 import json

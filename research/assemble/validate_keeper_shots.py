@@ -1,7 +1,7 @@
 """CHANGELOG §163: opponent shots, shot quality and keeper shot-stopping, against §162's fixture model.
 
 Walk-forward at realized minutes. Test only; no production writes.
-Run: python -u -X utf8 scripts/assemble/validate_keeper_shots.py
+Run: python -u -X utf8 -m research.assemble.validate_keeper_shots
 """
 import json
 

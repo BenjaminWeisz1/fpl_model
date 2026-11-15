@@ -41,11 +41,11 @@ and the back-three wing-back rule below). Because the raw label is kept, any
 mapping can be recomputed later without re-scraping.
 
 Run locally:
-    python fetch_understat.py                 # full backfill (resumable), then rebuild CSV
-    python fetch_understat.py --build-only    # rebuild CSV from the cache, no downloads
-    python fetch_understat.py --season 2026   # one season only
-    python fetch_understat.py --limit 50      # cap new match downloads (testing)
-    python fetch_understat.py --weekly        # current season only, tolerant of network errors
+    python -m fpl_model.fetch.fetch_understat                 # full backfill (resumable), then rebuild CSV
+    python -m fpl_model.fetch.fetch_understat --build-only    # rebuild CSV from the cache, no downloads
+    python -m fpl_model.fetch.fetch_understat --season 2026   # one season only
+    python -m fpl_model.fetch.fetch_understat --limit 50      # cap new match downloads (testing)
+    python -m fpl_model.fetch.fetch_understat --weekly        # current season only, tolerant of network errors
 """
 import argparse
 import json

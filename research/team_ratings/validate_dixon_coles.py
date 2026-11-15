@@ -1,5 +1,5 @@
 """Correlated scorelines (CHANGELOG §157). Walk-forward Dixon-Coles rho on pre-match forecasts; no production writes.
-python -u -X utf8 scripts/team_ratings/validate_dixon_coles.py
+python -u -X utf8 -m research.team_ratings.validate_dixon_coles
 """
 import json
 

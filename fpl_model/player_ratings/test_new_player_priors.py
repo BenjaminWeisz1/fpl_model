@@ -1,4 +1,4 @@
-"""Tests for the new-player priors (CHANGELOG §103-§104). Run: python test_new_player_priors.py (or pytest)"""
+"""Tests for the new-player priors (CHANGELOG §103-§104). Run: python -m fpl_model.player_ratings.test_new_player_priors (or pytest)"""
 import json
 
 import numpy as np

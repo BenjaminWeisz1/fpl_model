@@ -3,7 +3,7 @@ Diagnostic: is over-prediction of high goal/assist ratings larger when they rest
 (CHANGELOG §109). Nothing here changes a model. Reuses the §108 log and target starts.
 
 Run locally (after diagnose_inactivity.py's logged run):
-    python diagnose_evidence.py
+    python -m research.player_ratings.diagnose_evidence
 """
 import json
 

@@ -84,7 +84,7 @@ def trailing_level(d, value, by=("group",)):
 
 
 # Pseudo-count in expected yellows: lowest card-point MSE on 2018-2023 of k = 2, 5, 10, 20, 40, 80 (§175).
-# Reproduce with `python validate_card_points.py tune`; see tuned.json in data/validation/card_points_20261101/.
+# Reproduce with `python -m research.general.validate_card_points tune`; see tuned.json in data/validation/card_points_20261101/.
 K = 5
 RED_POINTS, YELLOW_POINTS = -3, -1      # FPL's scoring rules
 

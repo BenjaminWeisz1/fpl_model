@@ -13,7 +13,7 @@ Folds: fit 2025 -> test 2026, and fit 2026 -> test 2025.
 FPL-only assists that remain after removing identified penalty assists.
 
 Run locally:
-    python validate_fpl_only_assists.py
+    python -m research.bonus.validate_fpl_only_assists
 """
 import json
 

@@ -9,7 +9,7 @@ residual shrinkage), A_noopp (pass bands, no tilt), A (pass bands tilted by
 opponent and venue effects). Common random numbers across arms.
 
 Run locally:
-    python validate_pass_bands.py
+    python -m research.bonus.validate_pass_bands
 """
 import hashlib
 import json

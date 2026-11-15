@@ -2,7 +2,7 @@
 
 Same frame, control and scoring as evaluate_defender_recency.py (§105); the candidate rescales AvgPer90,
 AvgRaw and RecentEWPer90 by L_(s-1) / (the league levels of the player's earlier qualifying matches).
-No production writes. Run: python -u -X utf8 scripts/defcon/evaluate_defender_level.py
+No production writes. Run: python -u -X utf8 -m research.defcon.evaluate_defender_level
 """
 import os
 

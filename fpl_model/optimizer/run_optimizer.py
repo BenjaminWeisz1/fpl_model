@@ -5,7 +5,7 @@ bootstrap-static prices, then writes three plans to data/optimizer/GW<nn>/. Read
 The gameweek comes from bootstrap-static (is_next); free transfers and bank come from team_data.json. Each week: run
 part 2, refresh team_data.json, then run this and replay_plans.py. The plans the replay reports are the checked ones.
 
-    python -u -X utf8 scripts/optimizer/run_optimizer.py [--mode fast|standard|deep] [--full-pool] [--constraints file.json]
+    python -u -X utf8 -m fpl_model.optimizer.run_optimizer [--mode fast|standard|deep] [--full-pool] [--constraints file.json]
         [--team file.json] [--horizon N] [--out folder]
 
 --mode picks the solve mode (solve_modes.py, §227): how long the solver searches and how close to the optimum it must

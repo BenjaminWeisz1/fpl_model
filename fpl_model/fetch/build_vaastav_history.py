@@ -20,7 +20,7 @@ BPS rules changed over the seasons; see "Rules Verification: BPS Values by Seaso
 "Data Sources for Reconstructing the FPL Bonus Points System.md" before training on it.
 
 Run locally (after fetch_vaastav.py; no network):
-    python build_vaastav_history.py
+    python -m fpl_model.fetch.build_vaastav_history
 """
 
 import numpy as np

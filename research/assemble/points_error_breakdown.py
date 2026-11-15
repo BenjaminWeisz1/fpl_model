@@ -4,7 +4,7 @@ For each player-match: pre-match ratings and team forecasts, the realized minute
 Each component's error is set against the variance its own forecast implies, so noise is not read as model error.
 Rows: the pre-match bonus hindcast, 2018-2024 (vaastav outcomes) and its 2025-26 windows. Defcon uses the §149-§150
 out-of-time probabilities, 2022-2026. Diagnostic only; no production writes.
-Run: python -u -X utf8 scripts/assemble/points_error_breakdown.py
+Run: python -u -X utf8 -m research.assemble.points_error_breakdown
 """
 import json
 

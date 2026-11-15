@@ -11,7 +11,7 @@ GW5-7 are the untouched test set. The frozen GW8 forecast is hash-checked but
 never read as an input or modified.
 
 Run locally:
-    python validate_bonus_calibration.py
+    python -m research.bonus.validate_bonus_calibration
 """
 import hashlib
 import json

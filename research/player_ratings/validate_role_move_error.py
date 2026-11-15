@@ -2,7 +2,7 @@
 
 Protocol, frozen before any error was computed:
 data/validation/role_move_error_20261101/protocol.json. Reads the pre-match log written by
-GOAL_MODEL_PREMATCH_LOG=<log> python build_player_ratings.py
+GOAL_MODEL_PREMATCH_LOG=<log> python -m fpl_model.player_ratings.build_player_ratings
 Scores seasons 2018-2024 only; 2025-26 stays untouched. Changes no production file.
 """
 import json

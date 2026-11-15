@@ -1,8 +1,8 @@
 """
 How many matches should the starting rating count as in the goal/assist loop? (CHANGELOG §112)
 
-    python validate_prior_k.py run     # one pre-match log per K (GOAL_MODEL_PRIOR_K), out-of-time priors
-    python validate_prior_k.py score   # train/test MSE of entrants' match npxG and xAG; writes results.json
+    python -m research.player_ratings.validate_prior_k run     # one pre-match log per K (GOAL_MODEL_PRIOR_K), out-of-time priors
+    python -m research.player_ratings.validate_prior_k score   # train/test MSE of entrants' match npxG and xAG; writes results.json
 
 Entrants: outfield players whose first logged PL match is in 2019 or later, scored on their first two logged
 seasons. Train = entrants 2019-2022, test = entrants 2023-2026. Production is never written.

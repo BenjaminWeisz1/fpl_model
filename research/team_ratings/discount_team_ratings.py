@@ -130,7 +130,7 @@ Outputs (data/current/team_ratings_oot/): discount_report.txt,
 discount_summary.json.
 
 Run locally:
-    python discount_team_ratings.py
+    python -m research.team_ratings.discount_team_ratings
 """
 import json
 import sys

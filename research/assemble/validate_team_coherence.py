@@ -2,7 +2,7 @@
 
 Rates are pre-match, scored at realized minutes; c and the slope are fitted on earlier seasons only.
 Test only; no production writes.
-Run: python -u -X utf8 scripts/assemble/validate_team_coherence.py
+Run: python -u -X utf8 -m research.assemble.validate_team_coherence
 """
 import json
 import sys

@@ -1,5 +1,5 @@
 """Card exposure, starts v cameos (CHANGELOG §193). Protocol: data/validation/card_exposure_20261102/protocol.json.
-No production writes. Run: python -u -X utf8 scripts/validate_card_exposure.py
+No production writes. Run: python -u -X utf8 -m research.general.validate_card_exposure
 """
 import json
 

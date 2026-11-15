@@ -12,7 +12,7 @@ draws from lagged pre-match rates. Common random numbers across arms; the
 incumbent reuses the §68 random stream, so it reproduces §68's arm A exactly.
 
 Run locally:
-    python validate_shots_on_target.py
+    python -m research.bonus.validate_shots_on_target
 """
 import hashlib
 import json

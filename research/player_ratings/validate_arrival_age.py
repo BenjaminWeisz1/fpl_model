@@ -2,7 +2,7 @@
 Arrivals' starting rating by age at arrival (CHANGELOG §240).
 Protocol, frozen before scoring: data/validation/arrival_age_20261113/protocol.json.
 
-    python validate_arrival_age.py    # -> data/validation/arrival_age_20261113/results.json
+    python -m research.player_ratings.validate_arrival_age    # -> data/validation/arrival_age_20261113/results.json
 
 Same exact replay as §238 (validate_arrival_position.py): scaling an arrival's start by m moves his rating before
 row t by s_t x start x (m - 1). Arm A: m = k for every arrival. Arm B: m = exp(a + b x (age - 25)), age clipped 18-34.

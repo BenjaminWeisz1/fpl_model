@@ -4,7 +4,7 @@
     fixture_ticker_GW<nn>_attack.png   (Attack)  expected goals scored: the opponent's defence, for attackers
     fixture_ticker_GW<nn>_defense.png  (Defense) expected goals conceded, lower is easier: the opponent's attack
 
-    python -u -X utf8 scripts/optimizer/fixture_ticker.py
+    python -u -X utf8 -m fpl_model.optimizer.fixture_ticker
 
 The gameweek comes from FPL, so it needs no edits week to week. Each of the 40 possible fixtures (20 opponents, home or
 away) gets a difficulty: the expected goal difference an average team would have in it, from team_ratings_current.csv

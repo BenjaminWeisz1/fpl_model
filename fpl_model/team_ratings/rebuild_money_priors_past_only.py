@@ -13,8 +13,8 @@ rows change: the file is edited as text, line endings and number format (10 sign
 backup written first. Rerun update_team_ratings.py afterwards.
 
 Run locally:
-    python rebuild_money_priors_past_only.py            # dry run: prints the changes
-    python rebuild_money_priors_past_only.py --apply
+    python -m fpl_model.team_ratings.rebuild_money_priors_past_only            # dry run: prints the changes
+    python -m fpl_model.team_ratings.rebuild_money_priors_past_only --apply
 """
 import argparse
 import shutil

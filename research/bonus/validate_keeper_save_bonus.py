@@ -1,7 +1,7 @@
 """CHANGELOG §165: the §162 fixture save rate inside the bonus simulation, against the pooled rate.
 
 Rows, blocks, era rules and features as validate_prematch_coherence_history.py; coherence on. Test only.
-Run: python -u -X utf8 scripts/bonus/validate_keeper_save_bonus.py
+Run: python -u -X utf8 -m research.bonus.validate_keeper_save_bonus
 """
 import hashlib
 import json

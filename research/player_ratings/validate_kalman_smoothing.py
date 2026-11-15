@@ -1,8 +1,8 @@
 """
 Goal/assist smoothing by position: a local-level (Kalman) model against production (CHANGELOG §234).
 
-    python validate_kalman_smoothing.py fit     # fit K1 and K5 on 2018-2023 -> fits.json
-    python validate_kalman_smoothing.py score   # test 2024-2026 against production -> results.json
+    python -m research.player_ratings.validate_kalman_smoothing fit     # fit K1 and K5 on 2018-2023 -> fits.json
+    python -m research.player_ratings.validate_kalman_smoothing score   # test 2024-2026 against production -> results.json
 
 Replayed from the production pre-match log (npxG floor 0.035, xAG 0.025, §233). Per row: reading z = actual per 90 /
 f, f = pred_90 / rating_pre (venue x opponent x substitute uplift), w = minutes / 90. Filter per player and target:

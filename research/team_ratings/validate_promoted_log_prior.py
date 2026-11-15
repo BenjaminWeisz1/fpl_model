@@ -7,7 +7,7 @@ Part B (only if A passes): Premier League production priors with only promoted t
 prior, level-matched per season, through update_team_ratings.py on a scratch copy; walk-forward log loss.
 
 Run locally:
-    python validate_promoted_log_prior.py
+    python -m research.team_ratings.validate_promoted_log_prior
 """
 import json
 

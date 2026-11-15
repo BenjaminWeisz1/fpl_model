@@ -38,8 +38,8 @@ Outputs (data/current/, rebuilt from the cache every run):
 The stage stops (non-zero exit) when a played project match of the season has no valid page, so a FotMob
 outage cannot silently drop a round as the Understat outage did. FOTMOB_ALLOW_MISSING=1 lets it continue.
 
-    python fetch_fotmob_matches.py             # fetch new pages (7 s apart), then rebuild the outputs
-    python fetch_fotmob_matches.py --offline   # rebuild from the cache only
+    python -m fpl_model.fetch.fetch_fotmob_matches             # fetch new pages (7 s apart), then rebuild the outputs
+    python -m fpl_model.fetch.fetch_fotmob_matches --offline   # rebuild from the cache only
 """
 import argparse
 import json

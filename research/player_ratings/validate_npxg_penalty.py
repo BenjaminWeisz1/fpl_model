@@ -8,7 +8,7 @@ run on the fixed data, under data/validation/npxg_penalty_20261028/:
   effect    penalty takers' final NPG/90 and Assists/90 before and after.
 
 Run locally (after the logged run):
-    python validate_npxg_penalty.py
+    python -m research.player_ratings.validate_npxg_penalty
 """
 import json
 

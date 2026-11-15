@@ -1,8 +1,8 @@
 """
 Goal/assist loop: a faster learning-rate floor for npxG only? (CHANGELOG §233)
 
-    python validate_npxg_floor.py run     # one pre-match log per floor (GOAL_MODEL_ALPHA), production untouched
-    python validate_npxg_floor.py score   # npxG MSE per season and pooled against the 0.025 floor -> results.json
+    python -m research.player_ratings.validate_npxg_floor run     # one pre-match log per floor (GOAL_MODEL_ALPHA), production untouched
+    python -m research.player_ratings.validate_npxg_floor score   # npxG MSE per season and pooled against the 0.025 floor -> results.json
 
 The step max(1/(n + 16), floor) x minutes/90 is shared by both targets, but the npxG rating's update uses only npxG
 data, so the npxG columns of a run at floor f are exactly the npxG loop at f (xAG columns are ignored). Base = the

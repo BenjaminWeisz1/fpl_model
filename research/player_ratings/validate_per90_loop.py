@@ -10,7 +10,7 @@ factor x realized minutes / 90, against actual match npxG (xAG likewise).
              appearance in the era, and crossed with this match's minutes; MAE for reference.
 
 Run locally (after the logged run):
-    python validate_per90_loop.py
+    python -m research.player_ratings.validate_per90_loop
 """
 import json
 

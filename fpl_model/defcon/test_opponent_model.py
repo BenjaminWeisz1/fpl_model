@@ -1,4 +1,4 @@
-"""Tests for the opponent factor (CHANGELOG §149). Run: python -m pytest scripts/defcon/test_opponent_model.py"""
+"""Tests for the opponent factor (CHANGELOG §149). Run: python -m pytest fpl_model/defcon/test_opponent_model.py"""
 import numpy as np
 import pandas as pd
 

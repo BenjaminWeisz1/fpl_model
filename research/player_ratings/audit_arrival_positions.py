@@ -1,7 +1,7 @@
 """
 Audit transfers.csv positions of arrivals against Transfermarkt starting positions before arrival (CHANGELOG §239).
 
-    python audit_arrival_positions.py     # -> data/validation/position_audit_20261113/audit.csv, flagged.csv, summary.json
+    python -m research.player_ratings.audit_arrival_positions     # -> data/validation/position_audit_20261113/audit.csv, flagged.csv, summary.json
 
 Source: the frozen Transfermarkt dataset in data/raw/transfermarkt/ (game_lineups: one row per player and match with
 his lineup position, 2013 - July 2026, the major European leagues and cups). Only starting-lineup rows are used; a

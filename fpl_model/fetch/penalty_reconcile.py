@@ -14,9 +14,9 @@ Only those columns change; every other value and the row order are preserved. Bo
 fetchers call reconcile_* on every run, and this script applies it once directly.
 
 Run locally (dry run prints the changes; --apply writes them):
-    python penalty_reconcile.py [--apply]
+    python -m fpl_model.fetch.penalty_reconcile [--apply]
 One-off (§80): add the xG column, filled from the then penalty-inclusive FPL-era npxG:
-    python penalty_reconcile.py --migrate-xg --apply
+    python -m fpl_model.fetch.penalty_reconcile --migrate-xg --apply
 """
 import argparse
 import json

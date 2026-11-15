@@ -8,7 +8,7 @@ substitute appearances in the candidate only. Primary: MSE per era (FPL era out 
 uplifts); secondary: starts only, and calibration for usual subs when starting and in cameos.
 
 Run locally (after the candidate's logged run):
-    python validate_sub_uplift.py
+    python -m research.player_ratings.validate_sub_uplift
 """
 import json
 

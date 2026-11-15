@@ -1,8 +1,8 @@
 """
 Second audit of arrivals' transfers.csv positions against Transfermarkt starting positions (CHANGELOG §248).
 
-    python audit_arrival_positions_v2.py          # proposals -> data/validation/position_audit_20261114/
-    python audit_arrival_positions_v2.py --apply  # also rewrites the differing Pos cells of transfers.csv (text level,
+    python -m research.player_ratings.audit_arrival_positions_v2          # proposals -> data/validation/position_audit_20261114/
+    python -m research.player_ratings.audit_arrival_positions_v2 --apply  # also rewrites the differing Pos cells of transfers.csv (text level,
                                                   # backup in data/archive/)
 
 Why a second audit (user decision 2026-11-14): §239 changed a listing only when its rate moved by 0.05 or more, so it

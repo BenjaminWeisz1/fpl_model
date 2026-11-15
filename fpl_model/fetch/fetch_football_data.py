@@ -13,7 +13,7 @@ football-data fixture must map onto exactly one match_results.csv row, or the
 script exits non-zero naming the unmapped teams.
 
 Run locally:
-    python fetch_football_data.py
+    python -m fpl_model.fetch.fetch_football_data
 """
 import sys
 import time

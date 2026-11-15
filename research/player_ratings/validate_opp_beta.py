@@ -1,8 +1,8 @@
 """
 Dampening exponent on the goal/assist loop's opponent factor (CHANGELOG §123).
 
-    python validate_opp_beta.py run     # one pre-match log per beta (same beta for both targets)
-    python validate_opp_beta.py score   # beta* per target on 2018-2022, test 2023-2026 and 2025+ -> results.json
+    python -m research.player_ratings.validate_opp_beta run     # one pre-match log per beta (same beta for both targets)
+    python -m research.player_ratings.validate_opp_beta score   # beta* per target on 2018-2022, test 2023-2026 and 2025+ -> results.json
 """
 import json
 import os

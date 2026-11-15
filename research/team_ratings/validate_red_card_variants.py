@@ -5,8 +5,8 @@ Builds one match_results file per variant (only red-card matches' NPxG_Adj diffe
 evaluate_team_ratings_oot.py on each with --dump-predictions, and scores the held-out predictions at full precision
 (Poisson LL kernel pred - NPG x ln(pred) per team-match, the harness's primary metric).
 
-    python validate_red_card_variants.py run
-    python validate_red_card_variants.py score     # -> data/validation/red_card_20261030/variants/results.json
+    python -m research.team_ratings.validate_red_card_variants run
+    python -m research.team_ratings.validate_red_card_variants score     # -> data/validation/red_card_20261030/variants/results.json
 """
 import json
 import subprocess

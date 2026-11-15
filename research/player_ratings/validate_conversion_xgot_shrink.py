@@ -1,7 +1,7 @@
 """CHANGELOG §164, after the first run: is xGOT's small gain just more shrinkage?
 
 Compares α arms with the same formula at a larger c on the same rows. A disclosed follow-up, not part of the rule.
-Run: python -u -X utf8 scripts/player_ratings/validate_conversion_xgot_shrink.py
+Run: python -u -X utf8 -m research.player_ratings.validate_conversion_xgot_shrink
 """
 import json
 

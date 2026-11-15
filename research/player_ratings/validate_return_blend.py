@@ -1,8 +1,8 @@
 """
 Returning players' blend of old PL rating and new-league prior (CHANGELOG §114).
 
-    python validate_return_blend.py run     # one pre-match log per H (GOAL_MODEL_RETURN_H)
-    python validate_return_blend.py score   # train/test MSE on returners' rows; writes results.json
+    python -m research.player_ratings.validate_return_blend run     # one pre-match log per H (GOAL_MODEL_RETURN_H)
+    python -m research.player_ratings.validate_return_blend score   # train/test MSE on returners' rows; writes results.json
 """
 import json
 import os

@@ -2,7 +2,7 @@
 
 One row per team-match: the expected XI from trailing league minutes, who actually started, each absentee's reason from
 Sofascore's own pre-match missing lists, and the quality gap between expected and actual XI on several pre-match measures.
-Run: python -u -X utf8 scripts/absence/build_absence_frame.py
+Run: python -u -X utf8 -m research.absence.build_absence_frame
 """
 import re
 import unicodedata

@@ -1,8 +1,8 @@
 """
 Out-of-time test of the new-player goal/assist priors (CHANGELOG §103).
 
-    python validate_new_player_priors.py diagnostic   # step 2: the incumbent's calibration by league group
-    python validate_new_player_priors.py test         # step 7: rolling out-of-time test, both targets
+    python -m research.player_ratings.validate_new_player_priors diagnostic   # step 2: the incumbent's calibration by league group
+    python -m research.player_ratings.validate_new_player_priors test         # step 7: rolling out-of-time test, both targets
 
 Population: `transfers.csv` arrivals with blank Notes, a non-PL League and a non-GK position whose first
 PL match is in their arrival season (players returning after an earlier PL spell keep their old rating in

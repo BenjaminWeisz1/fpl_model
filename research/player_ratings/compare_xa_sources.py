@@ -8,7 +8,7 @@ native xA (fbref xAG / FPL expected assists), Understat xA and a 50/50 blend, ea
 constant. Scored by MSE against conventional assists (Understat) and FPL assists.
 
 Run locally:
-    python compare_xa_sources.py
+    python -m research.player_ratings.compare_xa_sources
 """
 import json
 

@@ -11,7 +11,7 @@ after) under data/validation/season_fix_20261028/:
             earlier history) as baseline log vs candidate log.
 
 Run locally (after both logged runs):
-    python validate_season_fix.py [--dir <run directory>]
+    python -m research.player_ratings.validate_season_fix [--dir <run directory>]
 """
 import argparse
 import json

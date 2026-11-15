@@ -1,4 +1,4 @@
-"""Tests for the §106 league-level adjustment (defender_model.py). Run: python test_level_adjust.py"""
+"""Tests for the §106 league-level adjustment (defender_model.py). Run: python -m fpl_model.defcon.test_level_adjust"""
 import unittest
 
 import numpy as np
