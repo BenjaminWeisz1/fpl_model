@@ -18,9 +18,8 @@ Keeper saves use the fixture multiplier of keeper_saves.py on the pooled rate, a
 Run locally (after build_simulation_features.py):
     python simulate_bonus.py
 """
-from fpl_model import paths
+from fpl_model import config, paths
 import json
-import os
 import sys
 
 import pandas as pd
@@ -39,7 +38,7 @@ TEAM_RATINGS_HISTORY_FILE = paths.CURRENT / "team_ratings_history.csv"
 FIXTURE_GOALS_FILE = paths.CURRENT / "fixture_goal_predictions.csv"
 OUT_FILE = paths.CURRENT / "bonus_predictions.csv"
 
-SAVE_FIXTURE_ON = os.environ.get("BONUS_SAVE_FIXTURE", "1") == "1"  # fixture save rate (§165)
+SAVE_FIXTURE_ON = config.get("BONUS_SAVE_FIXTURE")  # fixture save rate (§165)
 
 N_DRAWS = 3000
 CS_BPS = {"D": CLEAN_SHEET_BPS, "M": 0, "F": 0, "G": CLEAN_SHEET_BPS}

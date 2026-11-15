@@ -15,17 +15,17 @@ probability should re-scale that mu with the CURRENT expected minutes through
 ``prob_at_minutes`` here, because predict.py runs in part 1, a day or more
 before the minutes forecast is refreshed.
 """
-import os
-
 import numpy as np
 from scipy import stats
+
+from fpl_model import config
 
 __all__ = ["DEFENDER_POINTS_FACTOR", "nb_sf", "points_mu90", "points_prob_at_90", "prob_at_minutes"]
 
 # CHANGELOG §153/§159: defender forecasts run under FPL's real Defensive_Contribution hits. Fitted on all FPL-era
 # held-out rows; refit when a season ends. Defcon points, charts and player_ratings.csv: bonus keeps the raw Defcon_Mu90.
 DEFENDER_POINTS_FACTOR = 1.083
-_POINTS_CALIBRATION = os.environ.get("DEFCON_POINTS_CALIBRATION", "1") != "0"
+_POINTS_CALIBRATION = config.get("DEFCON_POINTS_CALIBRATION")
 
 
 def nb_sf(mu, k, p: float = 0.75):

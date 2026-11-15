@@ -15,8 +15,7 @@ ratio computed directly from career history:
 Run locally:
     python build_player_ratings.py
 """
-from fpl_model import paths
-import os
+from fpl_model import config, paths
 
 import pandas as pd
 import numpy as np
@@ -28,33 +27,31 @@ _DATA = paths.CURRENT
 minutes_constant = 500
 league_coefficient_multiplier = 0.7
 youth_coefficient = 0.75
-ALPHA = float(os.environ.get("GOAL_MODEL_ALPHA", "0.025"))  # learning-rate floor; env for experiments (§196)
+ALPHA = config.get("GOAL_MODEL_ALPHA")  # learning-rate floor; env for experiments (§196)
 # npxG has its own floor since §233 (0.035; GOAL_MODEL_ALPHA_NPG=0.025 reverts). Without GOAL_MODEL_ALPHA_NPG, an
 # experiment that sets GOAL_MODEL_ALPHA moves both floors, as it did before §233.
-ALPHA_NPG = float(os.environ.get("GOAL_MODEL_ALPHA_NPG", os.environ.get("GOAL_MODEL_ALPHA", "0.035")))
+ALPHA_NPG = config.get("GOAL_MODEL_ALPHA_NPG")
 # Centre-backs' npxG floor since §235 (0.018, user decision; GOAL_MODEL_ALPHA_NPG_CB=0.035 reverts). A centre-back row
 # = the match's Position_Resolved is CB; a row without a position takes the player's previous match group, else his
 # transfers.csv group (first listed position), as validate_kalman_smoothing.load(). When an experiment sets
 # GOAL_MODEL_ALPHA or GOAL_MODEL_ALPHA_NPG without this, centre-backs follow ALPHA_NPG (pre-§235 behaviour).
-_CB_DEFAULT = (str(ALPHA_NPG) if ("GOAL_MODEL_ALPHA_NPG" in os.environ or "GOAL_MODEL_ALPHA" in os.environ)
-               else "0.018")
-ALPHA_NPG_CB = float(os.environ.get("GOAL_MODEL_ALPHA_NPG_CB", _CB_DEFAULT))
+ALPHA_NPG_CB = config.get("GOAL_MODEL_ALPHA_NPG_CB")
 AVG_CONCEDED = 1.32023
 from fpl_model.league_rates import current_season  # noqa: E402
 from fpl_model.match_order import chrono_order  # noqa: E402
 from fpl_model.team_ratings.update_team_ratings import home_advantage  # noqa: E402
 SHRINKAGE_PRIOR = 30  # the new conversion-rate correction's pseudo-count
-RETURN_H = float(os.environ.get("GOAL_MODEL_RETURN_H", "5000"))  # second-season blend discount (§114)
-PRIOR_K = float(os.environ.get("GOAL_MODEL_PRIOR_K", "16"))  # matches the starting rating counts as (§112; 5 = pre-§112)
+RETURN_H = config.get("GOAL_MODEL_RETURN_H")  # second-season blend discount (§114)
+PRIOR_K = config.get("GOAL_MODEL_PRIOR_K")  # matches the starting rating counts as (§112; 5 = pre-§112)
 # Players whose rating starts from a `youth` row (§126); defaults to PRIOR_K (no separate weight).
-PRIOR_K_YOUTH = float(os.environ.get("GOAL_MODEL_PRIOR_K_YOUTH", str(PRIOR_K)))
+PRIOR_K_YOUTH = config.get("GOAL_MODEL_PRIOR_K_YOUTH")
 
 # ---- pre-match rating log (CHANGELOG §72, §74) ----
 # When set to a path, every rated row's goal/assist rating *before* that match's
 # update is written there with its one-step-ahead prediction and actual, and the
 # would-be ratings go to <path>.ratings.csv instead of player_goal_assist_ratings.csv.
 # Unset (production) leaves the output unchanged.
-PREMATCH_LOG = os.environ.get("GOAL_MODEL_PREMATCH_LOG", "")
+PREMATCH_LOG = config.get("GOAL_MODEL_PREMATCH_LOG")
 
 # ---- role factor (position plan step 3, CHANGELOG §172) ----
 # Experiment only: unset = no effect. Rating stays on the scale of the player's first logged line;
@@ -62,13 +59,13 @@ PREMATCH_LOG = os.environ.get("GOAL_MODEL_PREMATCH_LOG", "")
 # the honest prediction from role percentages. Refuses to run without PREMATCH_LOG, so never production.
 _ROLE_K_ENV = ["GOAL_MODEL_ROLE_K_NPG_UP", "GOAL_MODEL_ROLE_K_NPG_DOWN",
                "GOAL_MODEL_ROLE_K_AST_UP", "GOAL_MODEL_ROLE_K_AST_DOWN"]
-ROLE_K_ON = any(v in os.environ for v in _ROLE_K_ENV)
+ROLE_K_ON = any(config.is_set(v) for v in _ROLE_K_ENV)
 if ROLE_K_ON:
     if not PREMATCH_LOG:
         raise SystemExit("GOAL_MODEL_ROLE_K_* needs GOAL_MODEL_PREMATCH_LOG: it must not reach production")
     import json
     from fpl_model.player_ratings.role_shares import LINE_RATES_FILE, role_table
-    K_NPG_UP, K_NPG_DOWN, K_AST_UP, K_AST_DOWN = [float(os.environ.get(v, "0")) for v in _ROLE_K_ENV]
+    K_NPG_UP, K_NPG_DOWN, K_AST_UP, K_AST_DOWN = [config.get(v) or 0.0 for v in _ROLE_K_ENV]
     _rates = json.loads(LINE_RATES_FILE.read_text(encoding="utf-8"))
     RATE_NPG, RATE_AST = np.array(_rates["npxG"]), np.array(_rates["xAG"])
     ROLE_TABLE = role_table()
@@ -77,7 +74,7 @@ if ROLE_K_ON:
 # ---- same-player move factors (user's form of the position plan, CHANGELOG §173) ----
 # Experiment only: unset = no effect. One-off rating multiply when a move is detected, divided out on
 # moving back. Refuses to run without PREMATCH_LOG, so never production.
-MOVE_TABLE_FILE = os.environ.get("GOAL_MODEL_MOVE_TABLE", "")
+MOVE_TABLE_FILE = config.get("GOAL_MODEL_MOVE_TABLE")
 if MOVE_TABLE_FILE:
     if not PREMATCH_LOG:
         raise SystemExit("GOAL_MODEL_MOVE_TABLE needs GOAL_MODEL_PREMATCH_LOG: it must not reach production")
@@ -146,7 +143,7 @@ playerstats = pd.read_csv(_DATA / 'player_match_stats.csv', encoding='utf-8-sig'
 
 # ---- red-card adjustment of player npxG / xAG (§136): the team-level factors, per player from his own shots ----
 # Keyed on the native Season (before the overwrite below). The data files stay unadjusted.
-RED_CARD_FILE = Path(os.environ.get("GOAL_MODEL_RED_CARD_FILE", _DATA / 'red_card_player_factors.csv'))
+RED_CARD_FILE = config.get("GOAL_MODEL_RED_CARD_FILE") or _DATA / 'red_card_player_factors.csv'
 if RED_CARD_FILE.exists():
     _rc = pd.read_csv(RED_CARD_FILE, encoding='utf-8-sig')
     _key = ['Season', 'Player', 'Team', 'Opponent', 'Venue']
@@ -180,9 +177,7 @@ print(f"[§101] start flag on {playerstats['_IsStarter'].notna().mean():.1%} of 
 #   fw_cb: FPL-era (Opta) xA x assists/Opta xA for forwards and centre-backs only (factors from 2022-2024)
 #   all:   the same for every slot (not recommended, §243)
 #   both:  every row, fbref xAG x assists/fbref xAG (2017-2024) and Opta xA x assists/Opta xA (2022-2024) (not recommended)
-XAG_CALIBRATION = os.environ.get("GOAL_MODEL_XAG_CALIBRATION", "fw_cb")
-if XAG_CALIBRATION not in ("off", "fw_cb", "all", "both"):
-    raise SystemExit(f"GOAL_MODEL_XAG_CALIBRATION must be off, fw_cb, all or both, not {XAG_CALIBRATION!r}")
+XAG_CALIBRATION = config.get("GOAL_MODEL_XAG_CALIBRATION")
 if XAG_CALIBRATION != "off":
     from fpl_model.player_ratings.xag_source_scale import CANON as _XS_CANON, assist_factors as _xs_assist
     _fpl = playerstats['Data_Source'].eq('FPL_API').to_numpy()
@@ -260,8 +255,8 @@ playerstats = playerstats.assign(_Chrono=chrono_order(playerstats, _DATA)).sort_
 # out his own team's attack (inflating weak-attack players), and FPL-era MatchIDs don't match, so 2025+
 # rows got ~1 (CHANGELOG §78, §79, §110).
 # Dampening exponent on the opponent factor, per target (§123, adopted 0.7 / 0.8); 1 = the plain multiplier.
-OPP_BETA_NPG = float(os.environ.get("GOAL_MODEL_OPP_BETA_NPG", "0.7"))
-OPP_BETA_AST = float(os.environ.get("GOAL_MODEL_OPP_BETA_AST", "0.8"))
+OPP_BETA_NPG = config.get("GOAL_MODEL_OPP_BETA_NPG")
+OPP_BETA_AST = config.get("GOAL_MODEL_OPP_BETA_AST")
 
 
 def build_concede_lookup(matchlogs):
@@ -348,10 +343,10 @@ youth_df = _pos_rates.apply_season_rates(youth_df)  # §246; no-op unless GOAL_M
 youth_df['Initial_NPG_Rating'] = np.where(youth_df['Pos'] != 'FW', youth_coefficient * youth_df['NPG/90'], 0.7 * youth_df['NPG/90'])
 youth_df['Initial_Assist_Rating'] = youth_coefficient * youth_df['Assists/90']
 # Fitted youth multipliers (§113): when set, one factor per target for every position replaces the 0.75 / 0.7 above.
-if os.environ.get("GOAL_MODEL_YOUTH_NPG"):
-    youth_df['Initial_NPG_Rating'] = float(os.environ["GOAL_MODEL_YOUTH_NPG"]) * youth_df['NPG/90']
-if os.environ.get("GOAL_MODEL_YOUTH_AST"):
-    youth_df['Initial_Assist_Rating'] = float(os.environ["GOAL_MODEL_YOUTH_AST"]) * youth_df['Assists/90']
+if config.is_set("GOAL_MODEL_YOUTH_NPG"):
+    youth_df['Initial_NPG_Rating'] = config.get("GOAL_MODEL_YOUTH_NPG") * youth_df['NPG/90']
+if config.is_set("GOAL_MODEL_YOUTH_AST"):
+    youth_df['Initial_Assist_Rating'] = config.get("GOAL_MODEL_YOUTH_AST") * youth_df['Assists/90']
 
 second_season_df = transfers_df[(transfers_df['Notes'] == 'second season') & (transfers_df['Pos'] != 'GK')]
 second_season_df = second_season_df.merge(leagues_df[['League', 'Coefficient']], on='League', how='left')
@@ -391,7 +386,7 @@ first_season_df['Initial_NPG_Rating'] = first_season_df['Initial_NPG_Rating'] * 
 first_season_df['Initial_Assist_Rating'] = first_season_df['Initial_Assist_Rating'] * (first_season_df['Team_Attack_Rating'] / AVG_CONCEDED) ** weight_team
 
 # ---- returners' new-league prior from a file (§128): replaces only the blend's new-league half ----
-RETURN_PRIORS_FILE = os.environ.get("GOAL_MODEL_RETURN_PRIORS_FILE", "")
+RETURN_PRIORS_FILE = config.get("GOAL_MODEL_RETURN_PRIORS_FILE")
 if RETURN_PRIORS_FILE:
     _rp = pd.read_csv(RETURN_PRIORS_FILE, encoding='utf-8-sig')
     _rp_map = {(p, s): (g, a) for p, s, g, a in _rp[['Player', 'Season', 'Initial_NPG_Rating', 'Initial_Assist_Rating']]
@@ -415,7 +410,7 @@ if len(_bad_blend):
 # For arrivals in the league groups that passed the out-of-time test (Adopted), the prior comes from
 # new_player_priors.csv (build_new_player_priors.py). Those values already carry their own fitted
 # new-team factor, so they replace the rating after the weight_team step above.
-NEW_PRIORS_FILE = Path(os.environ.get("GOAL_MODEL_NEW_PRIORS_FILE", _DATA / 'new_player_priors.csv'))
+NEW_PRIORS_FILE = config.get("GOAL_MODEL_NEW_PRIORS_FILE") or _DATA / 'new_player_priors.csv'
 if NEW_PRIORS_FILE.exists():
     _np = pd.read_csv(NEW_PRIORS_FILE, encoding='utf-8-sig')
     _np = _np[_np['Adopted'].astype(str).str.lower() == 'true']
@@ -440,9 +435,8 @@ else:
 # s = the share of the start still in the rating, p = (Kpos x p_listed + sum of minutes/90 x slot rate over his earlier
 # matches in the segment) / (Kpos + sum of minutes/90). Every appearance counts (form F0). Rates are
 # position_combinations.csv's. GOAL_MODEL_POS_UPDATE=0 reverts.
-POS_UPDATE = os.environ.get("GOAL_MODEL_POS_UPDATE", "1") == "1"
-POS_UPDATE_C = (float(os.environ.get("GOAL_MODEL_POS_UPDATE_C_NPG", "0.4")),
-                float(os.environ.get("GOAL_MODEL_POS_UPDATE_C_AST", "0.35")))
+POS_UPDATE = config.get("GOAL_MODEL_POS_UPDATE")
+POS_UPDATE_C = (config.get("GOAL_MODEL_POS_UPDATE_C_NPG"), config.get("GOAL_MODEL_POS_UPDATE_C_AST"))
 POS_UPDATE_KPOS = 1.0
 _PU_SINGLE = _single_positions.set_index('Pos')
 _PU_SLOT = {"CB": "CB", "LB": "FB", "RB": "FB", "WB": "WB", "DM": "DM", "CM": "CM", "AM": "AM",

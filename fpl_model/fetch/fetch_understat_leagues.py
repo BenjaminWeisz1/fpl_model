@@ -21,11 +21,10 @@ Run locally:
     python fetch_understat_leagues.py            # fetch what is missing, then write the manifest
     python fetch_understat_leagues.py --manifest # manifest only, no downloads
 """
-from fpl_model import paths
+from fpl_model import config, paths
 import argparse
 import hashlib
 import json
-import os
 import sys
 import time
 from pathlib import Path
@@ -40,7 +39,7 @@ LEAGUES = ["La_liga", "Bundesliga", "Serie_A", "Ligue_1", "RFPL"]
 FIRST_SEASON = 2014
 LAST_SEASON = 2025      # last completed season; bump manually each summer
 URL = "https://understat.com/getLeagueData/{league}/{season}"
-THROTTLE_S = float(os.environ.get("UNDERSTAT_THROTTLE", "6"))
+THROTTLE_S = config.get("UNDERSTAT_THROTTLE")
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) personal non-commercial FPL research",
     "X-Requested-With": "XMLHttpRequest",

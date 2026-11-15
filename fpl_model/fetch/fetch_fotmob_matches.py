@@ -41,10 +41,9 @@ outage cannot silently drop a round as the Understat outage did. FOTMOB_ALLOW_MI
     python fetch_fotmob_matches.py             # fetch new pages (7 s apart), then rebuild the outputs
     python fetch_fotmob_matches.py --offline   # rebuild from the cache only
 """
-from fpl_model import paths
+from fpl_model import config, paths
 import argparse
 import json
-import os
 import re
 import sys
 import time
@@ -425,7 +424,7 @@ def main():
     if missing:
         for m in missing:
             print(f"MISSING FotMob page -- {m}")
-        if os.environ.get("FOTMOB_ALLOW_MISSING", "0") != "1":
+        if not config.get("FOTMOB_ALLOW_MISSING"):
             sys.exit(f"{len(missing)} played match(es) have no FotMob page: positions, penalties and red cards "
                      f"would be incomplete. Rerun when FotMob answers, or set FOTMOB_ALLOW_MISSING=1 to continue.")
 

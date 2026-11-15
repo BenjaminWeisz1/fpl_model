@@ -8,8 +8,7 @@ Since §195: starts and cameos get separate group rates, mixed by the player's r
 (§193), and a player one yellow short of a ban before its cut-off gets
 x SUSPENSION_THETA on the yellow rate (§191). Reds are unchanged.
 """
-from fpl_model import paths
-import os
+from fpl_model import config, paths
 from pathlib import Path
 
 import numpy as np
@@ -101,7 +100,7 @@ def expected_card_points(yellows_90, reds_90, expected_minutes):
 # from that fixture's minutes forecast, so a returning starter isn't charged as a substitute. "trailing": the
 # tested §193 arm F stand-in, the cameo share of the last five club matches since the player's first
 # appearance for the club this season (at least three). CARD_ROLE_MIX=trailing selects it.
-ROLE_MIX = os.environ.get("CARD_ROLE_MIX", "forecast")
+ROLE_MIX = config.get("CARD_ROLE_MIX")
 MIX_WINDOW, MIX_MIN = 5, 3
 
 # Suspension threat (§191, §195).

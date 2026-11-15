@@ -8,8 +8,7 @@ simulation to consume directly.
 Run locally (after all the individual facet scripts):
     python build_simulation_features.py
 """
-from fpl_model import paths
-import os
+from fpl_model import config, paths
 import sys
 
 import pandas as pd
@@ -25,8 +24,8 @@ from fpl_model.team_ratings.update_team_ratings import home_advantage  # noqa: E
 PEN_ATTEMPTS_PER_NPG, PEN_CONVERSION = penalty_rates()
 
 # Opponent-multiplier dampening, shared with build_player_ratings.py (§123; 1 = undampened).
-OPP_BETA_NPG = float(os.environ.get("GOAL_MODEL_OPP_BETA_NPG", "0.7"))
-OPP_BETA_AST = float(os.environ.get("GOAL_MODEL_OPP_BETA_AST", "0.8"))
+OPP_BETA_NPG = config.get("GOAL_MODEL_OPP_BETA_NPG")
+OPP_BETA_AST = config.get("GOAL_MODEL_OPP_BETA_AST")
 
 MINUTES_PROBS_FILE = paths.CURRENT / "minutes_probabilities.csv"
 GOAL_ASSIST_FILE = paths.CURRENT / "player_goal_assist_ratings.csv"

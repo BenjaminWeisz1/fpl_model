@@ -22,8 +22,7 @@ Run locally:
     python fetch_clubelo.py           # mirror: coverage check only
     CLUBELO_SOURCE=api python fetch_clubelo.py
 """
-from fpl_model import paths
-import os
+from fpl_model import config, paths
 import sys
 import time
 from io import StringIO
@@ -37,7 +36,7 @@ from fpl_model.fetch.fetch_football_data import FIRST_SEASON, load_season
 _ROOT = paths.ROOT
 RAW_DIR = paths.RAW / "clubelo"
 MIRROR_FILE = paths.RAW / "clubelo_mirror" / "EloRatings.csv"
-SOURCE = os.environ.get("CLUBELO_SOURCE", "mirror")
+SOURCE = config.get("CLUBELO_SOURCE")
 MATCH_RESULTS_FILE = paths.CURRENT / "match_results.csv"
 
 from fpl_model.league_rates import current_season  # noqa: E402

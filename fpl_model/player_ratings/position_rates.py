@@ -20,18 +20,14 @@ multi-position players split equally). This module computes the same table from 
 Switch GOAL_MODEL_POSITION_RATES = file (default, the file) | slots (all earlier seasons) | slots3 (last 3 seasons).
 Combined positions keep the §77 rule (each listed position counts twice the next) on top of these single-slot rates.
 """
-from fpl_model import paths
-import os
+from fpl_model import config, paths
 from functools import lru_cache
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 DATA = paths.CURRENT
-MODE = os.environ.get("GOAL_MODEL_POSITION_RATES", "file")
-if MODE not in ("file", "slots", "slots3"):
-    raise SystemExit(f"GOAL_MODEL_POSITION_RATES must be file, slots or slots3, not {MODE!r}")
+MODE = config.get("GOAL_MODEL_POSITION_RATES")
 WINDOW = {"file": None, "slots": "all", "slots3": "3"}[MODE]
 MIN_STARTS = 300            # pre-registered in data/validation/position_rates_20261114/phase2/protocol.json
 OPTA_FROM = 2022            # first season with Sofascore expected assists (= Opta xA) for PL starts
@@ -59,7 +55,7 @@ def starts_frame():
     s["Slot"] = s["Position_Resolved"].map(SLOT_CANON)
     s = s[s["Slot"].notna()].copy()
     # §136 red-card player factors, as build_player_ratings.py (GOAL_MODEL_RED_CARD_FILE)
-    rc_file = Path(os.environ.get("GOAL_MODEL_RED_CARD_FILE", DATA / "red_card_player_factors.csv"))
+    rc_file = config.get("GOAL_MODEL_RED_CARD_FILE") or DATA / "red_card_player_factors.csv"
     fx = np.ones(len(s))
     fn = np.ones(len(s))
     if rc_file.exists():
@@ -82,7 +78,7 @@ def starts_frame():
     xa = np.where(fpl, np.nan, np.where(sofa, s["Sofascore_expectedAssists"].to_numpy(dtype=float) * fx, np.nan))
     # §243 calibration, as build_player_ratings.py (GOAL_MODEL_XAG_CALIBRATION): FPL-era rows' xAG is calibrated there;
     # here the same factors go on FPL-era rows and on the Sofascore Opta rows.
-    cal = os.environ.get("GOAL_MODEL_XAG_CALIBRATION", "fw_cb")
+    cal = config.get("GOAL_MODEL_XAG_CALIBRATION")
     if cal != "off":
         from fpl_model.player_ratings.xag_source_scale import assist_factors
         opta = assist_factors(DATA, "opta")

@@ -47,10 +47,9 @@ Run locally:
     python fetch_understat.py --limit 50      # cap new match downloads (testing)
     python fetch_understat.py --weekly        # current season only, tolerant of network errors
 """
-from fpl_model import paths
+from fpl_model import config, paths
 import argparse
 import json
-import os
 import sys
 import time
 from pathlib import Path
@@ -75,7 +74,7 @@ LEAGUE = "EPL"
 BASE_URL = "https://understat.com"
 LEAGUE_URL = BASE_URL + "/getLeagueData/{league}/{season}"
 MATCH_URL = BASE_URL + "/getMatchData/{match_id}"
-THROTTLE_S = float(os.environ.get("UNDERSTAT_THROTTLE", "6"))
+THROTTLE_S = config.get("UNDERSTAT_THROTTLE")
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) personal non-commercial FPL research",
     "X-Requested-With": "XMLHttpRequest",
