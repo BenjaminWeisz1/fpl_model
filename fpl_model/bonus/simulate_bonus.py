@@ -16,11 +16,15 @@ Keeper saves use the fixture multiplier of keeper_saves.py on the pooled rate, a
 (CHANGELOG §165). BONUS_SAVE_FIXTURE=0 restores one rate for every keeper.
 
 Run locally (after build_simulation_features.py):
-    python simulate_bonus.py
+    python -m fpl_model.bonus.simulate_bonus
+
+Importing the module reads no data: the league constants are computed on first use (league_constants()).
 """
 from fpl_model import config, paths
+import functools
 import json
 import sys
+from typing import NamedTuple
 
 import pandas as pd
 import numpy as np
@@ -42,16 +46,42 @@ SAVE_FIXTURE_ON = config.get("BONUS_SAVE_FIXTURE")  # fixture save rate (§165)
 
 N_DRAWS = 3000
 CS_BPS = {"D": CLEAN_SHEET_BPS, "M": 0, "F": 0, "G": CLEAN_SHEET_BPS}
-AVG_MINUTES_FULL, AVG_MINUTES_SHORT = minute_bands()  # recorded minutes of a 60+ and a 1-59 appearance (§181)
-_PLAYERS = pd.read_csv(_DATA / "players_current.csv", encoding="utf-8-sig")
-AVG_GK_SAVES_PER_90 = goalkeeper_event_rates(_PLAYERS)  # the rate points use
-PEN_SAVE_RATE = goalkeeper_pen_save_rate(_PLAYERS)
-PEN_ATTEMPTS_PER_NPG, PEN_CONVERSION = penalty_rates()
 PASS_BANDS = np.array([0, 2, 4, 6])
 RESIDUAL_MODE_FILE = paths.CURRENT / "residual_bps_mode.json"
 
 rng = np.random.default_rng(42)
 SAVE_RNG = None  # harnesses set this so changing the save rate leaves every other draw alone (§165)
+
+
+class LeagueConstants(NamedTuple):
+    minutes_full: float           # recorded minutes of a 60+ appearance (§181)
+    minutes_short: float          # recorded minutes of a 1-59 appearance
+    gk_saves_per_90: float        # the keeper save rate points use
+    pen_save_rate: float
+    pen_attempts_per_npg: float
+    pen_conversion: float
+
+
+@functools.cache
+def league_constants() -> LeagueConstants:
+    """Computed from the data files once, on first use, so importing the module reads nothing."""
+    players = pd.read_csv(_DATA / "players_current.csv", encoding="utf-8-sig")
+    full, short = minute_bands()
+    pen_attempts, conversion = penalty_rates()
+    return LeagueConstants(full, short, goalkeeper_event_rates(players), goalkeeper_pen_save_rate(players),
+                           pen_attempts, conversion)
+
+
+# The module-level names these constants had before, still readable as simulate_bonus.<NAME> (research reads them).
+_CONSTANT_NAMES = {"AVG_MINUTES_FULL": "minutes_full", "AVG_MINUTES_SHORT": "minutes_short",
+                   "AVG_GK_SAVES_PER_90": "gk_saves_per_90", "PEN_SAVE_RATE": "pen_save_rate",
+                   "PEN_ATTEMPTS_PER_NPG": "pen_attempts_per_npg", "PEN_CONVERSION": "pen_conversion"}
+
+
+def __getattr__(name):
+    if name in _CONSTANT_NAMES:
+        return getattr(league_constants(), _CONSTANT_NAMES[name])
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def assign_bonus(bps_matrix):
@@ -78,6 +108,7 @@ def assign_bonus(bps_matrix):
 
 def simulate_match(match_players, exp_gc_home, exp_gc_away, home_team, n_draws):
     """match_players: DataFrame of all D/M/F/G players in this fixture (both teams)."""
+    c = league_constants()
     n = len(match_players)
     pos = match_players["Pos"].values
     team = match_players["Team"].values
@@ -95,7 +126,7 @@ def simulate_match(match_players, exp_gc_home, exp_gc_away, home_team, n_draws):
     u = rng.random((n, n_draws))
     played_any = u < p1[:, None]
     played_full = u < p60[:, None]
-    minutes_drawn = np.where(played_full, AVG_MINUTES_FULL, np.where(played_any, AVG_MINUTES_SHORT, 0))
+    minutes_drawn = np.where(played_full, c.minutes_full, np.where(played_any, c.minutes_short, 0))
     minutes_bps = np.where(played_full, 6, np.where(played_any, 3, 0))
 
     minute_frac = minutes_drawn / 90.0
@@ -108,7 +139,7 @@ def simulate_match(match_players, exp_gc_home, exp_gc_away, home_team, n_draws):
     # PenAttempts already carries minutes (§183), so this is the same expected number, on draws he plays.
     pen_given_played = np.divide(pen_att, p1, out=np.zeros(n), where=p1 > 0).clip(max=1)
     pen_taken = played_any & (rng.random((n, n_draws)) < pen_given_played[:, None])
-    pen_scored = pen_taken & (rng.random((n, n_draws)) < PEN_CONVERSION)
+    pen_scored = pen_taken & (rng.random((n, n_draws)) < c.pen_conversion)
     pen_missed = pen_taken & ~pen_scored
     pen_goal_bps = pen_scored * PEN_GOAL_BPS
     pen_miss_bps = pen_missed * MISS_PEN_BPS
@@ -121,7 +152,7 @@ def simulate_match(match_players, exp_gc_home, exp_gc_away, home_team, n_draws):
     home_mask = team == home_team
     # Team goals conceded = the opponents' simulated goals + a remainder for own goals and
     # unlisted players, so scorers and clean sheets agree (CHANGELOG §71, §145).
-    e_player = npg90 * (p60 * AVG_MINUTES_FULL + (p1 - p60) * AVG_MINUTES_SHORT) / 90 + pen_att * PEN_CONVERSION
+    e_player = npg90 * (p60 * c.minutes_full + (p1 - p60) * c.minutes_short) / 90 + pen_att * c.pen_conversion
     scored = goals + pen_scored
     goals_conceded_home = scored[~home_mask].sum(axis=0) + rng.poisson(max(exp_gc_home - e_player[~home_mask].sum(), 0), n_draws)
     goals_conceded_away = scored[home_mask].sum(axis=0) + rng.poisson(max(exp_gc_away - e_player[home_mask].sum(), 0), n_draws)
@@ -139,11 +170,11 @@ def simulate_match(match_players, exp_gc_home, exp_gc_away, home_team, n_draws):
         # unscaled.
         gk_active = gk_mask[:, None] & played_full
         save_mult = match_players["GK_Save_Mult"].values if "GK_Save_Mult" in match_players else np.ones(n)
-        gk_save_rate = np.clip(AVG_GK_SAVES_PER_90 * save_mult[gk_mask][:, None] * minute_frac[gk_mask], 0, None)
+        gk_save_rate = np.clip(c.gk_saves_per_90 * save_mult[gk_mask][:, None] * minute_frac[gk_mask], 0, None)
         gk_saves = np.zeros_like(minutes_bps, dtype=float)
         gk_saves[gk_mask] = (rng if SAVE_RNG is None else SAVE_RNG).poisson(gk_save_rate)
 
-        pen_save_prob = np.where(gk_active, PEN_SAVE_RATE, 0.0)
+        pen_save_prob = np.where(gk_active, c.pen_save_rate, 0.0)
         pen_save_draw = rng.random((n, n_draws)) < pen_save_prob
         gk_pen_save_bps = np.where(gk_active & pen_save_draw, PEN_SAVE_BPS, 0)
         gk_save_bps = np.where(gk_active, gk_saves * SAVE_BPS, 0)
@@ -200,9 +231,10 @@ def main():
         features = features.assign(GK_Save_Mult=save_fixture_multiplier(
             features["Expected_Goals_Conceded"], save_fixture_reference(history)))
 
+    c = league_constants()
     fixture_goals = fixture_goals.copy()
-    fixture_goals["Exp_GC_Home"] = fixture_goals["Away_Pred_NPG"] * (1 + PEN_ATTEMPTS_PER_NPG * PEN_CONVERSION)
-    fixture_goals["Exp_GC_Away"] = fixture_goals["Home_Pred_NPG"] * (1 + PEN_ATTEMPTS_PER_NPG * PEN_CONVERSION)
+    fixture_goals["Exp_GC_Home"] = fixture_goals["Away_Pred_NPG"] * (1 + c.pen_attempts_per_npg * c.pen_conversion)
+    fixture_goals["Exp_GC_Away"] = fixture_goals["Home_Pred_NPG"] * (1 + c.pen_attempts_per_npg * c.pen_conversion)
 
     results = []
     for _, fx in fixture_goals.iterrows():
