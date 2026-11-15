@@ -2,6 +2,7 @@
 import unittest
 
 import pandas as pd
+import pytest
 
 from fpl_model.fetch import penalty_reconcile as pr  # noqa: E402
 
@@ -76,6 +77,7 @@ class PenaltyReconcileTests(unittest.TestCase):
         self.assertEqual(report["rows_changed"], 0)
         pd.testing.assert_frame_equal(once, twice)
 
+    @pytest.mark.needs_data
     def test_live_data_is_reconciled(self):
         lg = pr.load_log()
         _, rs = pr.reconcile_player_stats(
@@ -122,6 +124,7 @@ class PenaltyReconcileTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             pr.reconcile_player_stats(frame, log([]))
 
+    @pytest.mark.needs_data
     def test_live_summed_player_npxg_matches_team_penalties(self):
         # Sum of player npxG = sum of player xG - 0.79 x the team's PKatt in match_results.csv.
         # (Not compared with NPxG_Adj itself, which holds the user's game-state adjustments.)

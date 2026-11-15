@@ -33,6 +33,7 @@ pythonpath = ["."]
 testpaths = ["fpl_model", "tests"]
 python_files = ["test_*.py"]
 addopts = "-q"
+markers = ["needs_data: reads the local data/ folder; skipped when it is absent (CI)"]
 
 [tool.ruff]
 line-length = 120
