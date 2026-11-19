@@ -28,6 +28,9 @@ CLAUDE.md
 AGENDA.md
 History.md
 notes/
+find_dependencies.py
+dependencies.csv
+website_plan.md
 
 # Hand-supplied style reference, not a pipeline output
 images/team-ratings.png

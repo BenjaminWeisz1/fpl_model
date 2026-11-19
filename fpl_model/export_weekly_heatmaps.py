@@ -90,6 +90,7 @@ ACTIVE_XMINS_PER_GW = 20  # charts show players averaging more than this per for
 _SIM_FEATURES    = paths.current_file("simulation_features.csv", root=paths.CURRENT)
 _PENALTIES       = paths.current_file("penalty_predictions.csv", root=paths.CURRENT)
 _FIXTURE_GOALS   = paths.current_file("fixture_goal_predictions.csv", root=paths.CURRENT)
+GAMEWEEK_HORIZON = 5
 
 # Which input files each part needs (checked up front in main()).
 _PART_INPUTS = {
@@ -545,7 +546,11 @@ def predicted_points_charts() -> None:
     price_idx = cols.index("Price")
     total_idx = cols.index("Total")
     gw_cols = sorted((c for c in cols[price_idx + 1 : total_idx]
-                      if str(c).isdigit()), key=int)
+                      if str(c).isdigit()), key=int)[:GAMEWEEK_HORIZON]
+    print(gw_cols)
+    if gw_cols:
+        # The input Total covers the full forecast horizon.
+        df["Total"] = df[gw_cols].sum(axis=1)
 
     # (pos_filter, filename)
     specs = [
@@ -733,6 +738,7 @@ def main() -> int:
         return 1
 
     sns.set_style(_STYLE)
+
     if 1 in parts:
         team_ratings_chart()
         player_ratings_charts()
@@ -740,6 +746,7 @@ def main() -> int:
         predicted_points_charts()
         next_gameweek_charts()
     print(f"\nDone — {_OUT_DIR}/")
+
     return 0
 
 
