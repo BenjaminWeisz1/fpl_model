@@ -13,7 +13,7 @@ nobody else sees the site.
 | Topic | Decision |
 |---|---|
 | Audience | The user only. No logins, no public hosting, phone layout not needed. |
-| Hosting | Local app on the user's PC (Python server + static pages). |
+| Hosting | Local app on the user's PC (Python server + static pages). **Since 2026-11-16 (§256)** a copy without the Solver is also on Netlify for the user's friends (`build_public_site.py`, `data/site_public/`). |
 | Navbar | Projections, Player ratings, Team ratings, Fixtures, Solver. |
 | Publishing | A new **part 3** exports the site's data after part 2; the site shows only the latest week (no history). |
 | Players | Every player with a non-null player rating (`player_ratings.csv`). |

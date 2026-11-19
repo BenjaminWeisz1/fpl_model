@@ -86,6 +86,9 @@ python run_pre_deadline.py    # part 2, before the deadline: minutes, penalties,
 python run_site_export.py     # part 3: export the website data and serve it at http://127.0.0.1:8766/
 ```
 
+`python -m fpl_model.site_export.build_public_site` then writes a static copy of the site without the Solver page
+(which needs the local server) to `data/site_public/`, ready to upload to a static host such as Netlify.
+
 Any single stage runs on its own as a module, e.g. `python -m fpl_model.player_ratings.build_player_ratings`. Settings
 that experiments switch through environment variables are declared in one place, `fpl_model/config.py`
 (`python -m fpl_model.config` lists them). Both orchestrators stop at the first failing stage, and each part ends by
