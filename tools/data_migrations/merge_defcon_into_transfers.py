@@ -17,8 +17,8 @@ from fpl_model import paths
 
 _DATA = paths.CURRENT
 
-MAIN_TRANSFERS_FILE = paths.CURRENT / "transfers.csv"
-DEFCON_TRANSFERS_FILE = paths.CURRENT / "defcon_transfers.csv"  # the separate Player,Season,Pos,Minutes,Defcon file
+MAIN_TRANSFERS_FILE = paths.current_file("transfers.csv", root=paths.CURRENT)
+DEFCON_TRANSFERS_FILE = paths.SOURCED / "defcon_transfers.csv"  # the separate Player,Season,Pos,Minutes,Defcon file
 
 main = pd.read_csv(MAIN_TRANSFERS_FILE)
 defcon = pd.read_csv(DEFCON_TRANSFERS_FILE)

@@ -13,15 +13,16 @@ From 2026 (CHANGELOG §197) the matches come from FotMob (fotmob_match_positions
 above over his FotMob shots; FotMob does not record who assisted a shot, so xAG always takes the minutes factor.
 His minutes run from kick-off (or his entry) to his substitution, his own dismissal or the match end.
 
-    python -m fpl_model.player_ratings.red_card_player_factors     # -> data/current/red_card_player_factors.csv
+    python -m fpl_model.player_ratings.red_card_player_factors     # -> data/current/state/red_card_player_factors.csv
 """
 import json
 
 import pandas as pd
 
+from fpl_model import paths
 from fpl_model.team_ratings import red_card_adjust as rca  # noqa: E402
 
-OUT = rca.DATA / "red_card_player_factors.csv"
+OUT = paths.current_file("red_card_player_factors.csv", root=rca.DATA)
 
 
 def minutes_factor(reds, side, start, end, up, down, up2, down2):
@@ -70,9 +71,9 @@ def fotmob_rows(up, down, up2, down2):
 
 def build(up=rca.UP, down=rca.DOWN, up2=rca.UP2, down2=rca.DOWN2, out_path=OUT):
     # match-stats names with their Understat IDs (player_match_positions.csv), keyed to the Understat match ID
-    team = pd.read_csv(rca.DATA / "understat_match_positions.csv", encoding="utf-8-sig",
+    team = pd.read_csv(paths.current_file("understat_match_positions.csv", root=rca.DATA), encoding="utf-8-sig",
                        usecols=["Season", "MatchID_Understat", "Team", "Opponent", "Venue"]).drop_duplicates()
-    pmp = pd.read_csv(rca.DATA / "player_match_positions.csv", encoding="utf-8-sig",
+    pmp = pd.read_csv(paths.current_file("player_match_positions.csv", root=rca.DATA), encoding="utf-8-sig",
                       usecols=["Season", "Team", "Opponent", "Venue", "Player", "Player_ID_Understat"])
     pos = pmp.merge(team, on=["Season", "Team", "Opponent", "Venue"]).groupby("MatchID_Understat")
     rows = []

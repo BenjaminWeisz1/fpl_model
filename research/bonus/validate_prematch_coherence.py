@@ -23,6 +23,7 @@ import json
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from fpl_model.bonus import build_residual_bps_baseline as residual
 from fpl_model.bonus import simulate_bonus as sb
 from research.bonus import shadow_team_goal_coherence as coherence
@@ -46,7 +47,7 @@ DEFCON_K = 10
 
 def conversion_lookup(season):
     """Career (NPG + 30) / (npxG + 30) from player_match_stats rows before `season`."""
-    pms = pd.read_csv(calibration.DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    pms = pd.read_csv(paths.current_file("player_match_stats.csv", root=calibration.DATA), encoding="utf-8-sig", low_memory=False,
                       usecols=["Season", "Player", "Goals", "PK", "npxG"])
     pms = pms[pms["Season"] < season]
     t = pms.groupby("Player")[["Goals", "PK", "npxG"]].sum()
@@ -228,7 +229,7 @@ def main():
     gc = rows.groupby(["Season", "MatchID", "Team"])["Goals_Conceded"].max().rename("Goals_Conceded_Team")
     rows = rows.merge(gc.reset_index(), on=["Season", "MatchID", "Team"], how="left")
     const_pb = vpb.constants(so)
-    history = pd.read_csv(calibration.DATA / "team_ratings_history.csv", encoding="utf-8-sig", low_memory=False)
+    history = pd.read_csv(paths.current_file("team_ratings_history.csv", root=calibration.DATA), encoding="utf-8-sig", low_memory=False)
 
     wins = {k: v for k, v in acc.windows(rows).items() if v[2]}
     k_rem = vpb.split_half_k(wins["A_2025"][0], "r_rem")

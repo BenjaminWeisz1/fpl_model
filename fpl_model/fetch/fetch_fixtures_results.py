@@ -13,10 +13,10 @@ BOOTSTRAP_URL = "https://fantasy.premierleague.com/api/bootstrap-static/"
 FIXTURES_URL = "https://fantasy.premierleague.com/api/fixtures/"
 
 _DATA = paths.CURRENT
-MATCH_RESULTS_FILE = paths.CURRENT / "match_results.csv"
-PLAYER_STATS_FILE = paths.CURRENT / "player_match_stats.csv"
-PENALTY_LOG_FILE = paths.CURRENT / "penalty_log.csv"
-FIXTURES_FILE = paths.CURRENT / "fixtures.csv"
+MATCH_RESULTS_FILE = paths.current_file("match_results.csv", root=paths.CURRENT)
+PLAYER_STATS_FILE = paths.current_file("player_match_stats.csv", root=paths.CURRENT)
+PENALTY_LOG_FILE = paths.current_file("penalty_log.csv", root=paths.CURRENT)
+FIXTURES_FILE = paths.current_file("fixtures.csv", root=paths.CURRENT)
 
 from fpl_model.atomic_write import to_csv_atomic  # noqa: E402
 from fpl_model.league_rates import current_season  # noqa: E402

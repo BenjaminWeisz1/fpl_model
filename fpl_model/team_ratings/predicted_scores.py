@@ -41,7 +41,7 @@ def next_gameweek(bootstrap):
 
 def kickoff_times(bootstrap, round_num):
     """(Home, Away) in project team names -> FPL kickoff (UTC Timestamp, or NaT when FPL has none yet)."""
-    players = pd.read_csv(_DATA / "players_current.csv", encoding="utf-8-sig")
+    players = pd.read_csv(paths.current_file("players_current.csv", root=_DATA), encoding="utf-8-sig")
     team_of_code = players.drop_duplicates("Team_Short").set_index("Team_Short")["Team"]
     name = {t["id"]: team_of_code.get(t["short_name"]) for t in bootstrap["teams"]}
     unknown = [t["short_name"] for t in bootstrap["teams"] if name[t["id"]] is None]
@@ -66,11 +66,11 @@ def sort_by_kickoff(fx, kickoffs):
 
 
 def predicted_scores(round_num):
-    fx = pd.read_csv(_DATA / "fixtures.csv", encoding="utf-8-sig")
+    fx = pd.read_csv(paths.current_file("fixtures.csv", root=_DATA), encoding="utf-8-sig")
     fx = fx[(fx["Season"] == current_season()) & (pd.to_numeric(fx["Round"], errors="coerce") == round_num)].copy()
     if fx.empty:
         sys.exit(f"fixtures.csv has no rows for round {round_num}")
-    ratings = pd.read_csv(_DATA / "team_ratings_current.csv", encoding="utf-8-sig").set_index("Team")
+    ratings = pd.read_csv(paths.current_file("team_ratings_current.csv", root=_DATA), encoding="utf-8-sig").set_index("Team")
     missing = (set(fx["Home"]) | set(fx["Away"])) - set(ratings.index)
     assert not missing, f"no current rating for {missing}"
     avg = mean_npg()

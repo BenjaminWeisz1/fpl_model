@@ -31,7 +31,7 @@ The stage is `predict.py` (`python -m fpl_model.defcon.predict`), which runs the
 
 On every run it:
 
-1. Loads the full match history from `data/current/player_match_stats.csv`
+1. Loads the full match history from `data/current/sourced/player_match_stats.csv`
    — fbref rows 2017–2024 plus FPL-API rows from 2025 on. FPL-API defensive
    stats live on a different scale than fbref's, so they are reconciled to
    the fbref scale at load time (position-specific multipliers).
@@ -89,8 +89,8 @@ forecast.
 
 | File | Contents |
 |---|---|
-| `data/current/predictions_defensive.csv` | Per-fixture defcon probabilities (minutes-scaled) |
-| `data/current/defcon_average_probabilities.csv` | Fixture-neutral 90-minute probability (home/away averaged) — feeds `player_ratings.csv` |
+| `data/current/forecasts/predictions_defensive.csv` | Per-fixture defcon probabilities (minutes-scaled) |
+| `data/current/forecasts/defcon_average_probabilities.csv` | Fixture-neutral 90-minute probability (home/away averaged) — feeds `player_ratings.csv` |
 | `cache/defcon/` | Trained-model cache (pickles; regenerable, not in the repo) |
 
 ## Environment knobs

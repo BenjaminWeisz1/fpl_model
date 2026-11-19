@@ -10,6 +10,8 @@ import scipy.sparse as sp
 import statsmodels.formula.api as smf
 from sklearn.linear_model import Ridge
 
+from fpl_model import paths
+
 HERE = Path(__file__).resolve().parent
 from research.absence import build_absence_frame as B
 
@@ -71,7 +73,7 @@ def ols(frame, formula, cluster):
 
 def jedelhauser(tm, xi):
     s = B.load_squads()
-    m = pd.read_csv(DATA / "sofascore_missing_players.csv", encoding="utf-8-sig")
+    m = pd.read_csv(paths.current_file("sofascore_missing_players.csv", root=DATA), encoding="utf-8-sig")
     m = m[m.Type == "missing"]
     side = s.drop_duplicates(["Event", "Venue"])[["Event", "Venue", "Team", "Season"]].assign(Side=lambda d: d.Venue.str.lower())
     m = m.merge(side.drop(columns="Season"), left_on=["Event_ID_Sofascore", "Side"], right_on=["Event", "Side"], how="inner")
@@ -91,7 +93,7 @@ def jedelhauser(tm, xi):
     d["Diff"] = d.NPxG - d.NPxGA
     d["Home"] = (d.Venue == "Home").astype(int)
     d["TeamMV"] = d.set_index(["Season", "Team"]).index.map(mv.groupby(["Season", "Team"]).MV.mean() / 1e7)
-    pts = pd.read_csv(DATA / "match_results.csv", encoding="utf-8-sig", usecols=["Season", "Home", "Away", "Home_Goals", "Away_Goals"])
+    pts = pd.read_csv(paths.current_file("match_results.csv", root=DATA), encoding="utf-8-sig", usecols=["Season", "Home", "Away", "Home_Goals", "Away_Goals"])
     h = pts.assign(Team=pts.Home, P=np.select([pts.Home_Goals > pts.Away_Goals, pts.Home_Goals == pts.Away_Goals], [3, 1], 0))
     w = pts.assign(Team=pts.Away, P=np.select([pts.Away_Goals > pts.Home_Goals, pts.Home_Goals == pts.Away_Goals], [3, 1], 0))
     tab = pd.concat([h, w]).groupby(["Season", "Team"]).P.sum().reset_index()
@@ -139,7 +141,7 @@ def slope(tm, xi):
 def split_half(tm, xi):
     """Reliability of the gap: npxG+xAG per 90 over a player's last 20 qualifying matches, odd against even matches."""
     s = B.load_squads()
-    p = pd.read_csv(DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False, usecols=["Season", "Player", "Team", "Opponent", "Venue", "Minutes", "npxG", "xAG"])
+    p = pd.read_csv(paths.current_file("player_match_stats.csv", root=DATA), encoding="utf-8-sig", low_memory=False, usecols=["Season", "Player", "Team", "Opponent", "Venue", "Minutes", "npxG", "xAG"])
     j = p.merge(s[["Season", "Local_Player", "Team", "Opponent", "Venue", "PID", "Kickoff"]], left_on=["Season", "Player", "Team", "Opponent", "Venue"],
                 right_on=["Season", "Local_Player", "Team", "Opponent", "Venue"], how="inner")
     j = j[j.Minutes >= 30].sort_values("Kickoff")
@@ -167,7 +169,7 @@ def split_half(tm, xi):
 
 
 def position_groups(tm, xi):
-    pos = pd.read_csv(DATA / "player_match_positions.csv", encoding="utf-8-sig", low_memory=False, usecols=["Player", "Position_Resolved"])
+    pos = pd.read_csv(paths.current_file("player_match_positions.csv", root=DATA), encoding="utf-8-sig", low_memory=False, usecols=["Player", "Position_Resolved"])
     mode = pos.dropna().groupby("Player").Position_Resolved.agg(lambda x: x.mode().iat[0])
     s = B.load_squads().dropna(subset=["Local_Player"]).drop_duplicates("PID").set_index("PID").Local_Player
     x = xi[(xi.Set == "E") & (xi.Share >= .5)].copy()

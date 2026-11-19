@@ -40,7 +40,7 @@ def similar(a, b):
 
 
 def load_squads():
-    s = pd.read_csv(DATA / "sofascore_player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    s = pd.read_csv(paths.current_file("sofascore_player_match_stats.csv", root=DATA), encoding="utf-8-sig", low_memory=False,
                     usecols=["Season", "Event_ID_Sofascore", "Player_ID_Sofascore", "Player_Sofascore", "Local_Player", "Team", "Opponent", "Venue",
                              "Kickoff", "Is_Starter", "Position_Sofascore", "Sofascore_minutesPlayed"])
     s["Kickoff"] = pd.to_datetime(s.Kickoff, utc=True)
@@ -51,7 +51,7 @@ def load_squads():
 
 
 def load_missing():
-    m = pd.read_csv(DATA / "sofascore_missing_players.csv", encoding="utf-8-sig")
+    m = pd.read_csv(paths.current_file("sofascore_missing_players.csv", root=DATA), encoding="utf-8-sig")
     m = m[m.Type == "missing"].rename(columns={"Player_ID_Sofascore": "PID", "Event_ID_Sofascore": "Event"})
     m["Why"] = np.where(m.Reason.isin(SUSPENDED), "suspended", np.where(m.Reason.isin(INJURED), "injured", "other"))
     m.loc[m.Description.fillna("").str.lower().str.contains("doping"), "Why"] = "other"
@@ -63,7 +63,7 @@ def trailing_quality(s, ratings, value_map):
     r = ratings.merge(s[["Season", "Local_Player", "Team", "Opponent", "Venue", "PID", "Kickoff"]].dropna(subset=["Local_Player"]),
                       left_on=["Season", "Player", "Team", "Opponent", "Venue"], right_on=["Season", "Local_Player", "Team", "Opponent", "Venue"], how="inner")
     r = r.sort_values("Kickoff")
-    x = pd.read_csv(DATA / "sofascore_player_extra.csv.gz", encoding="utf-8-sig", low_memory=False,
+    x = pd.read_csv(paths.current_file("sofascore_player_extra.csv.gz", root=DATA), encoding="utf-8-sig", low_memory=False,
                     usecols=["Event_ID_Sofascore", "Player_ID_Sofascore", "rating", "minutesPlayed", "Position"])
     x = x.rename(columns={"Event_ID_Sofascore": "Event", "Player_ID_Sofascore": "PID"})
     x = x[x.rating.notna() & (x.minutesPlayed >= 30)].merge(s[["Event", "Kickoff"]].drop_duplicates(), on="Event").sort_values("Kickoff")
@@ -89,7 +89,7 @@ def attach_asof(frame, table, cols):
 
 
 def team_matches():
-    h = pd.read_csv(DATA / "team_ratings_history.csv", encoding="utf-8-sig")
+    h = pd.read_csv(paths.current_file("team_ratings_history.csv", root=DATA), encoding="utf-8-sig")
     a = pd.DataFrame({"Season": h.Season, "Team": h.Home, "Opponent": h.Away, "Venue": "Home", "NPxG": h.Home_NPxG_Adj, "NPxGA": h.Away_NPxG_Adj,
                       "NPG": h.Home_NPG, "NPGA": h.Away_NPG, "GD": h.Home_Goals - h.Away_Goals, "Pred": h.Home_Prediction, "PredA": h.Away_Prediction})
     b = pd.DataFrame({"Season": h.Season, "Team": h.Away, "Opponent": h.Home, "Venue": "Away", "NPxG": h.Away_NPxG_Adj, "NPxGA": h.Home_NPxG_Adj,
@@ -159,7 +159,7 @@ def build():
     by_event = {k: v for k, v in s.groupby(["Event", "Team"])}
     last_seen = s.groupby(["Team", "PID"]).Kickoff.max()   # used only to tell departures from absences
     pos_mode = s[s.Pos.notna()].groupby("PID").Pos.agg(lambda x: x.mode().iat[0]).to_dict()
-    missing_team = pd.read_csv(DATA / "sofascore_missing_players.csv", encoding="utf-8-sig")
+    missing_team = pd.read_csv(paths.current_file("sofascore_missing_players.csv", root=DATA), encoding="utf-8-sig")
     missing_team = missing_team[missing_team.Type == "missing"].groupby(["Event_ID_Sofascore", "Side"]).Player_ID_Sofascore.apply(set).to_dict()
 
     rows, absences = [], []

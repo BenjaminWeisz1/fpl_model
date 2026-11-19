@@ -26,7 +26,7 @@ NAMED = ["Haaland", "Awoniyi", "Watkins", "Isak", "C. Wilson", "Ekitiké", "Mate
 
 
 def multiplier():
-    m = pd.read_csv(ROOT / "data" / "current" / "team_ratings_history.csv")
+    m = pd.read_csv(paths.current_file("team_ratings_history.csv"))
     mean = pd.concat([m[["Season", "Home_Defense_Rating"]].set_axis(["Season", "Def"], axis=1),
                       m[["Season", "Away_Defense_Rating"]].set_axis(["Season", "Def"], axis=1)]).groupby("Season")["Def"].mean()
     home = pd.DataFrame({"Season": m["Season"], "Team": m["Home"], "Opponent": m["Away"], "Venue": "Home",

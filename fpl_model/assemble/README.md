@@ -8,7 +8,7 @@ per-gameweek predicted FPL points for the forecast window (`fpl_model/forecast_h
 ### build_simulation_features.py
 
 Assembles the consolidated per-player-per-gameweek feature table
-`data/current/simulation_features.csv`, joining:
+`data/current/forecasts/simulation_features.csv`, joining:
 
 - appearance and 60+-minute probabilities (`minutes_probabilities.csv`),
 - goal/assist ratings (`player_goal_assist_ratings.csv`),
@@ -44,7 +44,7 @@ with keeper exposure scaled by expected minutes. Goalkeepers do not receive
 outfield defensive-contribution points. Penalty-taker points remain in `PenPts`;
 that component does not represent penalty saves.
 
-Output: `data/current/predicted_points.csv` — one row per player with one
+Output: `data/current/forecasts/predicted_points.csv` — one row per player with one
 column per upcoming gameweek (headers are the actual gameweek numbers) and
 a `Total` column, sorted by `Total` descending.
 

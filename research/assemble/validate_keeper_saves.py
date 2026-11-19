@@ -29,7 +29,7 @@ REPS = 2000
 
 
 def team_matches():
-    H = pd.read_csv(DATA / "team_ratings_history.csv", encoding="utf-8-sig", low_memory=False)
+    H = pd.read_csv(paths.current_file("team_ratings_history.csv", root=DATA), encoding="utf-8-sig", low_memory=False)
     k = ["Season", "MatchID", "Team", "Opponent", "Venue", "T", "O"]
     a = H.assign(Team=H.Home, Opponent=H.Away, Venue="Home", T=H.Home_Prediction, O=H.Away_Prediction)[k]
     b = H.assign(Team=H.Away, Opponent=H.Home, Venue="Away", T=H.Away_Prediction, O=H.Home_Prediction)[k]
@@ -37,16 +37,16 @@ def team_matches():
 
 
 def keeper_rows():
-    v = pd.read_csv(DATA / "vaastav_player_match_history.csv", encoding="utf-8-sig", low_memory=False)
+    v = pd.read_csv(paths.current_file("vaastav_player_match_history.csv", root=DATA), encoding="utf-8-sig", low_memory=False)
     v = v.assign(Player=v.Local_Player.fillna(v.Name_FPL), Minutes=v.minutes, Saves=v.saves)
-    p = pd.read_csv(DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False)
+    p = pd.read_csv(paths.current_file("player_match_stats.csv", root=DATA), encoding="utf-8-sig", low_memory=False)
     p = p[p.Data_Source == "FPL_API"]
     r = pd.concat([v[KEY + ["Player", "Minutes", "Saves"]], p[KEY + ["Player", "Minutes", "Saves"]]], ignore_index=True)
     r = r.drop_duplicates(KEY + ["Player"])
-    pos = pd.read_csv(DATA / "player_match_positions.csv", encoding="utf-8-sig", low_memory=False)
+    pos = pd.read_csv(paths.current_file("player_match_positions.csv", root=DATA), encoding="utf-8-sig", low_memory=False)
     pos = pos[KEY + ["Player", "Position_Resolved"]].drop_duplicates(KEY + ["Player"])
     r = r.merge(pos, on=KEY + ["Player"], how="left", validate="one_to_one")
-    cur = pd.read_csv(DATA / "players_current.csv", encoding="utf-8-sig")
+    cur = pd.read_csv(paths.current_file("players_current.csv", root=DATA), encoding="utf-8-sig")
     cur = set(cur.loc[cur.Pos == "G", "Player"])
     gk = r.Position_Resolved.eq("GK") | r.Saves.fillna(0).gt(0) | (r.Season.ge(2025) & r.Player.isin(cur))
     r = r[gk & r.Minutes.gt(0) & r.Saves.notna()].copy()

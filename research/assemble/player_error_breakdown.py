@@ -11,6 +11,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
+
 HERE = Path(__file__).resolve().parent
 from fpl_model.defcon_scaling import DEFENDER_POINTS_FACTOR, nb_sf, prob_at_minutes  # noqa: E402
 from research.assemble import points_error_breakdown as P  # noqa: E402
@@ -37,7 +39,7 @@ def defcon_points(f):
     keys = P.KEY
     fr = [pd.read_csv(P.DEFCON / f"item2_predictions_{h}.csv", encoding="utf-8-sig")[keys + ["p_control"]].assign(Pos=h) for h in "DMF"]
     d = pd.concat(fr, ignore_index=True).drop_duplicates(keys + ["Pos"])
-    pm = pd.read_csv(P.DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False)
+    pm = pd.read_csv(paths.current_file("player_match_stats.csv", root=P.DATA), encoding="utf-8-sig", low_memory=False)
     pm = pm[pm.Data_Source == "FPL_API"].drop_duplicates(keys)[keys + ["Defensive_Contribution"]]
     f = f.merge(d, on=keys + ["Pos"], how="left", validate="many_to_one").merge(pm, on=keys, how="left", validate="many_to_one")
     f["p_defcon"], f["a_defcon"], f["v_defcon"] = 0.0, 0.0, 0.0
@@ -78,7 +80,7 @@ def norm(s):
 
 
 def attributes(f):
-    pm = pd.read_csv(P.DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False, usecols=["Season", "Player", "Team"])
+    pm = pd.read_csv(paths.current_file("player_match_stats.csv", root=P.DATA), encoding="utf-8-sig", low_memory=False, usecols=["Season", "Player", "Team"])
     apps = pm.groupby(["Player", "Season"]).size().rename("n").reset_index()
     prior = {}
     for player, g in apps.groupby("Player"):
@@ -93,7 +95,7 @@ def attributes(f):
     teams = pm.groupby("Season").Team.agg(set).to_dict()
     f["Promoted"] = [t not in teams.get(s - 1, {t}) for t, s in zip(f.Team, f.Season)]
 
-    tr = pd.read_csv(P.DATA / "transfers.csv", encoding="utf-8-sig", low_memory=False)[["Player", "Season", "League"]].drop_duplicates(["Player", "Season"])
+    tr = pd.read_csv(paths.current_file("transfers.csv", root=P.DATA), encoding="utf-8-sig", low_memory=False)[["Player", "Season", "League"]].drop_duplicates(["Player", "Season"])
     f = f.merge(tr, on=["Player", "Season"], how="left", validate="many_to_one")
     group = {"Championship": "Championship", "League One": "Lower English", "League Two": "Lower English", "Ligue 1": "Top five abroad", "La Liga": "Top five abroad",
              "Bundesliga": "Top five abroad", "Serie A": "Top five abroad"}
@@ -103,7 +105,7 @@ def attributes(f):
     f.loc[f.Route.isna(), "Route"] = "Debut, no prior league (youth or unlisted)"
     f.loc[f.Season < 2022, "Route"] = np.nan
 
-    pos = pd.read_csv(P.DATA / "player_match_positions.csv", encoding="utf-8-sig", low_memory=False)
+    pos = pd.read_csv(paths.current_file("player_match_positions.csv", root=P.DATA), encoding="utf-8-sig", low_memory=False)
     k = ["Season", "Team", "Opponent", "Venue", "Player"]
     f = f.merge(pos[k + ["Position_Resolved"]].drop_duplicates(k), on=k, how="left", validate="many_to_one")
     f["Detail"] = f.Position_Resolved.replace({"LB": "FB", "RB": "FB", "LW": "Winger", "RW": "Winger", "LM": "Wide mid", "RM": "Wide mid"})
@@ -243,7 +245,7 @@ def main():
     hist, rec = P.history_rows(), P.recent_rows()
     f = pd.concat([block_frame(hist, "2018-2024"), block_frame(rec, "2025-26")], ignore_index=True)
     # Rows under FPL full names the stats file doesn't use got a default rating in the hindcast, not the player's own (§160).
-    known = set(pd.read_csv(P.DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False, usecols=["Player"]).Player)
+    known = set(pd.read_csv(paths.current_file("player_match_stats.csv", root=P.DATA), encoding="utf-8-sig", low_memory=False, usecols=["Player"]).Player)
     bad = ~f.Player.isin(known)
     print("dropped unrated-name rows", int(bad.sum()), "players", f[bad].Player.nunique())
     f = f[~bad].reset_index(drop=True)
@@ -261,7 +263,7 @@ def main():
     phi = float(pl.Z.std())
     pl["Z_Adj"] = pl.Z / phi
     pl["Q"] = bh(pl.Z_Adj.values)
-    cur = set(pd.read_csv(P.DATA / "players_current.csv", encoding="utf-8-sig").Player)
+    cur = set(pd.read_csv(paths.current_file("players_current.csv", root=P.DATA), encoding="utf-8-sig").Player)
     pl["Current"] = pl.Player.isin(cur)
     pl.sort_values("Z").to_csv(OUT / "players.csv", index=False, encoding="utf-8-sig")
     show = ["Player", "Pos", "Team", "Matches", "Pred", "Actual", "Bias_Per_Match", "Z", "Z_Adj", "Q", "Excess", "Main_Component", "Main_Component_Pts", "Current"]

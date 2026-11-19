@@ -1,4 +1,4 @@
-"""Predicted final league table -> images/team_ratings/predicted_table.png (+ data/current/predicted_table.csv).
+"""Predicted final league table -> images/team_ratings/predicted_table.png (+ data/current/forecasts/predicted_table.csv).
 
 Points = current points from the season's results in match_results.csv (3 a win, 1 a draw) + expected points from
 every remaining fixture: 3 x P(win) + 1 x P(draw).
@@ -32,7 +32,7 @@ from fpl_model.league_rates import current_season, mean_npg, penalty_rates  # no
 from fpl_model.team_ratings.update_team_ratings import home_advantage  # noqa: E402
 
 BASE_URL = "https://fantasy.premierleague.com/api"
-OUT_CSV = paths.CURRENT / "predicted_table.csv"
+OUT_CSV = paths.current_file("predicted_table.csv", root=paths.CURRENT)
 IMAGE = "team_ratings/predicted_table.png"
 MAX_GOALS = 15          # Poisson tail beyond this is < 1e-9 at these means
 
@@ -66,7 +66,7 @@ def build():
     name = {t["id"]: to_fbref_name(t["name"]) for t in fpl["teams"]}
     teams = sorted(name.values())
 
-    m = pd.read_csv(_DATA / "match_results.csv", encoding="utf-8-sig")
+    m = pd.read_csv(paths.current_file("match_results.csv", root=_DATA), encoding="utf-8-sig")
     played = m[(m["Season"] == season) & m["Home_Goals"].notna() & m["Away_Goals"].notna()]
     done = set(zip(played["Home"], played["Away"]))
     assert set(played["Home"]) | set(played["Away"]) <= set(teams), "match_results team not in FPL's list"
@@ -76,7 +76,7 @@ def build():
     remaining = [p for p in all_pairs if p not in done]
     assert len(remaining) + len(done) == len(all_pairs), "a result in match_results.csv is not on FPL's fixture list"
 
-    ratings = pd.read_csv(_DATA / "team_ratings_current.csv", encoding="utf-8-sig").set_index("Team")
+    ratings = pd.read_csv(paths.current_file("team_ratings_current.csv", root=_DATA), encoding="utf-8-sig").set_index("Team")
     missing = set(teams) - set(ratings.index)
     assert not missing, f"no current rating for {missing}"
     avg = mean_npg()

@@ -39,7 +39,7 @@ def uplift(kind, is_sub, minutes):
 
 def build():
     j = paired(pd.read_csv(BASELINE, encoding="utf-8-sig"), pd.read_csv(DIR / "candidate_log.csv", encoding="utf-8-sig"))
-    starts = pd.read_csv(ROOT / "data" / "current" / "player_match_positions.csv", encoding="utf-8-sig", low_memory=False,
+    starts = pd.read_csv(paths.current_file("player_match_positions.csv"), encoding="utf-8-sig", low_memory=False,
                          usecols=["Season", "Team", "Opponent", "Venue", "Player", "Is_Starter"])
     starts = starts.drop_duplicates(["Season", "Team", "Opponent", "Venue", "Player"])
     j = j.merge(starts, left_on=["Season_b", "Team", "Opponent", "Venue", "Player"],

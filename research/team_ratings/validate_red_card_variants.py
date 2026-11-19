@@ -38,8 +38,8 @@ def write(m, vals, path):
 def build_files():
     """{(variant, cutoff or None): path}"""
     OUT.mkdir(parents=True, exist_ok=True)
-    m = pd.read_csv(rca.DATA / "match_results.csv", encoding="utf-8-sig")
-    stats = pd.read_csv(rca.DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False)
+    m = pd.read_csv(paths.current_file("match_results.csv", root=rca.DATA), encoding="utf-8-sig")
+    stats = pd.read_csv(paths.current_file("player_match_stats.csv", root=rca.DATA), encoding="utf-8-sig", low_memory=False)
     prod = rca.build(out_path=None)
     b = rca.bases(m, stats)
     ratio = rca.level_ratios(m, rca.red_rows(m, prod), b)   # no-red rows are identical in every variant
@@ -57,7 +57,7 @@ def build_files():
         files[("c2_fitted", c)] = OUT / f"match_results_c2_fitted_{c}.csv"
         write(m, vals, files[("c2_fitted", c)])
     # (d) post-red minutes carry no information: pre-red xG share of the base + predicted goals for unequal minutes
-    hist = pd.read_csv(rca.DATA / "team_ratings_history.csv", encoding="utf-8-sig")
+    hist = pd.read_csv(paths.current_file("team_ratings_history.csv", root=rca.DATA), encoding="utf-8-sig")
     pred = hist.set_index(["Season", "Home", "Away"])[["Home_Prediction", "Away_Prediction"]]
     red = rca.red_rows(m, prod)
     f = prod.set_index(["Season", "Home", "Away"])

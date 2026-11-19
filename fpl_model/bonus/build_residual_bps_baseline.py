@@ -46,9 +46,9 @@ from fpl_model.bonus.bps_rules import (
 
 _DATA = paths.CURRENT
 
-STATS_FILE = paths.CURRENT / "player_match_stats.csv"  # consolidated file
-PLAYERS_CURRENT_FILE = paths.CURRENT / "players_current.csv"
-OUT_FILE = paths.CURRENT / "residual_bps_baseline.csv"
+STATS_FILE = paths.current_file("player_match_stats.csv", root=paths.CURRENT)  # consolidated file
+PLAYERS_CURRENT_FILE = paths.current_file("players_current.csv", root=paths.CURRENT)
+OUT_FILE = paths.current_file("residual_bps_baseline.csv", root=paths.CURRENT)
 
 MIN_POS_ROWS_TO_CENTRE = 50
 
@@ -193,7 +193,7 @@ def main():
         reason += f"; {matched:.1%} of rows matched to Sofascore"
     if not previous_rows.empty:
         rule_df = centre_previous_season(rule_df, latest)
-    with open(_DATA / "residual_bps_mode.json", "w", encoding="utf-8") as h:
+    with open(paths.current_file("residual_bps_mode.json", root=_DATA), "w", encoding="utf-8") as h:
         json.dump({"pass_bands": use_bands, "reason": reason}, h, indent=2)
 
     # ---- per-player aggregation with position-level shrinkage ----
@@ -205,7 +205,7 @@ def main():
         print(f"Position default ({prow['Pos_']}): mean={prow['pos_mean']:.2f}, std={prow['pos_std']:.2f}")
 
     out.to_csv(OUT_FILE, index=False, encoding="utf-8-sig")
-    pos_defaults.to_csv(_DATA / "residual_bps_position_defaults.csv", index=False, encoding="utf-8-sig")
+    pos_defaults.to_csv(paths.current_file("residual_bps_position_defaults.csv", root=_DATA), index=False, encoding="utf-8-sig")
     print(f"\nBuilt current-rule residual baseline on {len(rule_df)} rows from {rule_df['Season'].nunique()} season(s)")
     print(f"Wrote {len(out)} players to {OUT_FILE}")
     print(out.sort_values("ResidualBPS_Mean", ascending=False).head(10))

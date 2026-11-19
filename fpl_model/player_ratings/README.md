@@ -8,7 +8,7 @@ Per-player non-penalty goals per 90 minutes (NPG) and assists per 90
 ### build_player_match_stats.py
 
 One-off, already run: it refuses to overwrite the file, because a rebuild would delete the current season.
-It built the unified match-history table `data/current/player_match_stats.csv`
+It built the unified match-history table `data/current/sourced/player_match_stats.csv`
 by concatenating:
 
 - fbref player match stats 2017–2024 (`data/raw/all_player_stats.csv`), and
@@ -46,13 +46,13 @@ pooled), position-prior shrinkage and new-team factor turn them into a per-90 pr
 FPL-era xAG priors are scaled by 0.921 (FPL expected assists run below fbref xAG).
 The parameters are frozen in `new_player_prior_params.json` (`--fit` refits them; that
 needs a new pre-registration). The builder runs as a part-1 stage before the ratings
-and writes `data/current/new_player_priors.csv`; only rows marked `Adopted` (league
+and writes `data/current/state/new_player_priors.csv`; only rows marked `Adopted` (league
 groups that passed the out-of-time test) are used. Championship arrivals found in the frozen FotMob league
 lists (`data/raw/fotmob/`, `fpl_model/fetch/fetch_fotmob_leagues.py`) instead use the FotMob-path model in
 `fotmob_priors.py` (up to three FotMob seasons; parameters in `new_player_prior_params_fotmob.json`,
 CHANGELOG §116). Since §127 every blank-Notes Championship arrival (and,
 since §139 by user decision, every La Liga / Bundesliga / Serie A arrival) uses that structure refit on the β-dampened loop (`new_player_prior_params_refit.json`, `--fit-refit`), and tagged Championship arrivals (mid-season, two leagues) get the fitted prior too
-(§130). Hand-found FotMob IDs live in `data/current/fotmob_id_overrides.csv`.
+(§130). Hand-found FotMob IDs live in `data/current/lookups/fotmob_id_overrides.csv`.
 Loop settings: starting rating worth K = 16 matches (§112, `GOAL_MODEL_PRIOR_K`); opponent factor dampened to
 (concede / mean)^β with β = 0.7 npxG / 0.8 xAG, in the loop and in `build_simulation_features.py` (§123,
 `GOAL_MODEL_OPP_BETA_NPG` / `_AST`); learning-rate floor 0.035 for npxG (§233, `GOAL_MODEL_ALPHA_NPG`;
@@ -67,7 +67,7 @@ exact replay of the loop from a pre-match log, §232), `validate_npxg_floor.py` 
 `validate_kalman_smoothing.py` (per-position Kalman smoothing, §234), `validate_defender_npxg.py` (defender floors,
 centre-backs 0.018 adopted, §235).
 
-Output: `data/current/player_goal_assist_ratings.csv`.
+Output: `data/current/state/player_goal_assist_ratings.csv`.
 
 ### fill_transfer_team_ratings.py
 
@@ -76,7 +76,7 @@ arrivals) from the preseason or current team ratings.
 
 ### export_player_ratings.py
 
-Assembles the weekly ratings card `data/current/player_ratings.csv`
+Assembles the weekly ratings card `data/current/state/player_ratings.csv`
 (Player, Pos, Team, Price, NPG, Assists, Defcon) by joining
 `player_goal_assist_ratings.csv` with the defcon model's
 `defcon_average_probabilities.csv` through `players_current.csv`. `Price` is

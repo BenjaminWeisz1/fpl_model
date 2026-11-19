@@ -9,6 +9,7 @@ import json
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from fpl_model.player_ratings import new_player_priors as npp  # noqa: E402
 from research.player_ratings import validate_new_player_priors as v  # noqa: E402
 
@@ -18,7 +19,7 @@ ADOPTED = ["championship", "ligue1"]
 def era_scale(before_season, exclude=None):
     """s_t = FPL-era per-90 (seasons 2025 .. before_season-1, or before_season itself when exclude is given)
     / 2017-2024 per-90, minutes-weighted over all PL rows with minutes > 0."""
-    p = pd.read_csv(npp.DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False)
+    p = pd.read_csv(paths.current_file("player_match_stats.csv", root=npp.DATA), encoding="utf-8-sig", low_memory=False)
     p = p[p["Minutes"] > 0]
     old = p[p["Season"] <= 2024]
     if exclude is None:

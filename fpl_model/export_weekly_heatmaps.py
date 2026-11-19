@@ -81,15 +81,15 @@ _C_RULE     = "#BBBBBB"        # header separator rule
 _C_ROWLINE  = "#DDDDDD"        # meta-row separators
 
 _DATA = paths.CURRENT
-_TEAM_RATINGS    = paths.CURRENT / "team_ratings_current.csv"
-_PLAYER_RATINGS  = paths.CURRENT / "player_ratings.csv"
-_PREDICTED_PTS   = paths.CURRENT / "predicted_points.csv"
-_MINUTES         = paths.CURRENT / "minutes.csv"
-_PLAYERS_CURRENT = paths.CURRENT / "players_current.csv"
+_TEAM_RATINGS    = paths.current_file("team_ratings_current.csv", root=paths.CURRENT)
+_PLAYER_RATINGS  = paths.current_file("player_ratings.csv", root=paths.CURRENT)
+_PREDICTED_PTS   = paths.current_file("predicted_points.csv", root=paths.CURRENT)
+_MINUTES         = paths.current_file("minutes.csv", root=paths.CURRENT)
+_PLAYERS_CURRENT = paths.current_file("players_current.csv", root=paths.CURRENT)
 ACTIVE_XMINS_PER_GW = 20  # charts show players averaging more than this per forecast gameweek
-_SIM_FEATURES    = paths.CURRENT / "simulation_features.csv"
-_PENALTIES       = paths.CURRENT / "penalty_predictions.csv"
-_FIXTURE_GOALS   = paths.CURRENT / "fixture_goal_predictions.csv"
+_SIM_FEATURES    = paths.current_file("simulation_features.csv", root=paths.CURRENT)
+_PENALTIES       = paths.current_file("penalty_predictions.csv", root=paths.CURRENT)
+_FIXTURE_GOALS   = paths.current_file("fixture_goal_predictions.csv", root=paths.CURRENT)
 
 # Which input files each part needs (checked up front in main()).
 _PART_INPUTS = {

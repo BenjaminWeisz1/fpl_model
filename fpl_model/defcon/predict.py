@@ -68,14 +68,14 @@ DEFENDER_FEATURE_MODE = DEFAULT_FEATURE_MODE
 # codes like FW/CB/CM/W), and the rest are NULL and filled first from
 # players_current.csv (coarse D/M/F/G) and then from transfers.csv below --
 # see the transfers fallback block for the departed-player rule.
-matchlogs = pd.read_csv(_DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False)
+matchlogs = pd.read_csv(paths.current_file("player_match_stats.csv", root=_DATA), encoding="utf-8-sig", low_memory=False)
 matchlogs["Chrono"] = chrono_order(matchlogs, _DATA)  # never MatchID: not chronological in 2026 GW1-2 (§188)
-players_current = pd.read_csv(_DATA / "players_current.csv", encoding="utf-8-sig")
+players_current = pd.read_csv(paths.current_file("players_current.csv", root=_DATA), encoding="utf-8-sig")
 
 # Fill NULL Position (FPL_API rows) from players_current.csv
 _pos_lookup = dict(zip(players_current["Player"], players_current["Pos"]))
 matchlogs["Position"] = matchlogs["Position"].fillna(matchlogs["Player"].map(_pos_lookup))
-fixtures = pd.read_csv(_DATA / "fixtures.csv")
+fixtures = pd.read_csv(paths.current_file("fixtures.csv", root=_DATA))
 # Restrict to the forecast window (forecast_horizon.HORIZON rounds) -- minutes_probabilities.csv
 # only covers GW1..GW<HORIZON>, so anything beyond that would silently fall back to unscaled 90-minute
 # probabilities in the minutes-scaling step below. Filtering here also avoids
@@ -85,7 +85,7 @@ _next_round = get_next_round(_DATA, CURRENT_SEASON)
 fixtures = fixtures[(fixtures["Season"] == CURRENT_SEASON) & (fixtures["Round"] >= _next_round) & (fixtures["Round"] < _next_round + HORIZON)].reset_index(drop=True)
 print(f"Next round from match_results.csv: {_next_round}")
 print(f"Filtered fixtures to rounds {_next_round}-{_next_round + HORIZON - 1}: {len(fixtures)} fixtures")
-transfers = pd.read_csv(_DATA / "transfers.csv")
+transfers = pd.read_csv(paths.current_file("transfers.csv", root=_DATA))
 
 # ── Transfers-based position fallback (departed players) ──────────────
 # players_current.csv only covers current squads, so FPL_API rows by players
@@ -270,7 +270,7 @@ RECENCY_DECAY = 0.8  # exponential decay factor per season
 # breach was the forward head on the ~2-hit Split B (AUC noise on a micro-sample),
 # which the user judged uninformative and overrode the pre-registered guardrail to
 # ship. Since §197 FotMob's slots fill the matches Understat lacks.
-_POSITIONS_FILE = paths.CURRENT / "player_match_positions.csv"
+_POSITIONS_FILE = paths.current_file("player_match_positions.csv", root=paths.CURRENT)
 if _POSITIONS_FILE.exists():
     _pos_art = pd.read_csv(_POSITIONS_FILE, encoding="utf-8-sig", low_memory=False)
     _pos_art = _pos_art.dropna(subset=["Position_Resolved"])
@@ -1337,7 +1337,7 @@ def _invert_mu(prob, k, lo=1e-6, hi=60):
 
 GW_COL = "Round"
 
-minutes_probs = pd.read_csv(_DATA / "minutes_probabilities.csv", encoding="utf-8-sig")
+minutes_probs = pd.read_csv(paths.current_file("minutes_probabilities.csv", root=_DATA), encoding="utf-8-sig")
 minutes_lookup = {}
 for _, mrow in minutes_probs.iterrows():
     # minutes_probabilities.csv is last week's (part 2 refreshes it), so it may cover fewer rounds
@@ -1370,7 +1370,7 @@ results["Probability"] = results.apply(_scale_row, axis=1).round(4)
 results = results.sort_values(["MatchID", "Team", "Player"]).reset_index(drop=True)
 
 # ── Save results ──────────────────────────────────────────────────────
-results.to_csv(_DATA / "predictions_defensive.csv", index=False)
+results.to_csv(paths.current_file("predictions_defensive.csv", root=_DATA), index=False)
 print("\nPredictions saved to predictions_defensive.csv")
 print(f"Total predictions: {len(results)}")
 print("\nSample predictions:")
@@ -1498,7 +1498,7 @@ avg_out = (avg_df.groupby(["Player", "Pos"], as_index=False)["Probability"].mean
            .rename(columns={"Probability": "Defcon"}))
 avg_out["Defcon"] = avg_out["Defcon"].round(4)
 avg_out = avg_out.sort_values(["Pos", "Player"]).reset_index(drop=True)
-avg_out.to_csv(_DATA / "defcon_average_probabilities.csv", index=False)
+avg_out.to_csv(paths.current_file("defcon_average_probabilities.csv", root=_DATA), index=False)
 print(f"\nWrote {len(avg_out)} players to defcon_average_probabilities.csv")
 print("Mean Defcon by position:")
 print(avg_out.groupby("Pos")["Defcon"].agg(["count", "mean"]).round(4).to_string())

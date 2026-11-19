@@ -25,14 +25,14 @@ def main():
     base = pd.read_csv(OUT / "log_rc0.csv", encoding="utf-8-sig", low_memory=False)
     cand = pd.read_csv(OUT / "log_rc1.csv", encoding="utf-8-sig", low_memory=False)
     assert len(base) == len(cand) and (base["Player"].to_numpy() == cand["Player"].to_numpy()).all()
-    rc = pd.read_csv(ROOT / "data" / "current" / "red_card_factors.csv", encoding="utf-8-sig")
+    rc = pd.read_csv(paths.current_file("red_card_factors.csv"), encoding="utf-8-sig")
     red = set(zip(rc["Season"], rc["Home"], rc["Away"]))
     home = np.where(base["Venue"] == "Home", base["Team"], base["Opponent"])
     away = np.where(base["Venue"] == "Home", base["Opponent"], base["Team"])
     in_red = np.array([(s, h, a) in red for s, h, a in zip(base["Season"], home, away)])
     for t, (a, _) in TARGETS.items():   # targets must be identical outside red-card matches
         assert np.allclose(base.loc[~in_red, a], cand.loc[~in_red, a]), t
-    gk = set(pd.read_csv(ROOT / "data" / "current" / "transfers.csv", encoding="utf-8-sig").query("Pos == 'GK'")["Player"])
+    gk = set(pd.read_csv(paths.current_file("transfers.csv"), encoding="utf-8-sig").query("Pos == 'GK'")["Player"])
     keep = (base["Season"] >= 2018).to_numpy() & ~base["Player"].isin(gk).to_numpy() & ~in_red
     masks = {"2018_2022": keep & (base["Season"] <= 2022).to_numpy(), "2023_2026": keep & (base["Season"] >= 2023).to_numpy(),
              "2025plus": keep & (base["Season"] >= 2025).to_numpy()}

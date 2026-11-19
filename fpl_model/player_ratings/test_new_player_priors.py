@@ -4,6 +4,7 @@ import json
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from fpl_model.player_ratings import build_new_player_priors as bnp  # noqa: E402
 from fpl_model.player_ratings import new_player_priors as npp  # noqa: E402
 
@@ -34,7 +35,7 @@ def test_team_factor_and_age():
 
 def test_position_rule_matches_build_player_ratings():
     pp = npp.position_priors(["FW", "W,AM", "AM,CM,DM"])
-    single = pd.read_csv(npp.DATA / "position_combinations.csv").set_index("Pos")
+    single = pd.read_csv(paths.current_file("position_combinations.csv", root=npp.DATA)).set_index("Pos")
     assert np.isclose(pp["W,AM"]["NPG/90"], (2 * single.loc["W", "NPG/90"] + single.loc["AM", "NPG/90"]) / 3)
     assert np.isclose(pp["AM,CM,DM"]["Assists/90"],
                       (4 * single.loc["AM", "Assists/90"] + 2 * single.loc["CM", "Assists/90"] + single.loc["DM", "Assists/90"]) / 7)
@@ -50,7 +51,7 @@ def test_name_match_unique_only():
 
 
 def test_production_file():
-    d = pd.read_csv(npp.DATA / "new_player_priors.csv", encoding="utf-8-sig")
+    d = pd.read_csv(paths.current_file("new_player_priors.csv", root=npp.DATA), encoding="utf-8-sig")
     adopted = set()   # §103 groups, plus the FotMob-path (§116) and refit (§127, §139) groups
     for f in (bnp.PARAMS, bnp.PARAMS_FOTMOB, bnp.PARAMS_REFIT):
         if f.exists():

@@ -16,10 +16,11 @@ import json
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from research.player_ratings import validate_position_alpha as vpa  # noqa: E402  (boot, rel, groups)
 
 ROOT = vpa.ROOT
-DATA = ROOT / "data" / "current"
+DATA = paths.CURRENT
 OUT = ROOT / "data" / "validation" / "arrival_position_20261113"
 LOG = ROOT / "data" / "validation" / "defender_npxg_20261112" / "check_default.csv"
 K = 16.0
@@ -42,7 +43,7 @@ def load():
     # The log is in match order with players interleaved; group each player's rows together, keeping their
     # chronological order (a stable sort), so a segment is a contiguous run of rows.
     log = log.sort_values("Player", kind="stable").reset_index(drop=True)
-    pos = pd.read_csv(DATA / "player_match_positions.csv", encoding="utf-8-sig", low_memory=False,
+    pos = pd.read_csv(paths.current_file("player_match_positions.csv", root=DATA), encoding="utf-8-sig", low_memory=False,
                       usecols=["Season", "Team", "Opponent", "Venue", "Player", "Position_Resolved"])
     pos = pos.drop_duplicates(["Season", "Team", "Opponent", "Venue", "Player"])
     m = log.merge(pos, on=["Season", "Team", "Opponent", "Venue", "Player"], how="left")
@@ -88,7 +89,7 @@ def step_weights(log, t):
 
 
 def listed_rates():
-    single = pd.read_csv(DATA / "position_combinations.csv").set_index("Pos")
+    single = pd.read_csv(paths.current_file("position_combinations.csv", root=DATA)).set_index("Pos")
 
     def rate(pos, col):
         parts = [x.strip() for x in str(pos).split(",")]
@@ -99,7 +100,7 @@ def listed_rates():
 
 def arrival_segments(log, resets):
     """(player, arrival season, listed Pos, row indices of the segment) for each in-scope arrival."""
-    t = pd.read_csv(DATA / "transfers.csv", encoding="utf-8-sig", usecols=["Player", "Season", "Pos", "League", "Notes"])
+    t = pd.read_csv(paths.current_file("transfers.csv", root=DATA), encoding="utf-8-sig", usecols=["Player", "Season", "Pos", "League", "Notes"])
     t = t[t["Notes"].isna() & t["League"].ne("Premier League") & t["Pos"].notna() & t["Pos"].ne("GK") & t["Season"].ge(2017)]
     t = t[~t["Pos"].str.contains("GK")]
     idx = log.groupby(["Player", "Season"]).indices

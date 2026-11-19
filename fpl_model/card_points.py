@@ -8,7 +8,6 @@ Since §195: starts and cameos get separate group rates, mixed by the player's r
 (§193), and a player one yellow short of a ban before its cut-off gets
 x SUSPENSION_THETA on the yellow rate (§191). Reds are unchanged.
 """
-
 import numpy as np
 import pandas as pd
 
@@ -23,7 +22,7 @@ KEYS = ["Season", "Team", "Opponent", "Venue", "Player"]
 
 def build_frame():
     """Played rows in date order, with events, group and fouls."""
-    d = pd.read_csv(DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    d = pd.read_csv(paths.current_file("player_match_stats.csv", root=DATA), encoding="utf-8-sig", low_memory=False,
                     usecols=KEYS + ["Minutes", "CrdY", "CrdR", "Fls"])
     d = d[d.Minutes > 0].copy()
     d["red"] = (d.CrdR.fillna(0) > 0).astype(float)
@@ -32,9 +31,9 @@ def build_frame():
     d["n90"] = d.Minutes / 90
 
     # match dates: Understat to 2025, FotMob from 2026 (CHANGELOG §197); without one a row would be dropped below
-    u = pd.read_csv(DATA / "understat_match_positions.csv", encoding="utf-8-sig", low_memory=False,
+    u = pd.read_csv(paths.current_file("understat_match_positions.csv", root=DATA), encoding="utf-8-sig", low_memory=False,
                     usecols=["Season", "Team", "Opponent", "Venue", "Date"])
-    fm = pd.read_csv(DATA / "fotmob_match_positions.csv", encoding="utf-8-sig", low_memory=False,
+    fm = pd.read_csv(paths.current_file("fotmob_match_positions.csv", root=DATA), encoding="utf-8-sig", low_memory=False,
                      usecols=["Season", "Team", "Opponent", "Venue", "Date"])
     u = pd.concat([u[u["Season"] < fm["Season"].min()], fm]).drop_duplicates(["Season", "Team", "Opponent", "Venue"])
     n = len(d)
@@ -46,15 +45,15 @@ def build_frame():
         print(f"card_points: {int(missing.sum())} rows without a date dropped")
         d = d[~missing]
 
-    p = pd.read_csv(DATA / "player_match_positions.csv", encoding="utf-8-sig", low_memory=False,
+    p = pd.read_csv(paths.current_file("player_match_positions.csv", root=DATA), encoding="utf-8-sig", low_memory=False,
                     usecols=KEYS + ["Position_Resolved"]).drop_duplicates(KEYS)
     d = d.merge(p, on=KEYS, how="left")
-    pc = pd.read_csv(DATA / "players_current.csv", encoding="utf-8-sig", usecols=["Player", "Pos"]).drop_duplicates("Player")
+    pc = pd.read_csv(paths.current_file("players_current.csv", root=DATA), encoding="utf-8-sig", usecols=["Player", "Pos"]).drop_duplicates("Player")
     d = d.merge(pc.rename(columns={"Pos": "_pos"}), on="Player", how="left")
     d["group"] = d.Position_Resolved.map(GROUP_OF).fillna(d._pos.map(FPL_GROUP))
     d["group"] = d.groupby("Player").group.transform(lambda s: s.ffill().bfill()).fillna("M")
 
-    s = pd.read_csv(DATA / "sofascore_player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    s = pd.read_csv(paths.current_file("sofascore_player_match_stats.csv", root=DATA), encoding="utf-8-sig", low_memory=False,
                     usecols=["Season", "Local_Player", "Team", "Opponent", "Venue", "Sofascore_fouls"])
     s = s.rename(columns={"Local_Player": "Player"}).dropna(subset=["Sofascore_fouls"]).drop_duplicates(KEYS)
     d = d.merge(s, on=KEYS, how="left")
@@ -114,7 +113,7 @@ BRINK = ((4, 19), (9, 32), (14, 10_000))
 
 def with_roles(d):
     """Start or cameo per row: Sofascore Is_Starter, else 46+ minutes (§193)."""
-    s = pd.read_csv(DATA / "sofascore_player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    s = pd.read_csv(paths.current_file("sofascore_player_match_stats.csv", root=DATA), encoding="utf-8-sig", low_memory=False,
                     usecols=["Season", "Local_Player", "Team", "Opponent", "Venue", "Is_Starter"]).rename(columns={"Local_Player": "Player"})
     s = s.dropna(subset=["Player"]).drop_duplicates(KEYS)
     n = len(d)

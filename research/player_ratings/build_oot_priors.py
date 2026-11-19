@@ -2,7 +2,7 @@
 Out-of-time arrival priors that match production's prior setup (CHANGELOG §245).
 
     python -m research.player_ratings.build_oot_priors --check   # cut-off 2025: must reproduce the three frozen parameter JSONs and
-                                         # data/current/new_player_priors.csv
+                                         # data/current/state/new_player_priors.csv
     python -m research.player_ratings.build_oot_priors           # season by season, 2019-2026 -> <out>/oot_priors.csv
 
 For each arrival season S from 2019 to 2026, every parameter set production uses is fitted on arrivals from seasons

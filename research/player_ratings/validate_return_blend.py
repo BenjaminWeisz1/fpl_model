@@ -48,7 +48,7 @@ def score():
     base = logs["5000"]
     for h, lg in logs.items():
         assert len(lg) == len(base) and (lg["Player"].to_numpy() == base["Player"].to_numpy()).all(), h
-    t = pd.read_csv(DATA / "transfers.csv", encoding="utf-8-sig")
+    t = pd.read_csv(paths.current_file("transfers.csv", root=DATA), encoding="utf-8-sig")
     ret = t[(t["Notes"] == "second season") & (t["Pos"] != "GK") & (t["Season"] >= 2019)][["Player", "Season"]]
     keys = set(map(tuple, ret.to_numpy()))
     # row -> the return season it belongs to (the return season itself or the next)

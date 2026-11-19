@@ -41,10 +41,10 @@ from fpl_model.fetch.fetch_fotmob_matches import SHOTS_OUT as FOTMOB_SHOTS
 _ROOT = paths.ROOT
 _DATA = paths.CURRENT
 MATCH_CACHE = paths.RAW / "understat" / "matches"
-POSITIONS_FILE = paths.CURRENT / "understat_match_positions.csv"
-CROSSWALK_FILE = paths.CURRENT / "player_match_positions.csv"
-ADDITIONS_FILE = paths.CURRENT / "penalty_log_understat_additions.csv"
-FOTMOB_ADDITIONS_FILE = paths.CURRENT / "penalty_log_fotmob_additions.csv"
+POSITIONS_FILE = paths.current_file("understat_match_positions.csv", root=paths.CURRENT)
+CROSSWALK_FILE = paths.current_file("player_match_positions.csv", root=paths.CURRENT)
+ADDITIONS_FILE = paths.current_file("penalty_log_understat_additions.csv", root=paths.CURRENT)
+FOTMOB_ADDITIONS_FILE = paths.current_file("penalty_log_fotmob_additions.csv", root=paths.CURRENT)
 KEY = ["Season", "Team", "Opponent", "Venue", "Player", "Scored"]
 
 

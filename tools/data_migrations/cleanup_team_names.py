@@ -34,7 +34,7 @@ FILES_AND_TEAM_COLS = {
 
 def main():
     for filename, cols in FILES_AND_TEAM_COLS.items():
-        path = _DATA / filename
+        path = paths.current_file(filename, root=_DATA)
         df = pd.read_csv(path, encoding="utf-8-sig")
         total_changed = 0
         for col in cols:

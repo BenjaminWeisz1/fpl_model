@@ -23,7 +23,7 @@ HEADS = {"D": ("p_control", 10), "M": ("p_count", 12), "F": ("p_control", 12)}
 
 def rows(h):
     col, thr = HEADS[h]
-    p = pd.read_csv(ROOT / "data/current/player_match_stats.csv", encoding="utf-8-sig", low_memory=False)
+    p = pd.read_csv(paths.current_file("player_match_stats.csv"), encoding="utf-8-sig", low_memory=False)
     p = p[p.Data_Source == "FPL_API"][KEY + ["Defensive_Contribution"]].drop_duplicates(KEY)
     d = pd.read_csv(OUT / f"item2_predictions_{h}.csv", encoding="utf-8-sig")
     d = d[d.Season >= 2025].drop_duplicates(KEY).merge(p, on=KEY, how="inner", validate="one_to_one")

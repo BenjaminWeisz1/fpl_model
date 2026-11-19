@@ -1,7 +1,7 @@
 """Exports what sofascore_player_match_stats.csv leaves out of the frozen raw files (AGENDA 2026-10-31, item 5).
 
-Writes data/current/sofascore_player_extra.csv.gz (every statistics field, one row per listed player and match) and
-data/current/sofascore_missing_players.csv (the source's missingPlayers lists: who was out, with its type and reason).
+Writes data/current/sourced/sofascore_player_extra.csv.gz (every statistics field, one row per listed player and match) and
+data/current/sourced/sofascore_missing_players.csv (the source's missingPlayers lists: who was out, with its type and reason).
 Reads data/raw/sofascore/matches/ only; no network; not a pipeline stage.
 Run: python -u -X utf8 -m fpl_model.fetch.export_sofascore_extra
 """
@@ -45,9 +45,9 @@ def main():
                                     "Description": m.get("description"), "External_Type": m.get("externalType"),
                                     "Expected_End": m.get("expectedEndDate")})
     out = pd.DataFrame(rows)
-    out.to_csv(DATA / "sofascore_player_extra.csv.gz", index=False, encoding="utf-8-sig", compression="gzip")
+    out.to_csv(paths.current_file("sofascore_player_extra.csv.gz", root=DATA), index=False, encoding="utf-8-sig", compression="gzip")
     mp = pd.DataFrame(missing)
-    mp.to_csv(DATA / "sofascore_missing_players.csv", index=False, encoding="utf-8-sig")
+    mp.to_csv(paths.current_file("sofascore_missing_players.csv", root=DATA), index=False, encoding="utf-8-sig")
     print("files", files, "rows", len(out), "fields", out.shape[1], "missing rows", len(mp))
     played = out[out.get("minutesPlayed").notna()]
     cov_p = played.drop(columns=["Event_ID_Sofascore", "Side", "Player_ID_Sofascore"]).groupby("Season").agg(lambda s: s.notna().mean()).T.round(2)

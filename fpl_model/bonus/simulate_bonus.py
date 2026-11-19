@@ -48,17 +48,17 @@ from fpl_model.league_rates import minute_bands, penalty_rates  # noqa: E402
 
 _DATA = paths.CURRENT
 
-FEATURES_FILE = paths.CURRENT / "simulation_features.csv"
-TEAM_RATINGS_HISTORY_FILE = paths.CURRENT / "team_ratings_history.csv"
-FIXTURE_GOALS_FILE = paths.CURRENT / "fixture_goal_predictions.csv"
-OUT_FILE = paths.CURRENT / "bonus_predictions.csv"
+FEATURES_FILE = paths.current_file("simulation_features.csv", root=paths.CURRENT)
+TEAM_RATINGS_HISTORY_FILE = paths.current_file("team_ratings_history.csv", root=paths.CURRENT)
+FIXTURE_GOALS_FILE = paths.current_file("fixture_goal_predictions.csv", root=paths.CURRENT)
+OUT_FILE = paths.current_file("bonus_predictions.csv", root=paths.CURRENT)
 
 SAVE_FIXTURE_ON = config.get("BONUS_SAVE_FIXTURE")  # fixture save rate (§165)
 
 N_DRAWS = 3000
 CS_BPS = {"D": CLEAN_SHEET_BPS, "M": 0, "F": 0, "G": CLEAN_SHEET_BPS}
 PASS_BANDS = np.array([0, 2, 4, 6])
-RESIDUAL_MODE_FILE = paths.CURRENT / "residual_bps_mode.json"
+RESIDUAL_MODE_FILE = paths.current_file("residual_bps_mode.json", root=paths.CURRENT)
 
 rng = np.random.default_rng(42)
 SAVE_RNG = None  # harnesses set this so changing the save rate leaves every other draw alone (§165)
@@ -76,7 +76,7 @@ class LeagueConstants(NamedTuple):
 @functools.cache
 def league_constants() -> LeagueConstants:
     """Computed from the data files once, on first use, so importing the module reads nothing."""
-    players = pd.read_csv(_DATA / "players_current.csv", encoding="utf-8-sig")
+    players = pd.read_csv(paths.current_file("players_current.csv", root=_DATA), encoding="utf-8-sig")
     full, short = minute_bands()
     pen_attempts, conversion = penalty_rates()
     return LeagueConstants(full, short, goalkeeper_event_rates(players), goalkeeper_pen_save_rate(players),

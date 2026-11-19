@@ -136,7 +136,7 @@ Out of scope: joint attack/defense or cross-team covariance (possible
 later refinement if this validates), full EKF/UKP iteration, re-tuning
 beta/money_weight/home_advantage, replacing update_team_ratings.py.
 
-Outputs (data/current/team_ratings_oot/): kalman_report.txt,
+Outputs (data/validation/team_ratings_oot/): kalman_report.txt,
 kalman_summary.json, kalman_grid.csv (301 rows incl. the ES reference).
 
 Run locally:

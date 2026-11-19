@@ -204,12 +204,12 @@ class Inputs:
 
 
 def load_inputs(data: Path = _DATA) -> Inputs:
-    transfers = pd.read_csv(data / 'transfers.csv')
+    transfers = pd.read_csv(paths.current_file('transfers.csv', root=data))
     for col in ['Prior_Minutes', 'Seasons_Missed', 'Team_Attack_Rating', 'Min_Old', 'npxG_Old', 'xAG_Old', 'NPG_Old',
                 'Assists_Old']:
         if col in transfers.columns:
             transfers[col] = pd.to_numeric(transfers[col], errors='coerce')
-    single = pd.read_csv(data / 'position_combinations.csv')
+    single = pd.read_csv(paths.current_file('position_combinations.csv', root=data))
     if single['Pos'].str.contains(',').any():
         raise ValueError("position_combinations.csv must hold single positions only; "
                          "combinations are computed (CHANGELOG §77)")
@@ -221,13 +221,13 @@ def load_inputs(data: Path = _DATA) -> Inputs:
               f"(min {_pos_rates.MIN_STARTS} starts)")
     return Inputs(
         transfers=transfers, single_positions=single, positions=positions,
-        leagues=pd.read_csv(data / 'league_coefficients.csv'),
-        matchlogs=pd.read_csv(data / 'team_ratings_history.csv'),
-        team_ratings_now=pd.read_csv(data / f'team_ratings_preseason_{current_season()}.csv'),
-        players_current=pd.read_csv(data / 'players_current.csv', encoding='utf-8-sig'),
+        leagues=pd.read_csv(paths.current_file('league_coefficients.csv', root=data)),
+        matchlogs=pd.read_csv(paths.current_file('team_ratings_history.csv', root=data)),
+        team_ratings_now=pd.read_csv(paths.current_file(f'team_ratings_preseason_{current_season()}.csv', root=data)),
+        players_current=pd.read_csv(paths.current_file('players_current.csv', root=data), encoding='utf-8-sig'),
         # player_match_stats.csv is already harmonized (fbref 2017-2024 + FPL-API 2025/26+): consistent MatchID
         # scheme, NPG computed, CBI computed for both sources. No manual schema reconciliation needed.
-        player_stats=pd.read_csv(data / 'player_match_stats.csv', encoding='utf-8-sig', low_memory=False),
+        player_stats=pd.read_csv(paths.current_file('player_match_stats.csv', root=data), encoding='utf-8-sig', low_memory=False),
     )
 
 
@@ -239,7 +239,7 @@ def prepare_player_stats(playerstats: pd.DataFrame, matchlogs: pd.DataFrame, dat
     chronological order."""
     # ---- red-card adjustment of player npxG / xAG (§136): the team-level factors, per player from his own shots ----
     # Keyed on the native Season (before the overwrite below). The data files stay unadjusted.
-    red_card_file = config.get("GOAL_MODEL_RED_CARD_FILE") or data / 'red_card_player_factors.csv'
+    red_card_file = config.get("GOAL_MODEL_RED_CARD_FILE") or paths.current_file('red_card_player_factors.csv', root=data)
     if red_card_file.exists():
         rc = pd.read_csv(red_card_file, encoding='utf-8-sig')
         key = ['Season', 'Player', 'Team', 'Opponent', 'Venue']
@@ -250,7 +250,7 @@ def prepare_player_stats(playerstats: pd.DataFrame, matchlogs: pd.DataFrame, dat
         print(f"[§136] red-card factors applied to {int(f['Factor_npxG'].notna().sum())} player-match rows")
 
     # ---- start flag (§101) and the match slot, from player_match_positions.csv ----
-    starts = pd.read_csv(data / 'player_match_positions.csv', encoding='utf-8-sig', low_memory=False,
+    starts = pd.read_csv(paths.current_file('player_match_positions.csv', root=data), encoding='utf-8-sig', low_memory=False,
                          usecols=['Season', 'Team', 'Opponent', 'Venue', 'Player', 'Is_Starter', 'Position_Resolved'])
     starts = starts.drop_duplicates(['Season', 'Team', 'Opponent', 'Venue', 'Player'])
     n_before = len(playerstats)
@@ -491,7 +491,7 @@ def build_initial_ratings(transfers_df, positions_df, leagues_df, data: Path = _
     # For arrivals in the league groups that passed the out-of-time test (Adopted), the prior comes from
     # new_player_priors.csv (build_new_player_priors.py). Those values already carry their own fitted
     # new-team factor, so they replace the rating after the weight_team step above.
-    new_priors_file = config.get("GOAL_MODEL_NEW_PRIORS_FILE") or data / 'new_player_priors.csv'
+    new_priors_file = config.get("GOAL_MODEL_NEW_PRIORS_FILE") or paths.current_file('new_player_priors.csv', root=data)
     if new_priors_file.exists():
         npr = pd.read_csv(new_priors_file, encoding='utf-8-sig')
         npr = npr[npr['Adopted'].astype(str).str.lower() == 'true']
@@ -883,7 +883,7 @@ def write_ratings(out_df: pd.DataFrame, data: Path = _DATA) -> None:
         print(f"\nGOAL_MODEL_PREMATCH_LOG set: ratings written to {PREMATCH_LOG}.ratings.csv, "
               f"not player_goal_assist_ratings.csv")
     else:
-        out_df.to_csv(data / 'player_goal_assist_ratings.csv', index=False, encoding='utf-8-sig')
+        out_df.to_csv(paths.current_file('player_goal_assist_ratings.csv', root=data), index=False, encoding='utf-8-sig')
         print(f"\nWrote {len(out_df)} players to player_goal_assist_ratings.csv")
 
 

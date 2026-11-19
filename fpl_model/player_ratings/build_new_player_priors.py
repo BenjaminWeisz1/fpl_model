@@ -1,5 +1,5 @@
 """
-Writes data/current/new_player_priors.csv: goal/assist priors for players new to the PL (CHANGELOG §103).
+Writes data/current/state/new_player_priors.csv: goal/assist priors for players new to the PL (CHANGELOG §103).
 
     python -m fpl_model.player_ratings.build_new_player_priors          # apply the frozen parameters (production)
     python -m fpl_model.player_ratings.build_new_player_priors --fit    # refit and freeze the parameters (one-off; needs a new
@@ -31,11 +31,12 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from fpl_model.player_ratings import fotmob_priors as fp  # noqa: E402
 from fpl_model.player_ratings import new_player_priors as npp  # noqa: E402
 
 PARAMS = Path(__file__).resolve().parent / "new_player_prior_params.json"
-OUT = npp.DATA / "new_player_priors.csv"
+OUT = paths.current_file("new_player_priors.csv", root=npp.DATA)
 FIT_LOG = npp.ROOT / "data" / "validation" / "new_player_priors_20261028" / "baseline_log.csv"
 FIT_LAST_SEASON = 2025
 PARAMS_FOTMOB = Path(__file__).resolve().parent / "new_player_prior_params_fotmob.json"
@@ -76,7 +77,7 @@ def dataset(with_outcomes, log_path=None):
     uplayers, _ = npp.load_understat()
     arr = npp.in_scope_transfers()
     if with_outcomes:
-        pms = pd.read_csv(npp.DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False)
+        pms = pd.read_csv(paths.current_file("player_match_stats.csv", root=npp.DATA), encoding="utf-8-sig", low_memory=False)
         log = pd.read_csv(log_path or FIT_LOG, encoding="utf-8-sig")
         arr = npp.attach_outcomes(arr, pms, log)
     ids = npp.understat_ids()
@@ -167,7 +168,7 @@ def fit_refit(last_season=FIT_LAST_SEASON, write=True):
 def era_scales(seasons):
     """FPL-era scale per season (CHANGELOG §104): PL per-90 in the FPL-era seasons before S (S itself for
     2025, the first) / PL per-90 in 2017-2024, minutes-weighted over every row with minutes > 0."""
-    p = pd.read_csv(npp.DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False)
+    p = pd.read_csv(paths.current_file("player_match_stats.csv", root=npp.DATA), encoding="utf-8-sig", low_memory=False)
     p = p[p["Minutes"] > 0]
     old = p[p["Season"] <= 2024]
     out = {}
@@ -184,7 +185,7 @@ def era_scales(seasons):
 def tagged_championship(params, scales, pf=None):
     """§130: Championship arrivals with a tag in Notes (mid-season, two leagues, ...) get the same fitted prior as a
     blank-Notes arrival: the FotMob path if FotMob matches them, else the §103 manual path."""
-    t = pd.read_csv(npp.DATA / "transfers.csv", encoding="utf-8-sig")
+    t = pd.read_csv(paths.current_file("transfers.csv", root=npp.DATA), encoding="utf-8-sig")
     for c in ["Min_Old", "npxG_Old", "xAG_Old", "NPG_Old", "Assists_Old", "Team_Attack_Rating"]:
         t[c] = pd.to_numeric(t[c], errors="coerce")
     arr = t[t["Notes"].notna() & ~t["Notes"].isin(["youth", "second season", "missed season"])

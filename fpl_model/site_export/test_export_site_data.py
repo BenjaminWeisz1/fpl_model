@@ -9,6 +9,7 @@ from unittest import mock
 
 import pandas as pd
 
+from fpl_model import paths
 from fpl_model.site_export import export_site_data as e  # noqa: E402
 
 
@@ -90,7 +91,7 @@ class SyntheticRatingsTests(unittest.TestCase):
         self.assertEqual((a["npg"], a["assists"], a["defcon"]), (0.3, 0.2, 0.1))
 
 
-@unittest.skipUnless((e.DATA / "predicted_components.csv").exists(), "no production outputs")
+@unittest.skipUnless(paths.current_file("predicted_components.csv", root=e.DATA).exists(), "no production outputs")
 class ProductionTests(unittest.TestCase):
     """The export of the current data/current files agrees with the CSVs, value by value."""
 
@@ -151,7 +152,7 @@ class ProductionTests(unittest.TestCase):
         self.assertEqual(json.loads(json.dumps(self.payload)), self.payload)
 
 
-@unittest.skipUnless((e.DATA / "predicted_components.csv").exists(), "no production outputs")
+@unittest.skipUnless(paths.current_file("predicted_components.csv", root=e.DATA).exists(), "no production outputs")
 class ProductionRatingsTests(unittest.TestCase):
     """ratings.json values against player_ratings.csv, minutes.csv, penalty_share.csv and the team ratings."""
 
@@ -243,7 +244,7 @@ class SyntheticTeamsTests(unittest.TestCase):
         self.assertEqual(out["table"][0]["Predicted_Points"], 70.0)
 
 
-@unittest.skipUnless((e.DATA / "predicted_components.csv").exists(), "no production outputs")
+@unittest.skipUnless(paths.current_file("predicted_components.csv", root=e.DATA).exists(), "no production outputs")
 class ProductionTeamsTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

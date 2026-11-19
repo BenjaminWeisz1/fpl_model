@@ -31,13 +31,13 @@ from fpl_model.player_availability import status_conflicts  # noqa: E402
 
 _DATA = paths.CURRENT
 
-MINUTES_FILE = paths.CURRENT / "minutes.csv"
+MINUTES_FILE = paths.current_file("minutes.csv", root=paths.CURRENT)
 NAME_COL = "Name"
 
-LOOKUP_FILE = paths.CURRENT / "mins_lookup_table.csv"
-PLAYERS_CURRENT_FILE = paths.CURRENT / "players_current.csv"
+LOOKUP_FILE = paths.current_file("mins_lookup_table.csv", root=paths.CURRENT)
+PLAYERS_CURRENT_FILE = paths.current_file("players_current.csv", root=paths.CURRENT)
 
-OUT_FILE = paths.CURRENT / "minutes_probabilities.csv"
+OUT_FILE = paths.current_file("minutes_probabilities.csv", root=paths.CURRENT)
 
 
 def interpolate(xmins_series, lookup_x, lookup_y):

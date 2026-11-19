@@ -161,7 +161,7 @@ def score(d, arms):
 # ---------------------------------------------------------------- stage 2
 def stage2(p, arm):
     from fpl_model.team_ratings import update_team_ratings as utr
-    prod = pd.read_csv(CUR / "money_priors_by_season.csv")
+    prod = pd.read_csv(paths.current_file("money_priors_by_season.csv", root=CUR))
     cand = p[p["competition_id"] == "GB1"][["season", "Team", arm + "_GF", arm + "_GA"]].rename(
         columns={"season": "Season", arm + "_GF": "GF", arm + "_GA": "GA"})
     new = prod.merge(cand, on=["Season", "Team"], how="left")
@@ -184,7 +184,7 @@ def stage2(p, arm):
 
     P = run("control_production_priors", prod)
     c = pd.read_csv(OUT / "control_production_priors" / "team_ratings_current.csv").merge(
-        pd.read_csv(CUR / "team_ratings_current.csv"), on="Team", suffixes=("", "_p"))
+        pd.read_csv(paths.current_file("team_ratings_current.csv", root=CUR)), on="Team", suffixes=("", "_p"))
     assert len(c) == 20 and np.allclose(c[["Attack_Rating", "Defense_Rating"]], c[["Attack_Rating_p", "Defense_Rating_p"]],
                                         atol=1e-12), "control doesn't reproduce production"
     A = run("candidate_" + arm, new)
@@ -224,7 +224,7 @@ def main():
     if "--coverage" in sys.argv:
         return
 
-    m0 = pd.read_csv(CUR / "money_priors_by_season.csv", encoding="utf-8-sig")
+    m0 = pd.read_csv(paths.current_file("money_priors_by_season.csv", root=CUR), encoding="utf-8-sig")
     p, coefs = stage1_predictions(t, m0)
     p.to_csv(OUT / "stage1_predictions.csv", index=False, encoding="utf-8-sig")
     arms = ["M0", "M1", "M2", "M3", "M4", "M4n"]

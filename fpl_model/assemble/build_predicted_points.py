@@ -41,17 +41,17 @@ from fpl_model.keeper_saves import (
 
 _DATA = paths.CURRENT
 
-MINUTES_PROBS_FILE = paths.CURRENT / "minutes_probabilities.csv"
-SIM_FEATURES_FILE = paths.CURRENT / "simulation_features.csv"
-PENALTY_FILE = paths.CURRENT / "penalty_predictions.csv"
-BONUS_FILE = paths.CURRENT / "bonus_predictions.csv"
-PLAYERS_CURRENT_FILE = paths.CURRENT / "players_current.csv"
-PLAYER_MATCH_STATS_FILE = paths.CURRENT / "player_match_stats.csv"
-PLAYER_MATCH_POSITIONS_FILE = paths.CURRENT / "player_match_positions.csv"
-TEAM_RATINGS_HISTORY_FILE = paths.CURRENT / "team_ratings_history.csv"
+MINUTES_PROBS_FILE = paths.current_file("minutes_probabilities.csv", root=paths.CURRENT)
+SIM_FEATURES_FILE = paths.current_file("simulation_features.csv", root=paths.CURRENT)
+PENALTY_FILE = paths.current_file("penalty_predictions.csv", root=paths.CURRENT)
+BONUS_FILE = paths.current_file("bonus_predictions.csv", root=paths.CURRENT)
+PLAYERS_CURRENT_FILE = paths.current_file("players_current.csv", root=paths.CURRENT)
+PLAYER_MATCH_STATS_FILE = paths.current_file("player_match_stats.csv", root=paths.CURRENT)
+PLAYER_MATCH_POSITIONS_FILE = paths.current_file("player_match_positions.csv", root=paths.CURRENT)
+TEAM_RATINGS_HISTORY_FILE = paths.current_file("team_ratings_history.csv", root=paths.CURRENT)
 
-OUT_FILE = paths.CURRENT / "predicted_points.csv"
-COMPONENTS_FILE = paths.CURRENT / "predicted_components.csv"
+OUT_FILE = paths.current_file("predicted_points.csv", root=paths.CURRENT)
+COMPONENTS_FILE = paths.current_file("predicted_components.csv", root=paths.CURRENT)
 from fpl_model.forecast_horizon import GAMEWEEKS  # noqa: E402  (the forecast window, set in one place)
 
 PTS_PER_GOAL = {"G": 10, "D": 6, "M": 5, "F": 4}

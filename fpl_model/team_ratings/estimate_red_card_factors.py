@@ -35,7 +35,7 @@ CUTOFFS = (2023, 2024, 2025, 2026)
 def segments():
     """One row per team-segment."""
     names, season_of = team_map()
-    hist = pd.read_csv(DATA / "team_ratings_history.csv", encoding="utf-8-sig")
+    hist = pd.read_csv(paths.current_file("team_ratings_history.csv", root=DATA), encoding="utf-8-sig")
     pred = {(r.Season, r.Home, r.Away): (r.Home_Prediction, r.Away_Prediction) for r in hist.itertuples()}
     rows = []
     for f in sorted(MATCHES.glob("*.json")):

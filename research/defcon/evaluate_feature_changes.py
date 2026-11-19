@@ -39,11 +39,11 @@ def preserve():
     if baseline.exists():
         m=json.loads((baseline/"manifest.json").read_text())
         assert sha(OUT/"preregistration.json")==m["preregistration_sha256"]
-        for name,h in m["input_sha256"].items():assert sha(DATA/name)==h, name
+        for name,h in m["input_sha256"].items():assert sha(paths.current_file(name, root=DATA))==h, name
         return
     baseline.mkdir()
     for name in ("predictions_defensive.csv","defcon_average_probabilities.csv","player_ratings.csv"):
-        shutil.copy2(DATA/name,baseline/name)
+        shutil.copy2(paths.current_file(name, root=DATA),baseline/name)
     here=Path(__file__).resolve().parent
     for name in ("predict.py","defender_model.py"):
         shutil.copy2(here/name,baseline/name)

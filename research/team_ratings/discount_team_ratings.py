@@ -126,7 +126,7 @@ Out of scope: re-tuning alpha/beta/money_weight under the discount,
 rebalancing interaction (engine modes are exclusive), team-specific
 home/away (the remaining planned experiment).
 
-Outputs (data/current/team_ratings_oot/): discount_report.txt,
+Outputs (data/validation/team_ratings_oot/): discount_report.txt,
 discount_summary.json.
 
 Run locally:

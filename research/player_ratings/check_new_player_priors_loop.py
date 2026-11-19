@@ -14,6 +14,7 @@ import json
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from research.player_ratings import validate_new_player_priors as v  # noqa: E402
 
 D = v.DIR
@@ -41,7 +42,7 @@ def main():
     rb, ro = load("baseline_log.csv.ratings.csv"), load("switch_off_log.csv.ratings.csv")
     res["switch_off_identical_ratings"] = bool(rb.sort_values("Player").reset_index(drop=True).equals(
         ro.sort_values("Player").reset_index(drop=True)))
-    pri = pd.read_csv(v.npp.DATA / "new_player_priors.csv", encoding="utf-8-sig")
+    pri = pd.read_csv(paths.current_file("new_player_priors.csv", root=v.npp.DATA), encoding="utf-8-sig")
     touched = set(pri.loc[pri["Adopted"], "Player"])
     for name, other in [("on", on), ("oot", oot)]:
         assert len(other) == len(base)

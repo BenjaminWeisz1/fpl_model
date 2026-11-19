@@ -89,7 +89,7 @@ STATS = {
 
 def find_inputs(args):
     if args.current:
-        return DATA, DATA / "solio_baselines.csv", DATA / "solio_status.json", "current"
+        return DATA, paths.current_file("solio_baselines.csv", root=DATA), paths.current_file("solio_status.json", root=DATA), "current"
     if args.snapshot:
         snap = Path(args.snapshot)
     else:
@@ -129,7 +129,7 @@ def our_rates(comp, sim):
     keys = ["Player", "Team"]
     # simulation_features.csv keys players by full name in Player; predicted_components.csv by Web_Name.
     sim = sim.drop(columns="Player").rename(columns={"Web_Name": "Player"})
-    teams = pd.read_csv(DATA / "players_current.csv", encoding="utf-8-sig").drop_duplicates("Team").set_index("Team")["Team_Short"]
+    teams = pd.read_csv(paths.current_file("players_current.csv", root=DATA), encoding="utf-8-sig").drop_duplicates("Team").set_index("Team")["Team_Short"]
     if not sim["Team"].isin(comp["Team"]).all():
         sim["Team"] = sim["Team"].map(teams)
     sim = sim.assign(DC_Mu90_Points=points_mu90(sim["Defcon_Mu90"], sim["Pos"]))
@@ -274,7 +274,7 @@ def main():
     parser.add_argument("--rounds", type=int, help="compare only the first N rounds of our forecast")
     args = parser.parse_args()
     comp, sim, ratings, solio, status, name = load(args)
-    players = pd.read_csv(DATA / "players_current.csv", encoding="utf-8-sig")
+    players = pd.read_csv(paths.current_file("players_current.csv", root=DATA), encoding="utf-8-sig")
     solio = solio_split_goals(solio)
     j = join(our_rates(comp, sim), solio)
     summary = summarise(j)

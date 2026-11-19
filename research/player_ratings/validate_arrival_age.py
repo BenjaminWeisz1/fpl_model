@@ -12,6 +12,7 @@ import json
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from research.player_ratings import validate_arrival_position as v  # noqa: E402
 from research.player_ratings import validate_position_alpha as vpa  # noqa: E402
 
@@ -32,7 +33,7 @@ def main():
         a_by[t], rs[t] = v.step_weights(log, t)
     resets = rs["npxG"] | rs["xAG"]
     segs, counts = v.arrival_segments(log, resets)
-    ages = pd.read_csv(v.DATA / "new_player_priors.csv", encoding="utf-8-sig").set_index(["Player", "Season"])["Age"]
+    ages = pd.read_csv(paths.current_file("new_player_priors.csv", root=v.DATA), encoding="utf-8-sig").set_index(["Player", "Season"])["Age"]
     ages = ages[~ages.index.duplicated()]
     res = {"arrivals": counts, "targets": {}}
     for t, (ac, pc, rc, _) in v.PAIRS.items():

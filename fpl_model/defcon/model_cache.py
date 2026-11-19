@@ -108,11 +108,11 @@ def _initialise_model_cache():
         return
     _CACHE_INITIALISED = True
     _CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    fingerprints = {name: _md5_file(_DATA / name)
+    fingerprints = {name: _md5_file(paths.current_file(name, root=_DATA))
                     for name in ("player_match_stats.csv", "players_current.csv",
                                  "transfers.csv", "fixtures.csv",
                                  "minutes_probabilities.csv", "match_results.csv")
-                    if (_DATA / name).exists()}
+                    if paths.current_file(name, root=_DATA).exists()}
     payload = {"written": time.strftime("%Y-%m-%d %H:%M:%S"),
                "predict_source_md5": _PREDICT_SOURCE_MD5,
                "files": fingerprints}

@@ -9,11 +9,12 @@ import json
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from research.assemble import validate_keeper_saves as K
 
 
 def sofascore_check(x):
-    s = pd.read_csv(K.DATA / "sofascore_player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    s = pd.read_csv(paths.current_file("sofascore_player_match_stats.csv", root=K.DATA), encoding="utf-8-sig", low_memory=False,
                     usecols=K.KEY + ["Sofascore_saves"])
     s = s.groupby(K.KEY, as_index=False).Sofascore_saves.sum()
     f = x.groupby(K.KEY, as_index=False).Saves.sum()

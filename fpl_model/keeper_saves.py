@@ -32,8 +32,8 @@ def save_fixture_multiplier(expected_goals_conceded, reference):
 
 def goalkeeper_history(players_current):
     """Played FPL API rows of goalkeepers."""
-    stats = pd.read_csv(_DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False)
-    positions = pd.read_csv(_DATA / "player_match_positions.csv", encoding="utf-8-sig", low_memory=False)
+    stats = pd.read_csv(paths.current_file("player_match_stats.csv", root=_DATA), encoding="utf-8-sig", low_memory=False)
+    positions = pd.read_csv(paths.current_file("player_match_positions.csv", root=_DATA), encoding="utf-8-sig", low_memory=False)
     keys = ["Season", "Team", "Opponent", "Venue", "Player"]
     history = stats.loc[stats["Data_Source"] == "FPL_API"].merge(
         positions[keys + ["Position_Resolved"]], on=keys, how="left", validate="many_to_one")

@@ -11,7 +11,7 @@ editing only those cells as text; every other cell keeps its exact text. 2025 ha
 red-card adjustments, so no manual value is lost. The Understat values stay in
 data/raw/understat/ and in the §81 evidence folder.
 
-Run locally (writes a copy; --apply edits data/current/match_results.csv):
+Run locally (writes a copy; --apply edits data/current/sourced/match_results.csv):
     python rebuild_2025_team_xg.py --out <path> | --apply
 """
 import argparse
@@ -22,8 +22,8 @@ import pandas as pd
 from fpl_model import paths
 
 _DATA = paths.CURRENT
-MATCH_RESULTS_FILE = paths.CURRENT / "match_results.csv"
-PLAYER_STATS_FILE = paths.CURRENT / "player_match_stats.csv"
+MATCH_RESULTS_FILE = paths.current_file("match_results.csv", root=paths.CURRENT)
+PLAYER_STATS_FILE = paths.current_file("player_match_stats.csv", root=paths.CURRENT)
 SEASON = 2025
 COLS = [f"{s}_{c}" for s in ("Home", "Away") for c in ("xG", "NPxG", "NPxG_Adj")]
 

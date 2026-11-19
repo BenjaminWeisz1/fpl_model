@@ -42,7 +42,7 @@ def main():
     v = pd.read_csv(SRC, encoding="utf-8-sig", low_memory=False)
     v["exp"] = pd.cut(v.MatchesPlayed, [-1, 50, 150, 250, 10000], labels=["<=50", "51-150", "151-250", ">250"])
     v["act"] = pd.cut(v.AvgPer90, [-1, 8, 10, 1000], right=False, labels=["<8", "8-10", ">=10"])
-    p = pd.read_csv(ROOT / "data" / "current" / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False)
+    p = pd.read_csv(paths.current_file("player_match_stats.csv"), encoding="utf-8-sig", low_memory=False)
     p = p[p.Data_Source == "FPL_API"][KEY + ["Defensive_Contribution"]].drop_duplicates(KEY)
     r = v[v.Season >= 2025].drop_duplicates(KEY).merge(p, on=KEY, how="inner", validate="one_to_one")
     r["hit"] = (r.Defensive_Contribution >= THR).astype(float)

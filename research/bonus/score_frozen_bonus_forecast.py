@@ -17,6 +17,7 @@ import json
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from fpl_model.bonus import build_residual_bps_baseline as residual
 from fpl_model.bonus import simulate_bonus
 from research.bonus import validate_bonus_calibration as calibration
@@ -97,7 +98,7 @@ def main():
         raise ValueError(f"Frozen GW8 snapshot changed: {hashes_before}")
 
     rows = calibration.build_match_rows()
-    players_current = pd.read_csv(calibration.DATA / "players_current.csv", encoding="utf-8-sig")
+    players_current = pd.read_csv(paths.current_file("players_current.csv", root=calibration.DATA), encoding="utf-8-sig")
     rows["Pos"] = rows["Player"].map(dict(zip(players_current["Player"], players_current["Pos"])))
     rows["Pos"] = rows["Pos"].fillna(rows["Position_Mapped"].map(calibration.SLOT_POSITION))
     actual = rows[(rows["Season"] == 2026) & (rows["Round"] == ROUND)]

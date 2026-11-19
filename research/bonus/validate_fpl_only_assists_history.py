@@ -17,6 +17,7 @@ import pandas as pd
 import statsmodels.api as sm
 from scipy.optimize import linear_sum_assignment
 
+from fpl_model import paths
 from fpl_model.fetch.build_position_crosswalk import name_similarity  # noqa: E402
 from research.bonus import validate_bonus_calibration as calibration
 from research.bonus import validate_fpl_only_assists as v
@@ -90,7 +91,7 @@ def match(vs, so):
 
 
 def attach(m):
-    pms = pd.read_csv(calibration.DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    pms = pd.read_csv(paths.current_file("player_match_stats.csv", root=calibration.DATA), encoding="utf-8-sig", low_memory=False,
                       usecols=["MatchID", "Season", "Player", "Team", "Opponent", "Venue", "PK", "PKatt", "Data_Source"])
     pms = pms[pms["Data_Source"].eq("fbref")]
     pms["Season"] = 2017 + pms["MatchID"] // 380

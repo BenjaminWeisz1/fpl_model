@@ -6,6 +6,7 @@ import json
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from fpl_model.card_points import DATA, K, build_frame, decayed_multiplier, trailing_level
 
 OUT = DATA.parent / "validation" / "card_suspension_20261102"
@@ -19,7 +20,7 @@ def prepare(count_two_yellow=False):
     d["lvl_r"] = trailing_level(d, "red")
     d["e_y"] = d.lvl_y * d.n90
     d["m"] = decayed_multiplier(d, "yellow", "e_y", K).clip(1e-3)
-    u = pd.read_csv(DATA / "understat_match_positions.csv", encoding="utf-8-sig", low_memory=False,
+    u = pd.read_csv(paths.current_file("understat_match_positions.csv", root=DATA), encoding="utf-8-sig", low_memory=False,
                     usecols=["Season", "Team", "Date"]).drop_duplicates()
     u["Date"] = pd.to_datetime(u.Date)
     u = u.sort_values("Date")
@@ -70,8 +71,8 @@ def cluster(prev, new, a, pl):
 
 def state_check(d):
     """Do Sofascore's suspension lists line up with the count?"""
-    m = pd.read_csv(DATA / "sofascore_missing_players.csv", encoding="utf-8-sig", low_memory=False)
-    s = pd.read_csv(DATA / "sofascore_player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    m = pd.read_csv(paths.current_file("sofascore_missing_players.csv", root=DATA), encoding="utf-8-sig", low_memory=False)
+    s = pd.read_csv(paths.current_file("sofascore_player_match_stats.csv", root=DATA), encoding="utf-8-sig", low_memory=False,
                     usecols=["Season", "Player_ID_Sofascore", "Local_Player"]).dropna().drop_duplicates(["Season", "Player_ID_Sofascore"])
     m = m[m.Reason.isin([3, 11, 12, 13]) & (m.Type == "missing")].merge(s, on=["Season", "Player_ID_Sofascore"], how="inner")
     end = d.groupby(["Season", "Player"]).agg(total=("counted", "sum"), reds=("red", "sum")).reset_index()

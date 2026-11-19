@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 
+from fpl_model import paths
 from research.assemble import validate_keeper_saves as K
 
 OUT = K.ROOT / "data" / "validation" / "keeper_shots_20261101"
@@ -19,12 +20,12 @@ TERMS = {"ctrl": ["lO"], "s": ["lO", "lOppSoT", "lOwnSoTA"], "q": ["lO", "lOppSo
 
 
 def shots_table():
-    s = pd.read_csv(K.DATA / "sofascore_player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    s = pd.read_csv(paths.current_file("sofascore_player_match_stats.csv", root=K.DATA), encoding="utf-8-sig", low_memory=False,
                     usecols=K.KEY + ["Sofascore_onTargetScoringAttempt", "Sofascore_shotOffTarget", "Sofascore_blockedScoringAttempt"])
     s = s.fillna(0).groupby(K.KEY, as_index=False).sum(numeric_only=True)
     s["SoT"] = s.Sofascore_onTargetScoringAttempt
     s["Shots"] = s.SoT + s.Sofascore_shotOffTarget + s.Sofascore_blockedScoringAttempt
-    H = pd.read_csv(K.DATA / "team_ratings_history.csv", encoding="utf-8-sig", low_memory=False)
+    H = pd.read_csv(paths.current_file("team_ratings_history.csv", root=K.DATA), encoding="utf-8-sig", low_memory=False)
     a = H.assign(Team=H.Home, Opponent=H.Away, Venue="Home", xG=H.Home_NPxG_Adj)
     b = H.assign(Team=H.Away, Opponent=H.Home, Venue="Away", xG=H.Away_NPxG_Adj)
     t = pd.concat([a, b], ignore_index=True)[K.KEY + ["MatchID", "xG"]]
@@ -69,10 +70,10 @@ def team_features(t, spells):
 
 
 def keeper_table():
-    e = pd.read_csv(K.DATA / "sofascore_player_extra.csv.gz", low_memory=False,
+    e = pd.read_csv(paths.current_file("sofascore_player_extra.csv.gz", root=K.DATA), low_memory=False,
                     usecols=["Season", "Event_ID_Sofascore", "Player_ID_Sofascore", "Position", "minutesPlayed", "goalsPrevented", "expectedGoalsOnTarget"])
     e = e[(e.Position == "G") & (e.minutesPlayed.fillna(0) > 0)]
-    s = pd.read_csv(K.DATA / "sofascore_player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    s = pd.read_csv(paths.current_file("sofascore_player_match_stats.csv", root=K.DATA), encoding="utf-8-sig", low_memory=False,
                     usecols=K.KEY + ["Event_ID_Sofascore", "Player_ID_Sofascore"])
     e = e.merge(s, on=["Season", "Event_ID_Sofascore", "Player_ID_Sofascore"], how="left", validate="one_to_one")
     assert e.Team.notna().all()
@@ -135,7 +136,7 @@ def judge(t, later, arm):
 def keeper_diagnostics(x, e, k):
     res = {}
     g = e[e.Season == 2022].merge(x.groupby(K.KEY, as_index=False).agg(GA=("Pts", "size")), on=K.KEY)
-    H = pd.read_csv(K.DATA / "team_ratings_history.csv", encoding="utf-8-sig", low_memory=False)
+    H = pd.read_csv(paths.current_file("team_ratings_history.csv", root=K.DATA), encoding="utf-8-sig", low_memory=False)
     a = H.assign(Team=H.Home, Opponent=H.Away, Venue="Home", Against=H.Away_Goals)
     b = H.assign(Team=H.Away, Opponent=H.Home, Venue="Away", Against=H.Home_Goals)
     ga = pd.concat([a, b])[K.KEY + ["Against"]]

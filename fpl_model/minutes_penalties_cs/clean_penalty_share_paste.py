@@ -36,8 +36,8 @@ from fpl_model import paths
 from fpl_model.forecast_horizon import GAMEWEEKS, HORIZON  # noqa: E402  (the paste must cover the pipeline's window)
 
 _DATA = paths.CURRENT
-RAW_FILE = paths.CURRENT / "review_pk_share.xlsx"
-OUT_FILE = paths.CURRENT / "penalty_share.csv"
+RAW_FILE = paths.current_file("review_pk_share.xlsx", root=paths.CURRENT)
+OUT_FILE = paths.current_file("penalty_share.csv", root=paths.CURRENT)
 
 MYSTERY_ROW_PATTERN = re.compile(r"^(\d+(\.\d+)?|-)$")
 

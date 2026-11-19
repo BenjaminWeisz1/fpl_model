@@ -22,13 +22,13 @@ _DATA = paths.CURRENT
 PEN_ATTEMPTS_PER_NPG, _ = penalty_rates()  # computed (§181)
 PTS_PER_GOAL = {"G": 10, "D": 6, "M": 5, "F": 4}
 
-FIXTURE_GOALS_FILE = paths.CURRENT / "fixture_goal_predictions.csv"
-PENALTY_SHARE_FILE = paths.CURRENT / "penalty_share.csv"
-PLAYERS_CURRENT_FILE = paths.CURRENT / "players_current.csv"
-PENALTY_LOG_FILE = paths.CURRENT / "penalty_log.csv"
-PLAYER_MATCH_STATS_FILE = paths.CURRENT / "player_match_stats.csv"
-MINUTES_PROBS_FILE = paths.CURRENT / "minutes_probabilities.csv"
-OUT_FILE = paths.CURRENT / "penalty_predictions.csv"
+FIXTURE_GOALS_FILE = paths.current_file("fixture_goal_predictions.csv", root=paths.CURRENT)
+PENALTY_SHARE_FILE = paths.current_file("penalty_share.csv", root=paths.CURRENT)
+PLAYERS_CURRENT_FILE = paths.current_file("players_current.csv", root=paths.CURRENT)
+PENALTY_LOG_FILE = paths.current_file("penalty_log.csv", root=paths.CURRENT)
+PLAYER_MATCH_STATS_FILE = paths.current_file("player_match_stats.csv", root=paths.CURRENT)
+MINUTES_PROBS_FILE = paths.current_file("minutes_probabilities.csv", root=paths.CURRENT)
+OUT_FILE = paths.current_file("penalty_predictions.csv", root=paths.CURRENT)
 
 
 def resolve_names(pen_share, players_current, name_col):

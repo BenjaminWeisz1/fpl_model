@@ -28,9 +28,9 @@ from fpl_model import paths
 from fpl_model.atomic_write import to_csv_atomic  # noqa: E402
 
 _DATA = paths.CURRENT
-PLAYER_STATS_FILE = paths.CURRENT / "player_match_stats.csv"
-MATCH_RESULTS_FILE = paths.CURRENT / "match_results.csv"
-PENALTY_LOG_FILE = paths.CURRENT / "penalty_log.csv"
+PLAYER_STATS_FILE = paths.current_file("player_match_stats.csv", root=paths.CURRENT)
+MATCH_RESULTS_FILE = paths.current_file("match_results.csv", root=paths.CURRENT)
+PENALTY_LOG_FILE = paths.current_file("penalty_log.csv", root=paths.CURRENT)
 
 FIRST_FPL_SEASON = 2025
 PEN_XG_VALUE = 0.79

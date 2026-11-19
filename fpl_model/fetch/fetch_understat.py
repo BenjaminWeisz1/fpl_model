@@ -24,7 +24,7 @@ they are no longer inline in the match HTML):
 Both raw responses are cached verbatim under data/raw/understat/ and never
 rewritten once present, so the ~3,800-match backfill is resumable: delete a
 cache file to force a re-download. The tidy, pipeline-facing output is
-rebuilt from the cache every run into data/current/understat_match_positions.csv.
+rebuilt from the cache every run into data/current/sourced/understat_match_positions.csv.
 
 Discipline (CLAUDE.md §2):
   * one fetcher per source, plain requests + raise_for_status(), paths from
@@ -62,8 +62,8 @@ _DATA = paths.CURRENT
 RAW_DIR = paths.RAW / "understat"
 LEAGUE_CACHE = paths.RAW / "understat" / "league"
 MATCH_CACHE = paths.RAW / "understat" / "matches"
-MATCH_RESULTS_FILE = paths.CURRENT / "match_results.csv"
-OUT_FILE = paths.CURRENT / "understat_match_positions.csv"
+MATCH_RESULTS_FILE = paths.current_file("match_results.csv", root=paths.CURRENT)
+OUT_FILE = paths.current_file("understat_match_positions.csv", root=paths.CURRENT)
 
 from fpl_model.league_rates import current_season  # noqa: E402
 

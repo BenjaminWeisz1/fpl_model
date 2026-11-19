@@ -29,7 +29,7 @@ def ll(d, rho):
 
 
 def main():
-    h = pd.read_csv(ROOT / "data" / "current" / "team_ratings_history.csv", encoding="utf-8-sig")
+    h = pd.read_csv(paths.current_file("team_ratings_history.csv"), encoding="utf-8-sig")
     h["lh"], h["la"] = h.Home_Prediction * PEN, h.Away_Prediction * PEN
     h = h[h.Season >= 2018]
     rows = []

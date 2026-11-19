@@ -8,7 +8,6 @@ simulation to consume directly.
 Run locally (after all the individual facet scripts):
     python -m fpl_model.assemble.build_simulation_features
 """
-
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -32,19 +31,19 @@ PEN_ATTEMPTS_PER_NPG, PEN_CONVERSION = penalty_rates()
 OPP_BETA_NPG = config.get("GOAL_MODEL_OPP_BETA_NPG")
 OPP_BETA_AST = config.get("GOAL_MODEL_OPP_BETA_AST")
 
-MINUTES_PROBS_FILE = paths.CURRENT / "minutes_probabilities.csv"
-GOAL_ASSIST_FILE = paths.CURRENT / "player_goal_assist_ratings.csv"
-DEFCON_FILE = paths.CURRENT / "predictions_defensive.csv"
-PENALTY_FILE = paths.CURRENT / "penalty_predictions.csv"
-FIXTURE_GOALS_FILE = paths.CURRENT / "fixture_goal_predictions.csv"
-RESIDUAL_BPS_FILE = paths.CURRENT / "residual_bps_baseline.csv"
-RESIDUAL_DEFAULTS_FILE = paths.CURRENT / "residual_bps_position_defaults.csv"
-PLAYERS_CURRENT_FILE = paths.CURRENT / "players_current.csv"
-TEAM_RATINGS_FILE = paths.CURRENT / "team_ratings_current.csv"  # latest ratings, as predict_fixture_goals.py (§180)
-PASS_BAND_FILE = paths.CURRENT / "pass_band_rates.csv"
-FPL_ONLY_ASSISTS_FILE = paths.CURRENT / "fpl_only_assist_rates.csv"
+MINUTES_PROBS_FILE = paths.current_file("minutes_probabilities.csv", root=paths.CURRENT)
+GOAL_ASSIST_FILE = paths.current_file("player_goal_assist_ratings.csv", root=paths.CURRENT)
+DEFCON_FILE = paths.current_file("predictions_defensive.csv", root=paths.CURRENT)
+PENALTY_FILE = paths.current_file("penalty_predictions.csv", root=paths.CURRENT)
+FIXTURE_GOALS_FILE = paths.current_file("fixture_goal_predictions.csv", root=paths.CURRENT)
+RESIDUAL_BPS_FILE = paths.current_file("residual_bps_baseline.csv", root=paths.CURRENT)
+RESIDUAL_DEFAULTS_FILE = paths.current_file("residual_bps_position_defaults.csv", root=paths.CURRENT)
+PLAYERS_CURRENT_FILE = paths.current_file("players_current.csv", root=paths.CURRENT)
+TEAM_RATINGS_FILE = paths.current_file("team_ratings_current.csv", root=paths.CURRENT)  # latest ratings, as predict_fixture_goals.py (§180)
+PASS_BAND_FILE = paths.current_file("pass_band_rates.csv", root=paths.CURRENT)
+FPL_ONLY_ASSISTS_FILE = paths.current_file("fpl_only_assist_rates.csv", root=paths.CURRENT)
 
-OUT_FILE = paths.CURRENT / "simulation_features.csv"
+OUT_FILE = paths.current_file("simulation_features.csv", root=paths.CURRENT)
 
 from fpl_model.forecast_horizon import GAMEWEEKS  # noqa: E402  (the forecast window, set in one place)
 

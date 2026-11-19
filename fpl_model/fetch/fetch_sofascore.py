@@ -265,7 +265,7 @@ def discover(client, season, season_id, refresh=False):
                 raise FetchError('schema', 'Pagination did not terminate')
     result = sorted(events.values(), key=lambda e: e['id'])
     # This independent local archive establishes the known minimum, never source IDs.
-    local = {r['MatchID_Understat'] for r in read_csv(DATA / 'understat_match_positions.csv')
+    local = {r['MatchID_Understat'] for r in read_csv(paths.current_file('understat_match_positions.csv', root=DATA))
              if r['Season'] == str(season)}
     minimum = 380 if season < CURRENT_SEASON else len(local)
     if len(result) < minimum:
@@ -332,7 +332,7 @@ def build(client, registry, data=DATA):
             raise FetchError('cache_invalid', f'Unrepaired quarantined cache: {quarantined}')
     rows, present, eligible, season_rows = [], Counter(), Counter(), Counter()
     local, local_minutes = defaultdict(list), defaultdict(dict)
-    for r in read_csv(data / 'player_match_stats.csv'):
+    for r in read_csv(paths.current_file('player_match_stats.csv', root=data)):
         side = (r['Season'], r['Team'], r['Opponent'], r['Venue'])
         local[side].append(r['Player'])
         if r.get('Minutes') not in (None, ''):
@@ -396,12 +396,12 @@ def build(client, registry, data=DATA):
     # Integrity failures above occur before any good output is replaced.
     if rows:
         registry.save()
-        write_csv(data / 'sofascore_player_match_stats.csv', rows, list(rows[0]))
+        write_csv(paths.current_file('sofascore_player_match_stats.csv', root=data), rows, list(rows[0]))
     coverage = [{'Season': s, 'Appearance_Status': status, 'Field': field,
                  'Present_Nonnull': present[(s, status, field)], 'Rows': count}
                 for (s, status, field), count in sorted(eligible.items())]
-    if coverage or not (data / 'sofascore_field_coverage.csv').exists():
-        write_csv(data / 'sofascore_field_coverage.csv', coverage,
+    if coverage or not (paths.current_file('sofascore_field_coverage.csv', root=data)).exists():
+        write_csv(paths.current_file('sofascore_field_coverage.csv', root=data), coverage,
                   ['Season', 'Appearance_Status', 'Field', 'Present_Nonnull', 'Rows'])
     return {'player_rows': dict(season_rows), 'identity_status': dict(Counter(r['Identity_Status'] for r in rows)),
             'rows': len(rows), 'unique_player_events': len(set(keys))}
@@ -410,7 +410,7 @@ def build(client, registry, data=DATA):
 def manifest(client, seasons, discovery_errors, failures, summary):
     counts = {}
     local = defaultdict(set)
-    for r in read_csv(DATA / 'understat_match_positions.csv'):
+    for r in read_csv(paths.current_file('understat_match_positions.csv', root=DATA)):
         local[int(r['Season'])].add(r['MatchID_Understat'])
     for season in range(2017, CURRENT_SEASON + 1):
         path = client.raw / 'discovery' / f'{season}.json'

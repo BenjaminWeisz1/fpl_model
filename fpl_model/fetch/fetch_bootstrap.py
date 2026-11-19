@@ -14,9 +14,9 @@ from fpl_model.fetch.team_name_map import to_fbref_name
 
 BOOTSTRAP_URL = "https://fantasy.premierleague.com/api/bootstrap-static/"
 _DATA = paths.CURRENT
-OUT_FILE = paths.CURRENT / "players_current.csv"
-OVERRIDES_FILE = paths.CURRENT / "web_name_overrides.csv"
-DEADLINES_FILE = paths.CURRENT / "gameweek_deadlines.csv"
+OUT_FILE = paths.current_file("players_current.csv", root=paths.CURRENT)
+OVERRIDES_FILE = paths.current_file("web_name_overrides.csv", root=paths.CURRENT)
+DEADLINES_FILE = paths.current_file("gameweek_deadlines.csv", root=paths.CURRENT)
 
 POSITION_MAP = {1: "G", 2: "D", 3: "M", 4: "F"}
 
@@ -27,7 +27,7 @@ def write_deadlines(events, path=DEADLINES_FILE):
     to_csv_atomic(pd.DataFrame(rows), path, index=False, encoding="utf-8-sig")
 
 
-SET_PIECE_FILE = paths.CURRENT / "set_piece_orders.csv"
+SET_PIECE_FILE = paths.current_file("set_piece_orders.csv", root=paths.CURRENT)
 SET_PIECE_FIELDS = ["corners_and_indirect_freekicks_order", "direct_freekicks_order", "penalties_order"]
 
 
@@ -71,7 +71,7 @@ def append_set_piece_orders(data, path=SET_PIECE_FILE):
         print(f"WARNING: set-piece orders not saved: {exc!r}")
 
 
-CODES_FILE = paths.CURRENT / "fpl_player_codes.csv"
+CODES_FILE = paths.current_file("fpl_player_codes.csv", root=paths.CURRENT)
 
 
 def append_player_codes(data, path=CODES_FILE):

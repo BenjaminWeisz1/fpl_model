@@ -23,10 +23,10 @@ _DATA = paths.CURRENT
 
 money_weight = 0.3  # must match the constant in the main exponential-smoothing script
 
-PREV_RATINGS_FILE = paths.CURRENT / "team_ratings_current.csv"  # end-of-2025/26 state
-MONEY_FILE = paths.CURRENT / "money_priors_by_season.csv"  # consolidated money priors lookup
+PREV_RATINGS_FILE = paths.current_file("team_ratings_current.csv", root=paths.CURRENT)  # end-of-2025/26 state
+MONEY_FILE = paths.current_file("money_priors_by_season.csv", root=paths.CURRENT)  # consolidated money priors lookup
 CURRENT_SEASON = current_season()
-OUT_FILE = _DATA / f"team_ratings_preseason_{CURRENT_SEASON}.csv"
+OUT_FILE = paths.current_file(f"team_ratings_preseason_{CURRENT_SEASON}.csv", root=_DATA)
 
 
 def main():

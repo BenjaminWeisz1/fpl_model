@@ -37,7 +37,7 @@ FALLBACK = {"D": 0.02144, "M": 0.04100, "F": 0.04006, "G": 0.00109}
 
 def mode(data=_DATA):
     """(mode, reason): 'model', or 'fallback' (position rates) when Sofascore is not usable."""
-    path = data / "sofascore_status.json"
+    path = paths.current_file("sofascore_status.json", root=data)
     if not path.exists():
         return "fallback", "sofascore_status.json missing"
     status = json.loads(path.read_text(encoding="utf-8"))

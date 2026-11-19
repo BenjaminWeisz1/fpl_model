@@ -25,22 +25,22 @@ REPS = 2000
 
 
 def match_order():
-    H = pd.read_csv(DATA / "team_ratings_history.csv", encoding="utf-8-sig", low_memory=False)
+    H = pd.read_csv(paths.current_file("team_ratings_history.csv", root=DATA), encoding="utf-8-sig", low_memory=False)
     a = H.assign(Team=H.Home, Opponent=H.Away, Venue="Home")
     b = H.assign(Team=H.Away, Opponent=H.Home, Venue="Away")
     return pd.concat([a, b])[KEY + ["MatchID"]]
 
 
 def xgot_rows():
-    e = pd.read_csv(DATA / "sofascore_player_extra.csv.gz", low_memory=False, usecols=["Season", "Event_ID_Sofascore", "Player_ID_Sofascore", "expectedGoalsOnTarget"])
-    s = pd.read_csv(DATA / "sofascore_player_match_stats.csv", encoding="utf-8-sig", low_memory=False, usecols=KEY + ["Event_ID_Sofascore", "Player_ID_Sofascore", "Local_Player"])
+    e = pd.read_csv(paths.current_file("sofascore_player_extra.csv.gz", root=DATA), low_memory=False, usecols=["Season", "Event_ID_Sofascore", "Player_ID_Sofascore", "expectedGoalsOnTarget"])
+    s = pd.read_csv(paths.current_file("sofascore_player_match_stats.csv", root=DATA), encoding="utf-8-sig", low_memory=False, usecols=KEY + ["Event_ID_Sofascore", "Player_ID_Sofascore", "Local_Player"])
     e = e[e.Season >= 2022].merge(s, on=["Season", "Event_ID_Sofascore", "Player_ID_Sofascore"], how="left", validate="one_to_one")
     e = e.rename(columns={"Local_Player": "Player", "expectedGoalsOnTarget": "RawX"})
     return e[KEY + ["Player", "RawX"]].dropna(subset=["Player"]).drop_duplicates(KEY + ["Player"])
 
 
 def frame():
-    p = pd.read_csv(DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False, usecols=KEY + ["Player", "Position", "Minutes", "Goals", "PK", "PKatt", "npxG"])
+    p = pd.read_csv(paths.current_file("player_match_stats.csv", root=DATA), encoding="utf-8-sig", low_memory=False, usecols=KEY + ["Player", "Position", "Minutes", "Goals", "PK", "PKatt", "npxG"])
     p = p[p.Minutes.fillna(0) > 0].drop_duplicates(KEY + ["Player"]).copy()
     for c in ("Goals", "PK", "PKatt", "npxG"):
         p[c] = p[c].fillna(0.0)

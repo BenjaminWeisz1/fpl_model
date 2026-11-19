@@ -13,7 +13,7 @@ in-season learning change. (m, N) chosen per cutoff from seasons before it.
 
 Run:
     python -m research.team_ratings.promoted_learning_team_ratings
-Writes data/current/team_ratings_oot/promoted_learning_report.txt + _summary.json.
+Writes data/validation/team_ratings_oot/promoted_learning_report.txt + _summary.json.
 """
 import json
 from datetime import datetime

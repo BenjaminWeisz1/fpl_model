@@ -14,6 +14,7 @@ import json
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from research.team_ratings import validate_money_priors_pooled as vmp
 
 OUT = vmp.ROOT / "data" / "validation" / "promoted_log_prior_20261106"
@@ -44,7 +45,7 @@ def part_b(t):
     p = predictions(t, ["GB1"])
     p["Team"] = p["name"].map(vmp.TM_TO_PROJECT)
     assert p["Team"].notna().all()
-    prod = pd.read_csv(vmp.CUR / "money_priors_by_season.csv")
+    prod = pd.read_csv(paths.current_file("money_priors_by_season.csv", root=vmp.CUR))
     m = prod.merge(p[["season", "Team", "promoted", "G_GF", "G_GA"]].rename(columns={"season": "Season"}),
                    on=["Season", "Team"], how="left")
     sel = m["G_GF"].notna()
@@ -70,7 +71,7 @@ def part_b(t):
 
     P = run("control_production_priors", prod)
     c = pd.read_csv(OUT / "control_production_priors" / "team_ratings_current.csv").merge(
-        pd.read_csv(vmp.CUR / "team_ratings_current.csv"), on="Team", suffixes=("", "_p"))
+        pd.read_csv(paths.current_file("team_ratings_current.csv", root=vmp.CUR)), on="Team", suffixes=("", "_p"))
     assert len(c) == 20 and np.allclose(c[["Attack_Rating", "Defense_Rating"]], c[["Attack_Rating_p", "Defense_Rating_p"]],
                                         atol=1e-12), "control doesn't reproduce production"
     A = run("candidate_promoted_log", new)

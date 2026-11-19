@@ -44,7 +44,7 @@ _RAW = paths.RAW
 
 OLD_FILE = paths.RAW / "all_player_stats.csv"      # fbref, 2017-2024
 NEW_FILE = paths.RAW / "player_stats_2025_with_npg.csv"  # FPL-API, 2025/26+
-OUT_FILE = paths.CURRENT / "player_match_stats.csv"
+OUT_FILE = paths.current_file("player_match_stats.csv", root=paths.CURRENT)
 
 
 def main():

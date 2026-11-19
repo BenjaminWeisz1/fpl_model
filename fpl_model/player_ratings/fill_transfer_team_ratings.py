@@ -24,19 +24,19 @@ from fpl_model import paths
 
 _DATA = paths.CURRENT
 
-TRANSFERS_FILE = paths.CURRENT / "transfers.csv"
+TRANSFERS_FILE = paths.current_file("transfers.csv", root=paths.CURRENT)
 TRANSFERS_PLAYER_COL = "Player"
 TRANSFERS_SEASON_COL = "Season"
 
-CURRENT_PLAYERS_FILE = paths.CURRENT / "players_current.csv"
+CURRENT_PLAYERS_FILE = paths.current_file("players_current.csv", root=paths.CURRENT)
 CURRENT_PLAYERS_NAME_COL = "Player"
 CURRENT_PLAYERS_TEAM_COL = "Team"
 
-PRESEASON_FILE = paths.CURRENT / "team_ratings_preseason_2026.csv"
+PRESEASON_FILE = paths.current_file("team_ratings_preseason_2026.csv", root=paths.CURRENT)
 PRESEASON_TEAM_COL = "Team"
 PRESEASON_ATTACK_COL = "Attack_Rating"
 
-CURRENT_FILE = paths.CURRENT / "team_ratings_current.csv"
+CURRENT_FILE = paths.current_file("team_ratings_current.csv", root=paths.CURRENT)
 CURRENT_TEAM_COL = "Team"
 CURRENT_ATTACK_COL = "Attack_Rating"
 

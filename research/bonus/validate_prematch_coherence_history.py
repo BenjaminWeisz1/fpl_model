@@ -15,6 +15,7 @@ from concurrent.futures import ProcessPoolExecutor
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from fpl_model.bonus import build_residual_bps_baseline as residual
 from fpl_model.bonus import pass_bands
 from fpl_model.bonus import simulate_bonus as sb
@@ -47,7 +48,7 @@ def set_rules(season):
 
 
 def load_rows():
-    v = pd.read_csv(calibration.DATA / "vaastav_player_match_history.csv", encoding="utf-8-sig", low_memory=False)
+    v = pd.read_csv(paths.current_file("vaastav_player_match_history.csv", root=calibration.DATA), encoding="utf-8-sig", low_memory=False)
     positions = {}
     for path in sorted((calibration.ROOT / "data" / "raw" / "vaastav").glob("20*/players_raw.csv")):
         raw = pd.read_csv(path, encoding="latin-1", low_memory=False)
@@ -59,7 +60,7 @@ def load_rows():
     v = v.rename(columns={"minutes": "Minutes", "assists": "Assists", "clean_sheets": "Clean_Sheet", "saves": "Saves",
                           "goals_conceded": "Goals_Conceded", "penalties_saved": "Penalties_Saved", "bps": "BPS",
                           "bonus": "Bonus", "GW": "Round"})
-    pms = pd.read_csv(calibration.DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    pms = pd.read_csv(paths.current_file("player_match_stats.csv", root=calibration.DATA), encoding="utf-8-sig", low_memory=False,
                       usecols=["Season", "Player", "Team", "Opponent", "Venue", "PK", "PKatt", "Tkl", "CBI", "Recov"])
     key = ["Season", "Player", "Team", "Opponent", "Venue"]
     v = v.merge(pms.drop_duplicates(key), on=key, how="left")
@@ -188,7 +189,7 @@ def main():
     so = vpb.load_sofascore()
     rows = attach_bands_and_residuals(rows, so)
     const = vpb.constants(so)
-    history = pd.read_csv(calibration.DATA / "team_ratings_history.csv", encoding="utf-8-sig", low_memory=False)
+    history = pd.read_csv(paths.current_file("team_ratings_history.csv", root=calibration.DATA), encoding="utf-8-sig", low_memory=False)
     log = pd.read_csv(RATING_LOG, encoding="utf-8-sig", low_memory=False)
     key = ["Season", "Player", "Team", "Opponent", "Venue"]
     ratings = log.drop_duplicates(key, keep="first")[key + ["NPG_Rating_Pre", "Assist_Rating_Pre"]]

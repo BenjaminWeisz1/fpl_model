@@ -56,7 +56,7 @@ def norm(s):
 
 
 def rate_fn():
-    single = pd.read_csv(DATA / "position_combinations.csv").set_index("Pos")
+    single = pd.read_csv(paths.current_file("position_combinations.csv", root=DATA)).set_index("Pos")
 
     def rate(pos, col):
         parts = [p.strip() for p in str(pos).split(",")]
@@ -97,7 +97,7 @@ def tm_player_ids(arrivals):
 
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
-    t = pd.read_csv(DATA / "transfers.csv", encoding="utf-8-sig", usecols=["Player", "Season", "Pos", "League", "Notes"])
+    t = pd.read_csv(paths.current_file("transfers.csv", root=DATA), encoding="utf-8-sig", usecols=["Player", "Season", "Pos", "League", "Notes"])
     arr = t[t["Notes"].isna() & t["League"].ne("Premier League") & t["Pos"].notna() & t["Season"].ge(2017)
             & ~t["Pos"].astype(str).str.contains("GK")].copy()
     ids = tm_player_ids(arr)

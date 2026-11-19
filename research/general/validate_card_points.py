@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
 
+from fpl_model import paths
 from fpl_model.card_points import DATA, build_frame, decayed_multiplier, trailing_level
 
 OUT = DATA.parent / "validation" / "card_points_20261101"
@@ -30,7 +31,7 @@ def prepare():
     d["flat_r"] = trailing_level(d, "red", by=("_all",))
     d["e_y"] = d.lvl_y * d.n90
     d["e_f"] = d.lvl_f * d.n90
-    h = pd.read_csv(DATA / "team_ratings_history.csv", encoding="utf-8-sig", low_memory=False,
+    h = pd.read_csv(paths.current_file("team_ratings_history.csv", root=DATA), encoding="utf-8-sig", low_memory=False,
                     usecols=["Season", "Home", "Away", "Home_Prediction", "Away_Prediction"]).drop_duplicates(["Season", "Home", "Away"])
     home = d.Venue == "Home"
     d["_h"], d["_a"] = d.Team.where(home, d.Opponent), d.Opponent.where(home, d.Team)

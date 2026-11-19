@@ -37,6 +37,7 @@ from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
 
+from fpl_model import paths
 from fpl_model.fetch import fetch_sofascore as f
 from fpl_model.fetch.player_identity import Registry, read_csv
 from fpl_model.fetch.sofascore_browser_backfill import metadata_path
@@ -78,9 +79,9 @@ def local_teams(event):
 
 def fpl_fixtures(data):
     """Completed current-season FPL fixtures (Home, Away) -> Round."""
-    rounds = {(r['Home'], r['Away']): int(r['Round']) for r in read_csv(data / 'fixtures.csv')
+    rounds = {(r['Home'], r['Away']): int(r['Round']) for r in read_csv(paths.current_file('fixtures.csv', root=data))
               if r['Season'] == str(f.CURRENT_SEASON)}
-    completed = {(r['Home'], r['Away']) for r in read_csv(data / 'match_results.csv')
+    completed = {(r['Home'], r['Away']) for r in read_csv(paths.current_file('match_results.csv', root=data))
                  if r['Season'] == str(f.CURRENT_SEASON)}
     return {fx: rounds.get(fx) for fx in completed}
 
@@ -240,7 +241,7 @@ def build(raw, data):
 
 
 def unbuilt_events(raw, data):
-    built = {r['Event_ID_Sofascore'] for r in read_csv(data / 'sofascore_player_match_stats.csv')
+    built = {r['Event_ID_Sofascore'] for r in read_csv(paths.current_file('sofascore_player_match_stats.csv', root=data))
              if r['Season'] == str(f.CURRENT_SEASON)}
     return sorted(str(e) for e in cached_fixtures(raw).values() if str(e) not in built)
 
@@ -294,7 +295,7 @@ def status(raw, data, errors=(), warnings=()):
     except (OSError, ValueError, KeyError) as exc:
         result['errors'].append(f'{type(exc).__name__}: {exc}')
     result['usable_for_model'] = not result['errors'] and result.get('lag_rounds', MAX_LAG + 1) <= MAX_LAG
-    f.atomic_json(data / 'sofascore_status.json', result)
+    f.atomic_json(paths.current_file('sofascore_status.json', root=data), result)
     return result
 
 

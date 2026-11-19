@@ -8,6 +8,7 @@ import json
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from research.assemble import validate_keeper_saves as K
 from research.assemble import validate_keeper_shots as S
 
@@ -25,15 +26,15 @@ def level_match(t, arms):
 
 def goals_prevented_definition(e):
     """xGOT faced = the opponents' summed player xGOT, 2022, where that field is nearly complete."""
-    a = pd.read_csv(K.DATA / "sofascore_player_extra.csv.gz", low_memory=False,
+    a = pd.read_csv(paths.current_file("sofascore_player_extra.csv.gz", root=K.DATA), low_memory=False,
                     usecols=["Season", "Event_ID_Sofascore", "Side", "Position", "expectedGoalsOnTarget", "minutesPlayed"])
     a = a[(a.Season == 2022)]
     faced = a[a.Position != "G"].groupby(["Event_ID_Sofascore", "Side"]).expectedGoalsOnTarget.sum().rename("For").reset_index()
     faced["Side"] = faced.Side.map({"home": "away", "away": "home"})
-    H = pd.read_csv(K.DATA / "team_ratings_history.csv", encoding="utf-8-sig", low_memory=False)
+    H = pd.read_csv(paths.current_file("team_ratings_history.csv", root=K.DATA), encoding="utf-8-sig", low_memory=False)
     x = pd.concat([H.assign(Team=H.Home, Against=H.Away_Goals, Opponent=H.Away, Venue="Home"), H.assign(Team=H.Away, Against=H.Home_Goals, Opponent=H.Home, Venue="Away")])[K.KEY + ["Against"]]
     g = e[(e.Season == 2022) & e.goalsPrevented.notna() & (e.minutesPlayed >= 90)].merge(x, on=K.KEY, validate="many_to_one")
-    side = pd.read_csv(K.DATA / "sofascore_player_extra.csv.gz", low_memory=False, usecols=["Event_ID_Sofascore", "Player_ID_Sofascore", "Side"])
+    side = pd.read_csv(paths.current_file("sofascore_player_extra.csv.gz", root=K.DATA), low_memory=False, usecols=["Event_ID_Sofascore", "Player_ID_Sofascore", "Side"])
     g = g.merge(side, on=["Event_ID_Sofascore", "Player_ID_Sofascore"], validate="one_to_one").merge(faced, on=["Event_ID_Sofascore", "Side"], validate="one_to_one")
     d = g.goalsPrevented - (g.For - g.Against)
     keeper_field = g.expectedGoalsOnTarget

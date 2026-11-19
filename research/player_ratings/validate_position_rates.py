@@ -67,7 +67,7 @@ def _branch(r):
 def segments(log, priors_file):
     """Per log row: entry type ('' = not an entrant row), segment start season, segment id (-1 = none),
     transfers.csv position of the segment and its season, and whether the row is in the segment's first two seasons."""
-    t = pd.read_csv(DATA / "transfers.csv", encoding="utf-8-sig")
+    t = pd.read_csv(paths.current_file("transfers.csv", root=DATA), encoding="utf-8-sig")
     t["branch"] = [_branch(r) for r in t.itertuples()]
     t = t[t["branch"].notna()]
     pri = pd.read_csv(priors_file, encoding="utf-8-sig")

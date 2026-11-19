@@ -50,7 +50,7 @@ def run():
 
 def groups(log):
     """Group per row from the latest transfers.csv row with Season <= the row's season (first listed position)."""
-    t = pd.read_csv(DATA / "transfers.csv", encoding="utf-8-sig", usecols=["Player", "Season", "Pos"]).dropna()
+    t = pd.read_csv(paths.current_file("transfers.csv", root=DATA), encoding="utf-8-sig", usecols=["Player", "Season", "Pos"]).dropna()
     t["g"] = t.Pos.str.split(",").str[0].str.strip().map(GROUP)
     t = t.sort_values("Season")
     by = {p: (g.Season.to_numpy(), g.g.to_numpy()) for p, g in t.groupby("Player")}

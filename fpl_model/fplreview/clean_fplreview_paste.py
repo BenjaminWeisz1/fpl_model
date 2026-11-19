@@ -22,7 +22,7 @@ header row ("Player", "Price", "GW11".."GW20", "Total", "Elite Own%"), then thre
     name row   -- "{Raw_Web_Name}{TEAM} • {POS}"
     xMins row  -- FPL Review's rounded xMins for the first gameweek, or "-" (checked against minutes.csv)
 
-Output (data/current/):
+Output (data/current/sourced/):
     fplreview_projections.csv  one row per player and round: Points, Goals, Assists, CleanSheet,
                                Defcon, plus FPLR_xMins_First on the first round's rows
     fplreview_status.json      usable_for_comparison and the reasons; the comparison skips a
@@ -55,9 +55,9 @@ from fpl_model.league_rates import current_season  # noqa: E402
 
 DATA = paths.CURRENT
 RAW = paths.RAW / "fplreview"
-OUT_FILE = paths.CURRENT / "fplreview_projections.csv"
-STATUS_FILE = paths.CURRENT / "fplreview_status.json"
-TEAM_FILE = paths.CURRENT / "fplreview_team_strengths.csv"
+OUT_FILE = paths.current_file("fplreview_projections.csv", root=paths.CURRENT)
+STATUS_FILE = paths.current_file("fplreview_status.json", root=paths.CURRENT)
+TEAM_FILE = paths.current_file("fplreview_team_strengths.csv", root=paths.CURRENT)
 
 # file stem -> output column; the stat name FPL Review prints above the header row
 STATS = {
@@ -129,7 +129,7 @@ def link_players(frame, players):
 
 def minutes_check(frame, first_round):
     """Compare the paste's xMins row with minutes.csv's first round: a mismatch means one of them is stale."""
-    minutes = pd.read_csv(DATA / "minutes.csv", encoding="utf-8-sig")
+    minutes = pd.read_csv(paths.current_file("minutes.csv", root=DATA), encoding="utf-8-sig")
     col = f"{first_round}_xMins"
     if col not in minutes:
         return {"ok": False, "reason": f"minutes.csv has no {col}; it covers other rounds than the paste"}
@@ -180,7 +180,7 @@ def build(gameweek, season):
     wide = wide.merge(first, on=["FPLR_Name", "Team_Short"], how="left")
     wide.loc[wide["Round"] != rounds[0], "FPLR_xMins_First"] = pd.NA
 
-    players = pd.read_csv(DATA / "players_current.csv", encoding="utf-8-sig")
+    players = pd.read_csv(paths.current_file("players_current.csv", root=DATA), encoding="utf-8-sig")
     wide = link_players(wide, players)
     wide.insert(0, "Season", season)
     unmatched = wide[wide["Web_Name"].isna()].drop_duplicates(["FPLR_Name", "Team_Short"])
@@ -249,7 +249,7 @@ def build_team_strengths(folder, season):
         return None, {"ok": False, "reason": "no Team Strengths.xlsx in the paste folder"}
     try:
         table, blend = parse_team_strengths(paths[0])
-        players = pd.read_csv(DATA / "players_current.csv", encoding="utf-8-sig")
+        players = pd.read_csv(paths.current_file("players_current.csv", root=DATA), encoding="utf-8-sig")
         team_names = players.drop_duplicates("Team_Short").set_index("Team_Short")["Team"]
         table.insert(0, "Team", table["Team_Short"].map(team_names))
         missing = table.loc[table["Team"].isna(), "Team_Short"].tolist()
@@ -264,7 +264,7 @@ def build_team_strengths(folder, season):
 
 def default_gameweek():
     """The first forecast round in minutes.csv, which part 2 is about to use."""
-    minutes = pd.read_csv(DATA / "minutes.csv", encoding="utf-8-sig", nrows=1)
+    minutes = pd.read_csv(paths.current_file("minutes.csv", root=DATA), encoding="utf-8-sig", nrows=1)
     return min(int(c.split("_")[0]) for c in minutes.columns if re.fullmatch(r"\d+_xMins", c))
 
 

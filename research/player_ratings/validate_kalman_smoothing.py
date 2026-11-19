@@ -17,12 +17,13 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
 
+from fpl_model import paths
 from research.player_ratings import validate_position_alpha as vpa  # noqa: E402
 
 ROOT = vpa.ROOT
 OUT = ROOT / "data" / "validation" / "kalman_smoothing_20261112"
 LOG = ROOT / "data" / "validation" / "npxg_floor_20261112" / "check_default.csv"
-POS = ROOT / "data" / "current" / "player_match_positions.csv"
+POS = paths.current_file("player_match_positions.csv")
 FLOORS = {"npxG": 0.035, "xAG": 0.025}
 K_PRIOR = 16.0
 PAIRS = {"npxG": ("npxg90", "pred_goals_90", "NPG_Rating_Pre"), "xAG": ("xag90", "pred_ast_90", "Assist_Rating_Pre")}

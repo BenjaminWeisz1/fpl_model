@@ -25,9 +25,9 @@ def load(api):
     boot = json.loads((api / "boot.json").read_text(encoding="utf-8"))
     short = {t["id"]: t["short_name"] for t in boot["teams"]}
     id_of = {(e["web_name"], short[e["team"]]): e["id"] for e in boot["elements"]}
-    pc = pd.read_csv(ROOT / "data" / "current" / "players_current.csv", encoding="utf-8-sig")
+    pc = pd.read_csv(paths.current_file("players_current.csv"), encoding="utf-8-sig")
     raw = {(w, t): (r, s) for w, t, r, s in zip(pc.Web_Name, pc.Team, pc.Raw_Web_Name, pc.Team_Short)}
-    dl = pd.read_csv(ROOT / "data" / "current" / "gameweek_deadlines.csv", encoding="utf-8-sig")
+    dl = pd.read_csv(paths.current_file("gameweek_deadlines.csv"), encoding="utf-8-sig")
     print(dl[dl.iloc[:, 0].isin([8, 9])].to_string(index=False))
     rows = []
     for gw, snap in SNAPS.items():

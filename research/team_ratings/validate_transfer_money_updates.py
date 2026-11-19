@@ -19,6 +19,7 @@ import json
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from fpl_model.team_ratings import update_team_ratings as utr  # noqa: E402
 from research.team_ratings import validate_money_priors_pooled as vmp  # noqa: E402
 
@@ -37,7 +38,7 @@ def cutoff(s):
 
 # ------------------------------------------------------------------ money model
 def money_model():
-    hm = pd.read_csv(CUR / "historical_money.csv", encoding="utf-8-sig")
+    hm = pd.read_csv(paths.current_file("historical_money.csv", root=CUR), encoding="utf-8-sig")
     for c in ("Wages", "Squad_Value"):
         hm[c + "_pct"] = hm.groupby("Season")[c].transform(lambda x: x / x.sum())
     known = hm[hm["GF"].notna()]

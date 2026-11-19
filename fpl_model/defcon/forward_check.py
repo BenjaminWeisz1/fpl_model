@@ -121,23 +121,23 @@ def freeze(data=DATA, study=STUDY, experiment=EXPERIMENT):
     baseline = experiment / "baseline"
     original_manifest = json.loads((baseline / "manifest.json").read_text(encoding="utf-8"))
     for name, expected in original_manifest["inputs"].items():
-        if sha256(data / name) != expected:
+        if sha256(paths.current_file(name, root=data)) != expected:
             raise ValueError(f"Source inputs changed since matched-model experiment: {name}")
     results = json.loads((experiment / "results.json").read_text(encoding="utf-8"))
     if not results["ship"]:
         raise ValueError("Replacement did not pass its registered historical comparison")
     legacy = clean_teams(read_csv(baseline / "predictions_defensive.csv"))
-    updated = clean_teams(read_csv(data / "predictions_defensive.csv"))
+    updated = clean_teams(read_csv(paths.current_file("predictions_defensive.csv", root=data)))
     legacy = legacy[legacy.Pos.eq("D")].reset_index(drop=True)
     updated = updated[updated.Pos.eq("D")].reset_index(drop=True)
     pd.testing.assert_frame_equal(legacy.drop(columns=["Probability", "Probability_at_90min"]),
                                   updated.drop(columns=["Probability", "Probability_at_90min"]))
-    fixtures = clean_teams(read_csv(data / "fixtures.csv"))
+    fixtures = clean_teams(read_csv(paths.current_file("fixtures.csv", root=data)))
     fixtures = fixtures[fixtures.Season.eq(PROTOCOL["season"]) & fixtures.Round.isin(PROTOCOL["rounds"])].copy()
     if len(fixtures) != 50 or fixtures.duplicated(MATCH_KEY).any() or fixtures.MatchID.duplicated().any():
         raise ValueError("Study requires 50 unambiguous fixture identities")
-    played = clean_teams(read_csv(data / "match_results.csv"))
-    stats = clean_teams(read_csv(data / "player_match_stats.csv"))
+    played = clean_teams(read_csv(paths.current_file("match_results.csv", root=data)))
+    stats = clean_teams(read_csv(paths.current_file("player_match_stats.csv", root=data)))
     validate_unplayed(fixtures, played, stats)
     identity = updated[["MatchID", "Player", "Team", "Opponent", "Venue"]].merge(
         fixtures, on="MatchID", how="left", validate="many_to_one")
@@ -172,7 +172,7 @@ def freeze(data=DATA, study=STUDY, experiment=EXPERIMENT):
                 "frozen_sha256": {name: sha256(study / name) for name in frozen},
                 "source_inputs_sha256": original_manifest["inputs"],
                 "source_old_forecasts_sha256": sha256(baseline / "predictions_defensive.csv"),
-                "source_new_forecasts_sha256": sha256(data / "predictions_defensive.csv"),
+                "source_new_forecasts_sha256": sha256(paths.current_file("predictions_defensive.csv", root=data)),
                 "scorer_source_sha256_at_freeze": sha256(Path(__file__))}
     with (study / "manifest.json").open("x", encoding="utf-8") as stream:
         json.dump(manifest, stream, indent=2)
@@ -302,7 +302,7 @@ def score(data=DATA, study=STUDY):
         return None
     manifest = verify_snapshot(study)
     forecasts, fixtures = read_csv(study / "forecasts.csv"), read_csv(study / "fixtures.csv")
-    rows, coverage = attach_outcomes(forecasts, fixtures, read_csv(data / "match_results.csv"), read_csv(data / "player_match_stats.csv"))
+    rows, coverage = attach_outcomes(forecasts, fixtures, read_csv(paths.current_file("match_results.csv", root=data)), read_csv(paths.current_file("player_match_stats.csv", root=data)))
     primary = compare(rows)
     result = {"as_of_utc": utc_now(), "study_id": PROTOCOL["study_id"],
               "manifest_sha256": sha256(study / "manifest.json"), "coverage": coverage,

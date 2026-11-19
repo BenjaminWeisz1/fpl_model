@@ -15,6 +15,7 @@ from concurrent.futures import ProcessPoolExecutor
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from fpl_model.bonus import pass_bands
 from fpl_model.bonus import simulate_bonus as sb
 from research.bonus import validate_bonus_calibration as calibration
@@ -115,7 +116,7 @@ def main():
     rows = hist.attach_bands_and_residuals(rows, so)
     rows["MatchID_"] = rows["Match_Key"]
     const = vpb.constants(so)
-    history = pd.read_csv(calibration.DATA / "team_ratings_history.csv", encoding="utf-8-sig", low_memory=False)
+    history = pd.read_csv(paths.current_file("team_ratings_history.csv", root=calibration.DATA), encoding="utf-8-sig", low_memory=False)
     log = pd.read_csv(hist.RATING_LOG, encoding="utf-8-sig", low_memory=False)
     key = ["Season", "Player", "Team", "Opponent", "Venue"]
     ratings = log.drop_duplicates(key, keep="first")[key + ["NPG_Rating_Pre", "Assist_Rating_Pre"]]

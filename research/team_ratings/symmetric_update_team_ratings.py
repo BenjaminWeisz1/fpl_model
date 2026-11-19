@@ -125,7 +125,7 @@ Out of scope: re-tuning beta/money_weight/home_advantage, promoted-team
 entry changes, rebuilding any Kalman component on top of the symmetric
 engine (that would be §24 again), shipping without review.
 
-Outputs (data/current/team_ratings_oot/): sym_report.txt,
+Outputs (data/validation/team_ratings_oot/): sym_report.txt,
 sym_summary.json, sym_alpha_grid.csv.
 
 Run locally:

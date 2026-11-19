@@ -32,6 +32,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from fpl_model.player_ratings import position_rates as pr  # noqa: E402
 from research.player_ratings import (
     validate_arrival_position as vap,  # noqa: E402  (load, step_weights, PAIRS, SLOT_CANON)
@@ -64,7 +65,7 @@ def combined(tbl, pos, col):
 def covering_flags(log):
     """(Season, Team, Opponent, Venue, Player) -> True when a usual occupant of the player's raw slot didn't start.
     Team matches are ordered by their first row in the (chronological) control log."""
-    p = pd.read_csv(DATA / "player_match_positions.csv", encoding="utf-8-sig", low_memory=False,
+    p = pd.read_csv(paths.current_file("player_match_positions.csv", root=DATA), encoding="utf-8-sig", low_memory=False,
                     usecols=["Season", "Team", "Opponent", "Venue", "Player", "Position_Resolved", "Is_Starter"])
     p = p.drop_duplicates(["Season", "Team", "Opponent", "Venue", "Player"])
     p = p[p["Is_Starter"].astype(str).str.lower().eq("true") & p["Position_Resolved"].notna()]

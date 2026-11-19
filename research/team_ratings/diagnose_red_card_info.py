@@ -21,8 +21,8 @@ OUT = paths.VALIDATION / "red_card_20261030"
 
 
 def main():
-    h = pd.read_csv(DATA / "team_ratings_history.csv", encoding="utf-8-sig").reset_index(names="order")
-    rc = pd.read_csv(DATA / "red_card_factors.csv", encoding="utf-8-sig")
+    h = pd.read_csv(paths.current_file("team_ratings_history.csv", root=DATA), encoding="utf-8-sig").reset_index(names="order")
+    rc = pd.read_csv(paths.current_file("red_card_factors.csv", root=DATA), encoding="utf-8-sig")
     reds = {(r.Season, r.Home, r.Away): ("(home)" in r.Reds, "(away)" in r.Reds) for r in rc.itertuples()}
     rows = []
     for r in h.itertuples():

@@ -1,5 +1,5 @@
 """
-Builds data/current/vaastav_player_match_history.csv from the frozen vaastav archive in
+Builds data/current/sourced/vaastav_player_match_history.csv from the frozen vaastav archive in
 data/raw/vaastav/ (CHANGELOG §96): one row per player per played fixture, 2017-18 .. 2024-25
 (project Seasons 2017-2024), with FPL-definition bps, bonus, assists and the other scoring fields,
 for training the bonus model on pre-2025 seasons later.
@@ -33,8 +33,8 @@ from fpl_model.fetch.build_position_crosswalk import name_similarity
 _ROOT = paths.ROOT
 RAW = paths.RAW / "vaastav"
 _DATA = paths.CURRENT
-OUT_FILE = paths.CURRENT / "vaastav_player_match_history.csv"
-OVERRIDES_FILE = paths.CURRENT / "vaastav_name_overrides.csv"
+OUT_FILE = paths.current_file("vaastav_player_match_history.csv", root=paths.CURRENT)
+OVERRIDES_FILE = paths.current_file("vaastav_name_overrides.csv", root=paths.CURRENT)
 SEASONS = list(range(2017, 2025))
 TEAM = {"Cardiff": "Cardiff City", "Leeds": "Leeds United", "Leicester": "Leicester City", "Luton": "Luton Town",
         "Man City": "Manchester City", "Man Utd": "Manchester Utd", "Newcastle": "Newcastle Utd",
@@ -87,7 +87,7 @@ def load_season(season, teams):
 
 
 def sofascore_rows():
-    so = pd.read_csv(_DATA / "sofascore_player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    so = pd.read_csv(paths.current_file("sofascore_player_match_stats.csv", root=_DATA), encoding="utf-8-sig", low_memory=False,
                      usecols=["Season", "Team", "Opponent", "Venue", "Player_Sofascore", "Local_Player",
                               "Canonical_Player_ID", "Appearance_Status", "Sofascore_minutesPlayed"])
     so = so[so["Appearance_Status"].eq("played") & so["Season"].between(SEASONS[0], SEASONS[-1])].copy()
@@ -145,7 +145,7 @@ def apply_overrides(v, so, overrides):
 def unpartnered_stats_rows(v):
     """Played player_match_stats rows that no vaastav row claims, and duplicate claims."""
     key = ["Season", "Team", "Opponent", "Venue", "Player"]
-    p = pd.read_csv(_DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False, usecols=key + ["Minutes"])
+    p = pd.read_csv(paths.current_file("player_match_stats.csv", root=_DATA), encoding="utf-8-sig", low_memory=False, usecols=key + ["Minutes"])
     p = p[p["Season"].between(SEASONS[0], SEASONS[-1]) & p["Minutes"].gt(0)]
     claimed = v.assign(Player=v["Local_Player"].fillna(v["Name_FPL"]))[key]
     left = p.merge(claimed.drop_duplicates().assign(_hit=1), on=key, how="left")

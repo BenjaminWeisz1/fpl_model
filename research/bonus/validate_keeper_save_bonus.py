@@ -12,6 +12,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
+
 HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE), str(HERE.parent), str(HERE.parent / "assemble")]
 from fpl_model.bonus import build_residual_bps_baseline as residual  # noqa: E402
@@ -37,7 +39,7 @@ def repair_names(rows):
     mapped = rows["Player"].isin(NAMES)
     rows.loc[mapped, "Player"] = rows.loc[mapped, "Player"].map(NAMES)
     cols = ["PK", "PKatt", "Tkl", "CBI", "Recov"]
-    pms = pd.read_csv(calibration.DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False, usecols=KEY + cols).drop_duplicates(KEY)
+    pms = pd.read_csv(paths.current_file("player_match_stats.csv", root=calibration.DATA), encoding="utf-8-sig", low_memory=False, usecols=KEY + cols).drop_duplicates(KEY)
     m = rows.loc[mapped, KEY].merge(pms, on=KEY, how="left")
     for c in cols:
         rows.loc[mapped, c] = m[c].fillna(rows.loc[mapped, c].reset_index(drop=True)).to_numpy()
@@ -159,7 +161,7 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     frozen = hashlib.sha256(calibration.FROZEN_FORECAST.read_bytes()).hexdigest()
     betas = {int(r["Season"]): r["beta"] for r in json.loads(FITS.read_text(encoding="utf-8"))["fits"]}
-    history = pd.read_csv(calibration.DATA / "team_ratings_history.csv", encoding="utf-8-sig", low_memory=False)
+    history = pd.read_csv(paths.current_file("team_ratings_history.csv", root=calibration.DATA), encoding="utf-8-sig", low_memory=False)
     rows, _ = hist.load_rows()
     rows, known = repair_names(rows)
     so = vpb.load_sofascore()

@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from fpl_model import paths
 from fpl_model.bonus import fpl_only_assists as foa
 
 
@@ -42,11 +43,11 @@ class FplOnlyAssistTests(unittest.TestCase):
             self.assertEqual(foa.mode(d)[0], "model")
 
     def test_live_rates_cover_every_current_player(self):
-        path = foa._DATA / "fpl_only_assist_rates.csv"
+        path = paths.current_file("fpl_only_assist_rates.csv", root=foa._DATA)
         if not path.exists():
             self.skipTest("rates file not built yet")
         rates = pd.read_csv(path, encoding="utf-8-sig")
-        players = pd.read_csv(foa._DATA / "players_current.csv", encoding="utf-8-sig")
+        players = pd.read_csv(paths.current_file("players_current.csv", root=foa._DATA), encoding="utf-8-sig")
         players = players[players["Pos"].isin(["D", "M", "F", "G"])]
         self.assertEqual(set(players["Player"]), set(rates["Player"]))
         self.assertFalse(rates["FPLOnly_Ast90"].isna().any())

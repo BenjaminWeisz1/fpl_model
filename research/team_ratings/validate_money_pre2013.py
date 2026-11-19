@@ -1,7 +1,7 @@
 """
 Money prior with 2011-2012 added as value-only seasons (pre-registered in CHANGELOG §213; user request).
 
-Builds data/current/historical_money_pre2013.csv (Season, Team, GF, GA, Squad_Value; no wages: fbref's wages start
+Builds data/archive/current_unused_20261118/historical_money_pre2013.csv (Season, Team, GF, GA, Squad_Value; no wages: fbref's wages start
 in 2013-14) from football-data.co.uk results (data/raw/football_data/E0_2011.csv, E0_2012.csv) and Transfermarkt's
 club market-value page at the 15 Aug cut-off (values below, read 2026-11-09 from
 /<league>/marktwerteverein/wettbewerb/GB1..GB4/plus/?stichtag=2011-08-15 and 2012-08-15, rows whose league on that
@@ -16,13 +16,14 @@ import json
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from fpl_model.atomic_write import to_csv_atomic  # noqa: E402
 from research.team_ratings import validate_money_priors_pooled as vmp  # noqa: E402
 
 ROOT = vmp.ROOT
 CUR = vmp.CUR
 OUT = ROOT / "data" / "validation" / "money_pre2013_20261109"
-PRE_FILE = CUR / "historical_money_pre2013.csv"
+PRE_FILE = paths.current_file("historical_money_pre2013.csv", root=CUR)
 TEST = range(2017, 2026)
 
 # EUR m, Transfermarkt cut-off 15 Aug, project team names
@@ -62,11 +63,11 @@ def build_pre2013():
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     pre = build_pre2013()
-    hm = pd.read_csv(CUR / "historical_money.csv", encoding="utf-8-sig")
+    hm = pd.read_csv(paths.current_file("historical_money.csv", root=CUR), encoding="utf-8-sig")
     allv = pd.concat([pre, hm[["Season", "Team", "GF", "GA", "Squad_Value", "Wages"]]], ignore_index=True)
     allv["V_pct"] = allv.groupby("Season")["Squad_Value"].transform(lambda x: x / x.sum())
     known = allv[allv["GF"].notna()]
-    prod = pd.read_csv(CUR / "money_priors_by_season.csv", encoding="utf-8-sig")
+    prod = pd.read_csv(paths.current_file("money_priors_by_season.csv", root=CUR), encoding="utf-8-sig")
     prev = allv.groupby("Season")["Team"].apply(set).to_dict()
 
     rows = []

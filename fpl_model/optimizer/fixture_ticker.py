@@ -78,8 +78,8 @@ def fetch(url):
 
 def build_difficulty(codes):
     """One row per (Opponent, Venue); Venue is where the team facing that opponent plays."""
-    ratings = pd.read_csv(_DATA / "team_ratings_current.csv", encoding="utf-8-sig").set_index("Team")
-    current = pd.read_csv(_DATA / "players_current.csv", encoding="utf-8-sig")
+    ratings = pd.read_csv(paths.current_file("team_ratings_current.csv", root=_DATA), encoding="utf-8-sig").set_index("Team")
+    current = pd.read_csv(paths.current_file("players_current.csv", root=_DATA), encoding="utf-8-sig")
     code_of = current.drop_duplicates("Team").set_index("Team")["Team_Short"]
     ratings["Code"] = ratings.index.map(code_of)
     ratings = ratings[ratings["Code"].isin(codes)]

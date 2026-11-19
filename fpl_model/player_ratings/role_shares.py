@@ -16,7 +16,7 @@ LINE_OF = {"CB": 0, "LB": 1, "RB": 1, "WB": 1, "DM": 2, "CM": 2, "AM": 3, "LM": 
 
 def load_starts():
     """Outfield starts in player-date order, with the integer line."""
-    u = pd.read_csv(DATA / "understat_match_positions.csv", encoding="utf-8-sig", low_memory=False)
+    u = pd.read_csv(paths.current_file("understat_match_positions.csv", root=DATA), encoding="utf-8-sig", low_memory=False)
     s = u[(u.Is_Starter == True) & u.Position.isin(LINE_OF)].copy()  # noqa: E712
     s["Date"] = pd.to_datetime(s["Date"])
     s["L"] = s.Position.map(LINE_OF)
@@ -56,7 +56,7 @@ def role_table():
     """
     s = load_starts()
     keys = ["Season", "Team", "Opponent", "Venue", "Player_ID_Understat"]
-    pos = pd.read_csv(DATA / "player_match_positions.csv", encoding="utf-8-sig", low_memory=False,
+    pos = pd.read_csv(paths.current_file("player_match_positions.csv", root=DATA), encoding="utf-8-sig", low_memory=False,
                       usecols=keys + ["Player"]).drop_duplicates(keys)
     n = len(s)
     s = s.drop(columns=["Player"]).merge(pos, on=keys, how="left")

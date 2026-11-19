@@ -52,7 +52,7 @@ def sofascore_components():
              "Sofascore_totalClearance", "Sofascore_outfielderBlock", "Sofascore_interceptionWon",
              "Sofascore_ballRecovery", "Sofascore_goals", "Sofascore_goalAssist"]
             + ["Sofascore_" + k for k in WEIGHTS])
-    so = pd.read_csv(DATA / "sofascore_player_match_stats.csv", encoding="utf-8-sig", usecols=cols, low_memory=False)
+    so = pd.read_csv(paths.current_file("sofascore_player_match_stats.csv", root=DATA), encoding="utf-8-sig", usecols=cols, low_memory=False)
     so = so[so["Season"].isin(SEASONS) & so["Appearance_Status"].eq("played")
             & (so["Sofascore_minutesPlayed"] >= 60)].copy()
     so.columns = [c.replace("Sofascore_", "") for c in so.columns]
@@ -74,7 +74,7 @@ def sofascore_components():
 
 
 def card_components():
-    s = pd.read_csv(DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    s = pd.read_csv(paths.current_file("player_match_stats.csv", root=DATA), encoding="utf-8-sig", low_memory=False,
                     usecols=["Season", "Player", "Opponent", "Position", "Minutes", "CrdY", "CrdR",
                              "Goals", "Assists", "Data_Source"])
     s = s[s["Data_Source"].eq("fbref") & s["Season"].isin(SEASONS) & (s["Minutes"] >= 60)].copy()

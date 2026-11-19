@@ -16,6 +16,7 @@ import sys
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from research.team_ratings import validate_money_priors_pooled as vmp
 
 OUT = vmp.ROOT / "data" / "validation" / "money_prior_outliers_20261107"
@@ -25,7 +26,7 @@ ARMS = {"C0": None, "P2": ("promoted", 2.0), "P15": ("promoted", 1.5), "A2": ("a
 
 
 def load():
-    df = pd.read_csv(vmp.CUR / "historical_money.csv", encoding="utf-8-sig")
+    df = pd.read_csv(paths.current_file("historical_money.csv", root=vmp.CUR), encoding="utf-8-sig")
     for col in ("Wages", "Squad_Value"):
         df[f"{col}_pct"] = df.groupby("Season")[col].transform(lambda x: x / x.sum())
     prev = {s: set(df.loc[df["Season"] == s - 1, "Team"]) for s in df["Season"].unique()}
@@ -76,7 +77,7 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     df = load()
     p, drops = predictions(df)
-    prod = pd.read_csv(vmp.CUR / "money_priors_by_season.csv", encoding="utf-8-sig")
+    prod = pd.read_csv(paths.current_file("money_priors_by_season.csv", root=vmp.CUR), encoding="utf-8-sig")
     chk = p.merge(prod, on=["Season", "Team"], how="left")
     assert chk["Money_GF"].notna().all()
     err = max((chk["C0_GF"] - chk["Money_GF"]).abs().max(), (chk["C0_GA"] - chk["Money_GA"]).abs().max())

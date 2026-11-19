@@ -27,8 +27,8 @@ from sklearn.linear_model import LinearRegression
 from fpl_model import paths
 
 _DATA = paths.CURRENT
-MONEY_FILE = paths.CURRENT / "money_priors_by_season.csv"
-HISTORY_FILE = paths.CURRENT / "historical_money.csv"
+MONEY_FILE = paths.current_file("money_priors_by_season.csv", root=paths.CURRENT)
+HISTORY_FILE = paths.current_file("historical_money.csv", root=paths.CURRENT)
 FEATURES = ["Wages_pct", "Squad_Value_pct"]
 REBUILD = range(2017, 2026)
 CHECK = None  # was 2025 until §211; set a season here to verify instead of rewriting it

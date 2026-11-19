@@ -9,9 +9,9 @@ into per-player, per-gameweek predicted points:
       -> residual BPS baseline -> pass-band rates -> simulation features -> bonus simulation
       -> predicted points -> part-2 heatmaps
 
-Manual inputs it expects to be up to date: data/current/minutes.csv (the FPL
-Review expected-minutes forecast), data/current/review_pk_share.xlsx (cleaned
-by clean_penalty_share_paste.py) and data/current/fixtures.csv.
+Manual inputs it expects to be up to date: data/current/manual/minutes.csv (the FPL
+Review expected-minutes forecast), data/current/manual/review_pk_share.xlsx (cleaned
+by clean_penalty_share_paste.py) and data/current/manual/fixtures.csv.
 
 Run locally (from anywhere -- paths are resolved relative to this file):
     python run_pre_deadline.py

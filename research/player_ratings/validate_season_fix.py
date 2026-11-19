@@ -45,8 +45,8 @@ def main():
     cand = pd.read_csv(run_dir / "candidate_log.csv", encoding="utf-8-sig")
     rb = pd.read_csv(run_dir / "baseline_log.csv.ratings.csv", encoding="utf-8-sig")
     rc = pd.read_csv(run_dir / "candidate_log.csv.ratings.csv", encoding="utf-8-sig")
-    transfers = pd.read_csv(ROOT / "data" / "current" / "transfers.csv")
-    players = pd.read_csv(ROOT / "data" / "current" / "players_current.csv", encoding="utf-8-sig")
+    transfers = pd.read_csv(paths.current_file("transfers.csv"))
+    players = pd.read_csv(paths.current_file("players_current.csv"), encoding="utf-8-sig")
     touched = set(transfers.loc[transfers["Season"] >= 2026, "Player"])
     web = dict(zip(players["Player"], players["Web_Name"]))
     touched_web = {web[p] for p in touched if p in web}

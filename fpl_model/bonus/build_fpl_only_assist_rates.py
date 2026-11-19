@@ -13,21 +13,21 @@ player gets the position fallback.
 Run locally (before build_simulation_features.py):
     python -m fpl_model.bonus.build_fpl_only_assist_rates
 """
-
 import pandas as pd
 
+from fpl_model import paths
 from fpl_model.bonus import fpl_only_assists as foa
 from fpl_model.minutes_penalties_cs.build_penalty_predictions import resolve_names  # noqa: E402
 
 _DATA = foa._DATA
-OUT_FILE = _DATA / "fpl_only_assist_rates.csv"
+OUT_FILE = paths.current_file("fpl_only_assist_rates.csv", root=_DATA)
 COLUMNS = ["Player", "Web_Name", "Team", "Pos", "Mode", "Sofascore_Appearances", "History_Minutes",
            "Rebound_Rate", "Pens_Rate", "Pen_Share", "FPLOnly_Ast90"]
 
 
 def penalty_shares(players):
     """Mean penalty share over the forecast window per Web_Name, as build_penalty_predictions.py names them."""
-    ps = pd.read_csv(_DATA / "penalty_share.csv")
+    ps = pd.read_csv(paths.current_file("penalty_share.csv", root=_DATA))
     ps["Web_Name"] = resolve_names(ps, players, "Player")
     gw = [c for c in ps.columns if c.startswith("GW")]
     ps["share"] = ps[gw].apply(pd.to_numeric, errors="coerce").mean(axis=1)
@@ -35,7 +35,7 @@ def penalty_shares(players):
 
 
 def history():
-    so = pd.read_csv(_DATA / "sofascore_player_match_stats.csv", encoding="utf-8-sig", low_memory=False)
+    so = pd.read_csv(paths.current_file("sofascore_player_match_stats.csv", root=_DATA), encoding="utf-8-sig", low_memory=False)
     so = so[so["Appearance_Status"].eq("played")].copy()
     so["Kickoff"] = pd.to_datetime(so["Kickoff"], utc=True)
     def num(c):
@@ -54,7 +54,7 @@ def history():
 
 def main():
     mode, reason = foa.mode()
-    players = pd.read_csv(_DATA / "players_current.csv", encoding="utf-8-sig")
+    players = pd.read_csv(paths.current_file("players_current.csv", root=_DATA), encoding="utf-8-sig")
     share_of = penalty_shares(players) if mode == "model" else {}
     players = players[players["Pos"].isin(["D", "M", "F", "G"])]
     canonical, sums = history() if mode == "model" else (pd.Series(dtype=object), pd.DataFrame())

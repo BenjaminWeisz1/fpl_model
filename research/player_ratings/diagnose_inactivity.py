@@ -30,7 +30,7 @@ N_BOOT, SEED = 5000, 42
 def build():
     log = pd.read_csv(LOG, encoding="utf-8-sig")
     log["order"] = np.arange(len(log))
-    pos = pd.read_csv(DATA / "player_match_positions.csv", encoding="utf-8-sig", low_memory=False)
+    pos = pd.read_csv(paths.current_file("player_match_positions.csv", root=DATA), encoding="utf-8-sig", low_memory=False)
     pos = pos.drop_duplicates(KEY)[KEY + ["Is_Starter", "Position_Resolved"]]
     f = log.merge(pos, on=KEY, how="left").sort_values("order").reset_index(drop=True)
     f["minutes"] = f["weight"] * 90
@@ -59,7 +59,7 @@ def build():
     f["missed"] = np.where(same, f["team_idx"] - prev_idx - 1, np.where(prev_season < f["Season"], f["team_idx"], np.nan))
     # (C) previous appearance two or more seasons earlier
     f["season_gap"] = f["Season"] - prev_season
-    tr = pd.read_csv(DATA / "transfers.csv", encoding="utf-8-sig", dtype=str, keep_default_na=False)
+    tr = pd.read_csv(paths.current_file("transfers.csv", root=DATA), encoding="utf-8-sig", dtype=str, keep_default_na=False)
     ss = tr[pd.to_numeric(tr["Seasons_Missed"], errors="coerce").fillna(0) > 0]
     ss_keys = set(zip(ss["Player"], pd.to_numeric(ss["Season"], errors="coerce")))
     f["second_season_row"] = [(p, s) in ss_keys for p, s in zip(f["Player"], f["Season"])]

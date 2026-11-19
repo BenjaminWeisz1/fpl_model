@@ -39,24 +39,24 @@ KEY = ["Season", "Team", "Opponent", "Venue", "Player"]
 
 
 def file_rates():
-    return pd.read_csv(DATA / "position_combinations.csv").set_index("Pos")
+    return pd.read_csv(paths.current_file("position_combinations.csv", root=DATA)).set_index("Pos")
 
 
 @lru_cache(maxsize=1)
 def starts_frame():
     """Every PL start with minutes > 0: Season, Slot, Minutes, npxG, xAG (the loop's target), xA_opta (Opta-scale
     expected assists where they exist: FPL-era xAG, or 2022-2024 Sofascore expectedAssists), Data_Source."""
-    s = pd.read_csv(DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    s = pd.read_csv(paths.current_file("player_match_stats.csv", root=DATA), encoding="utf-8-sig", low_memory=False,
                     usecols=KEY + ["Minutes", "npxG", "xAG", "Data_Source"])
     s = s[s["Minutes"] > 0].copy()
-    p = pd.read_csv(DATA / "player_match_positions.csv", encoding="utf-8-sig", low_memory=False,
+    p = pd.read_csv(paths.current_file("player_match_positions.csv", root=DATA), encoding="utf-8-sig", low_memory=False,
                     usecols=KEY + ["Position_Resolved", "Is_Starter"]).drop_duplicates(KEY)
     s = s.merge(p, on=KEY, how="inner")
     s = s[s["Is_Starter"].astype(str).str.lower().eq("true")].copy()
     s["Slot"] = s["Position_Resolved"].map(SLOT_CANON)
     s = s[s["Slot"].notna()].copy()
     # §136 red-card player factors, as build_player_ratings.py (GOAL_MODEL_RED_CARD_FILE)
-    rc_file = config.get("GOAL_MODEL_RED_CARD_FILE") or DATA / "red_card_player_factors.csv"
+    rc_file = config.get("GOAL_MODEL_RED_CARD_FILE") or paths.current_file("red_card_player_factors.csv", root=DATA)
     fx = np.ones(len(s))
     fn = np.ones(len(s))
     if rc_file.exists():
@@ -68,7 +68,7 @@ def starts_frame():
     s["npxG"] = s["npxG"].to_numpy() * fn
     s["xAG"] = s["xAG"].to_numpy() * fx
     # Sofascore expected assists (= Opta xA) for the 2022-2024 starts
-    sf = pd.read_csv(DATA / "sofascore_player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    sf = pd.read_csv(paths.current_file("sofascore_player_match_stats.csv", root=DATA), encoding="utf-8-sig", low_memory=False,
                      usecols=["Season", "Team", "Opponent", "Venue", "Local_Player", "Sofascore_minutesPlayed",
                               "Sofascore_expectedAssists"]).rename(columns={"Local_Player": "Player"})
     sf = sf[(sf["Sofascore_minutesPlayed"].fillna(0) > 0)].drop_duplicates(KEY)

@@ -1,6 +1,6 @@
 """Solve the multi-week transfer plan with the pinned open-fpl-solver (brief: optimizer_brief.md).
 
-Builds the projection from data/current/predicted_points.csv (points) and minutes.csv (IDs and xMins), with live
+Builds the projection from data/current/forecasts/predicted_points.csv (points) and data/current/manual/minutes.csv (IDs and xMins), with live
 bootstrap-static prices, then writes three plans to data/optimizer/GW<nn>/. Reads production data, never writes it.
 The gameweek comes from bootstrap-static (is_next); free transfers and bank come from team_data.json. Each week: run
 part 2, refresh team_data.json, then run this and replay_plans.py. The plans the replay reports are the checked ones.
@@ -84,13 +84,13 @@ def fetch(url):
 
 def build_projection(fpl, gws):
     """predicted_points (Player, Team) -> players_current -> (Raw_Web_Name, Team_Short) -> bootstrap ID."""
-    points = pd.read_csv(_DATA / "predicted_points.csv", encoding="utf-8-sig")
+    points = pd.read_csv(paths.current_file("predicted_points.csv", root=_DATA), encoding="utf-8-sig")
     assert not points.duplicated(["Player", "Team"]).any()
     weeks = [int(c) for c in points.columns if c.isdigit()]
     if weeks[0] != gws[0] or not set(gws) <= set(weeks):
         raise ValueError(f"predicted_points.csv covers GW{weeks}, the plan needs GW{gws}: run part 2 first.")
 
-    current = pd.read_csv(_DATA / "players_current.csv", encoding="utf-8-sig")
+    current = pd.read_csv(paths.current_file("players_current.csv", root=_DATA), encoding="utf-8-sig")
     current = current[["Web_Name", "Raw_Web_Name", "Team_Short"]].drop_duplicates(["Web_Name", "Team_Short"])
     merged = points.merge(current, left_on=["Player", "Team"], right_on=["Web_Name", "Team_Short"], how="left", validate="1:1")
 
@@ -107,7 +107,7 @@ def build_projection(fpl, gws):
     merged["ID"] = merged["ID"].astype(int)
     assert merged["ID"].is_unique and (merged["Pos"] == merged["Live_Pos"]).all()
 
-    minutes = pd.read_csv(_DATA / "minutes.csv", encoding="utf-8-sig")
+    minutes = pd.read_csv(paths.current_file("minutes.csv", root=_DATA), encoding="utf-8-sig")
     minutes = minutes[minutes["BV"] != NOT_IN_FPL_BV]
     assert len(minutes) == len(points) and minutes["ID"].is_unique
     merged = merged.merge(minutes[["ID", "Team", *[f"{w}_xMins" for w in gws]]], on="ID", how="left", suffixes=("", "_minutes"), validate="1:1")

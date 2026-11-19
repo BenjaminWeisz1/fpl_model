@@ -25,8 +25,8 @@ VALUES = ["NPG_Rating_Pre", "Assist_Rating_Pre", "npxg90", "pred_goals_90", "xag
 
 def main():
     read = lambda p: pd.read_csv(p, encoding="utf-8-sig", low_memory=False)
-    stats = read(ROOT / "data" / "current" / "player_match_stats.csv")
-    players = read(ROOT / "data" / "current" / "players_current.csv")
+    stats = read(paths.current_file("player_match_stats.csv"))
+    players = read(paths.current_file("players_current.csv"))
     fpl = stats[stats["Data_Source"].eq("FPL_API") & (stats["Season"] >= 2025)]
     takers = set(fpl.loc[fpl["PKatt"] > 0, "Player"])
     web = dict(zip(players["Player"], players["Web_Name"]))

@@ -34,7 +34,7 @@ K_REM = {"D": 17.666, "M": 15.100, "F": 21.311, "G": 100.0}
 
 def active(data=_DATA):
     """(bool, reason): whether pass bands replace the §64 residual-only model this run."""
-    path = data / "sofascore_status.json"
+    path = paths.current_file("sofascore_status.json", root=data)
     if not path.exists():
         return False, "sofascore_status.json missing"
     status = json.loads(path.read_text(encoding="utf-8"))
@@ -53,7 +53,7 @@ def pass_band(total, accurate):
 
 def load_sofascore(data=_DATA):
     """Played Sofascore rows with pass-band BPS, 60+ flag and kickoff time."""
-    so = pd.read_csv(data / "sofascore_player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    so = pd.read_csv(paths.current_file("sofascore_player_match_stats.csv", root=data), encoding="utf-8-sig", low_memory=False,
                      usecols=["Season", "Canonical_Player_ID", "Local_Player", "Team", "Opponent", "Venue",
                               "Kickoff", "Event_ID_Sofascore", "Appearance_Status", "Sofascore_minutesPlayed",
                               "Sofascore_totalPass", "Sofascore_accuratePass"])

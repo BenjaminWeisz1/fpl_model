@@ -88,14 +88,14 @@ def clean(frame):
 def snapshot_plan(data, season, gameweek=None, part="all"):
     """Validate every required artifact before creating any archive directory."""
     names = [*PART1, *(PART2 if part == "all" else ()), *CONTEXT]
-    missing = [name for name in names if not (data/name).is_file()]
+    missing = [name for name in names if not paths.current_file(name, root=data).is_file()]
     if missing:
         raise ValueError(f"Missing required files: {', '.join(missing)}")
-    fixtures = clean(read_csv(data/"fixtures.csv"))
+    fixtures = clean(read_csv(paths.current_file("fixtures.csv", root=data)))
     fixtures = fixtures[fixtures.Season.eq(season)].copy()
     if fixtures.empty or fixtures.MatchID.duplicated().any():
         raise ValueError("Missing season schedule or duplicate fixture MatchIDs")
-    results = clean(read_csv(data/"match_results.csv"))
+    results = clean(read_csv(paths.current_file("match_results.csv", root=data)))
     results = results[results.Season.eq(season)]
     completed = results[results.Home_Goals.notna() & results.Away_Goals.notna()]
     # Use only played matches to locate origin: a duplicate elsewhere in the
@@ -111,8 +111,8 @@ def snapshot_plan(data, season, gameweek=None, part="all"):
     target = fixtures[fixtures.Round.eq(gameweek)]
     if target.empty or target.duplicated(["Season", "Home", "Away"]).any():
         raise ValueError(f"No unambiguous fixtures for season {season}, GW{gameweek}")
-    if (data/"player_match_stats.csv").exists():
-        stats = clean(read_csv(data/"player_match_stats.csv"))
+    if (paths.current_file("player_match_stats.csv", root=data)).exists():
+        stats = clean(read_csv(paths.current_file("player_match_stats.csv", root=data)))
         stats = stats[stats.Season.eq(season)]
         legs = pd.concat([target.rename(columns={"Home":"Team", "Away":"Opponent"}).assign(Venue="Home"),
                           target.rename(columns={"Away":"Team", "Home":"Opponent"}).assign(Venue="Away")])
@@ -120,7 +120,7 @@ def snapshot_plan(data, season, gameweek=None, part="all"):
                            on=["Season", "Team", "Opponent", "Venue"])):
             raise ValueError(f"GW{gameweek} player outcomes already exist; cannot save a pre-gameweek forecast")
     views = {"fixtures.csv": target}
-    defensive = read_csv(data/"predictions_defensive.csv")
+    defensive = read_csv(paths.current_file("predictions_defensive.csv", root=data))
     d = defensive.merge(fixtures[["MatchID", "Season", "Round"]], on="MatchID", how="left", validate="many_to_one")
     if d.Round.isna().any() or int(d.Round.min()) != origin:
         raise ValueError(f"DEFCON outputs are stale or unmapped; run the post-gameweek update for GW{origin}")
@@ -129,16 +129,16 @@ def snapshot_plan(data, season, gameweek=None, part="all"):
     views["predictions_defensive.csv"] = d[d.Round.eq(gameweek)].copy()
     if part == "all":
         dependencies = [*PART2[:-1], "predictions_defensive.csv", "player_goal_assist_ratings.csv", "team_ratings_current.csv"]
-        dependencies += [n for n in ("minutes.csv", "penalty_share.csv") if (data/n).exists()]
-        newer = [n for n in dependencies if (data/n).stat().st_mtime_ns > (data/"predicted_points.csv").stat().st_mtime_ns]
+        dependencies += [n for n in ("minutes.csv", "penalty_share.csv") if paths.current_file(n, root=data).exists()]
+        newer = [n for n in dependencies if paths.current_file(n, root=data).stat().st_mtime_ns > paths.current_file("predicted_points.csv", root=data).stat().st_mtime_ns]
         if newer:
             raise ValueError(f"Predicted points predate updated inputs/outputs ({', '.join(newer)}); run python run_pre_deadline.py first")
         for name in ("fixture_goal_predictions.csv", "simulation_features.csv", "bonus_predictions.csv"):
-            f = read_csv(data/name)
+            f = read_csv(paths.current_file(name, root=data))
             if "Round" not in f or f.empty or int(f.Round.min()) != origin or not f.Round.eq(gameweek).any():
                 raise ValueError(f"{name} is stale or lacks GW{gameweek}; run python run_pre_deadline.py first")
             views[name] = f[f.Round.eq(gameweek)].copy()
-        points = read_csv(data/"predicted_points.csv")
+        points = read_csv(paths.current_file("predicted_points.csv", root=data))
         rounds = sorted(int(c) for c in points.columns if str(c).isdigit())
         if not rounds or rounds[0] != origin or gameweek not in rounds:
             raise ValueError(f"predicted_points.csv is stale or lacks GW{gameweek}; run python run_pre_deadline.py first")
@@ -146,7 +146,7 @@ def snapshot_plan(data, season, gameweek=None, part="all"):
         views["predicted_points.csv"] = pts.rename(columns={str(gameweek):"PredictedPoints"}).assign(Season=season, Round=gameweek)
         relative = gameweek-origin+1
         for name in ("minutes_probabilities.csv", "penalty_predictions.csv"):
-            f = read_csv(data/name)
+            f = read_csv(paths.current_file(name, root=data))
             suffix = f"_GW{relative}"
             selected = [c for c in f if c.endswith(suffix)]
             if not selected:
@@ -158,7 +158,7 @@ def snapshot_plan(data, season, gameweek=None, part="all"):
 
 def deadline_timing(data, gameweek, now):
     """(deadline, tag): whether `now` is before the gameweek's FPL deadline."""
-    path = data/"gameweek_deadlines.csv"
+    path = paths.current_file("gameweek_deadlines.csv", root=data)
     if not path.is_file():
         return None, "deadline_unknown"
     deadlines = read_csv(path)
@@ -190,14 +190,15 @@ def benchmark_files(data, gameweek):
     """
     files = {}
     for group, (status_name, cleaned, patterns) in BENCHMARKS.items():
-        status_path = data/status_name
+        status_path = paths.current_file(status_name, root=data)
         if not status_path.is_file():
             continue
         status = json.loads(status_path.read_text(encoding="utf-8"))
         if status.get("gameweek") != gameweek:
             continue
         files[f"{group}/{status_name}"] = status_path
-        files.update({f"{group}/{name}": data/name for name in cleaned if (data/name).is_file()})
+        files.update({f"{group}/{name}": paths.current_file(name, root=data)
+                      for name in cleaned if paths.current_file(name, root=data).is_file()})
         folder = status.get("source_folder")
         raw = data.parent.parent/folder if folder else None
         if raw is not None and raw.is_dir():
@@ -207,12 +208,13 @@ def benchmark_files(data, gameweek):
 
 def save_snapshot(data=DATA, output=SNAPSHOTS, season=CURRENT_SEASON, gameweek=None, part="all", include_images=False, now=None):
     names = [*PART1, *(PART2 if part == "all" else ()), *CONTEXT, *PROVENANCE]
-    observed = {name: digest(data/name) for name in names if (data/name).is_file()}
+    observed = {name: digest(paths.current_file(name, root=data)) for name in names
+                if paths.current_file(name, root=data).is_file()}
     plan = snapshot_plan(data, season, gameweek, part)
     benchmark = benchmark_files(data, plan["gameweek"]) if part == "all" else {}
     benchmark_hashes = {key: digest(path) for key, path in benchmark.items()}
     for name, expected in observed.items():
-        if digest(data/name) != expected:
+        if digest(paths.current_file(name, root=data)) != expected:
             raise ValueError(f"Sources changed while checking snapshot: {name}; retry after the pipeline finishes")
     now = now or datetime.now(UTC)
     deadline, timing = deadline_timing(data, plan["gameweek"], now)
@@ -223,7 +225,7 @@ def save_snapshot(data=DATA, output=SNAPSHOTS, season=CURRENT_SEASON, gameweek=N
         folder = "context" if name in CONTEXT else "outputs"
         target = destination/folder/name
         target.parent.mkdir(exist_ok=True)
-        shutil.copy2(data/name, target)
+        shutil.copy2(paths.current_file(name, root=data), target)
         if digest(target) != observed[name]:
             raise ValueError(f"Source changed during snapshot: {name}; incomplete snapshot at {destination}")
     for key, source in benchmark.items():
@@ -247,7 +249,7 @@ def save_snapshot(data=DATA, output=SNAPSHOTS, season=CURRENT_SEASON, gameweek=N
                 if digest(target) != image_hash or digest(source) != image_hash:
                     raise ValueError(f"Image changed during snapshot: {source.name}")
     for name, expected in observed.items():
-        if digest(data/name) != expected:
+        if digest(paths.current_file(name, root=data)) != expected:
             raise ValueError(f"Inputs/outputs changed during snapshot: {name}; retry after the pipeline finishes")
     saved = {str(p.relative_to(destination)).replace("\\", "/"):
              {"sha256": digest(p), "bytes": p.stat().st_size,

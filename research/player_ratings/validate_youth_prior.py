@@ -29,7 +29,7 @@ GROUP = {"CB": "DEF", "FB": "DEF", "WB": "DEF", "DM": "MID", "CM": "MID", "WM": 
 
 def youth_rows(log):
     ent = entrants(log, min_season=2017)
-    t = pd.read_csv(DATA / "transfers.csv", encoding="utf-8-sig")
+    t = pd.read_csv(paths.current_file("transfers.csv", root=DATA), encoding="utf-8-sig")
     ent = ent[ent["Type"] == "youth"].copy()
     pos = {}
     for p, s0 in zip(ent["Player"], ent["Entry"]):

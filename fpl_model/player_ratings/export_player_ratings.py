@@ -38,11 +38,11 @@ from fpl_model.player_availability import with_availability  # noqa: E402
 
 _DATA = paths.CURRENT
 
-RATINGS_FILE = paths.CURRENT / "player_goal_assist_ratings.csv"
-DEFCON_FILE = paths.CURRENT / "defcon_average_probabilities.csv"
-PLAYERS_CURRENT_FILE = paths.CURRENT / "players_current.csv"
-MINUTES_FILE = paths.CURRENT / "minutes.csv"
-OUT_FILE = paths.CURRENT / "player_ratings.csv"
+RATINGS_FILE = paths.current_file("player_goal_assist_ratings.csv", root=paths.CURRENT)
+DEFCON_FILE = paths.current_file("defcon_average_probabilities.csv", root=paths.CURRENT)
+PLAYERS_CURRENT_FILE = paths.current_file("players_current.csv", root=paths.CURRENT)
+MINUTES_FILE = paths.current_file("minutes.csv", root=paths.CURRENT)
+OUT_FILE = paths.current_file("player_ratings.csv", root=paths.CURRENT)
 
 
 def _require(path, producer):

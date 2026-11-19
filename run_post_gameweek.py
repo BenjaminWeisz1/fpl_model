@@ -167,7 +167,7 @@ STAGES = [
     {
         # Predicted final table: current points + expected points (3 x P(win) + P(draw), Poisson goals from current
         # ratings, league penalty rate) for every remaining FPL fixture -> images/team_ratings/predicted_table.png
-        # and data/current/predicted_table.csv (user request, 2026-11-04).
+        # and data/current/forecasts/predicted_table.csv (user request, 2026-11-04).
         "label": "Predicted final table",
         "script": SCRIPTS / "team_ratings" / "predicted_table.py",
         "summary_files": ["predicted_table.csv"],

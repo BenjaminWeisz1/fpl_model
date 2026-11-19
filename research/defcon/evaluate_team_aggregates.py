@@ -5,6 +5,8 @@ Run: python -u -X utf8 -m research.defcon.evaluate_team_aggregates [extract|run|
 """
 import os
 
+from fpl_model import paths
+
 os.environ.setdefault("OMP_NUM_THREADS", "2")
 import json
 import sys
@@ -19,7 +21,7 @@ from research.defcon import overnight_frames as H
 
 OUT = H.ROOT / "data" / "validation" / "defcon_team_aggregates_20261102"
 H.OUT, H.FRAMES = OUT, OUT / "frames.pkl"
-DATA = H.ROOT / "data" / "current"
+DATA = paths.CURRENT
 YEARS = [2022, 2023, 2024, 2025, 2026]
 DECAY, RATIO = 0.8, 1.067      # RECENCY_DECAY, PROMOTED_DEF_RATIO in predict.py
 FEATS = {"TeamAvgStat": "Team", "VenueAvg": "Venue", "OpponentAvgStat": "Opponent"}
@@ -29,7 +31,7 @@ ARMS = ["A", "B", "C", "D"]
 
 
 def dates():
-    u = pd.read_csv(DATA / "understat_match_positions.csv", encoding="utf-8-sig", low_memory=False, usecols=KEY + ["Date"]).drop_duplicates(KEY)
+    u = pd.read_csv(paths.current_file("understat_match_positions.csv", root=DATA), encoding="utf-8-sig", low_memory=False, usecols=KEY + ["Date"]).drop_duplicates(KEY)
     u["Date"] = pd.to_datetime(u.Date)
     return u
 
@@ -156,7 +158,7 @@ def run():
 
 
 def real_hits(v, thr, head):
-    p = pd.read_csv(DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False)
+    p = pd.read_csv(paths.current_file("player_match_stats.csv", root=DATA), encoding="utf-8-sig", low_memory=False)
     p = p[p.Data_Source == "FPL_API"][KEY + ["Player", "Defensive_Contribution"]].drop_duplicates(KEY + ["Player"])
     d = v[v.Season >= 2025].drop_duplicates(KEY + ["Player"]).merge(p, on=KEY + ["Player"], how="inner", validate="one_to_one")
     d["hit"] = (d.Defensive_Contribution >= thr).astype(float)

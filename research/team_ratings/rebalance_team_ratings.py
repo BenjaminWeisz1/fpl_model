@@ -62,7 +62,7 @@ Note only: rebalancing changes rating levels entering update
 denominators, so the §21 optimum could shift under rebalancing -- not
 tested here.
 
-Outputs (data/current/team_ratings_oot/): rebalancing_report.txt,
+Outputs (data/validation/team_ratings_oot/): rebalancing_report.txt,
 rebalancing_summary.json.
 
 Run locally:

@@ -48,7 +48,7 @@ def match_events():
 
 
 def player_seasons():
-    p = pd.read_csv(DATA / "understat_match_positions.csv", encoding="utf-8-sig", low_memory=False,
+    p = pd.read_csv(paths.current_file("understat_match_positions.csv", root=DATA), encoding="utf-8-sig", low_memory=False,
                     usecols=["Season", "MatchID_Understat", "Player", "Player_ID_Understat", "Position", "Is_Starter", "Minutes"])
     p = p[p.Minutes > 0].drop_duplicates(["MatchID_Understat", "Player_ID_Understat"])
     e = match_events()

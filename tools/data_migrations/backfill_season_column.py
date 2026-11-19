@@ -18,7 +18,7 @@ import pandas as pd
 from fpl_model import paths
 
 _DATA = paths.CURRENT
-FILE = paths.CURRENT / "player_match_stats.csv"
+FILE = paths.current_file("player_match_stats.csv", root=paths.CURRENT)
 
 # MatchID cutover point where the old fbref round-based scheme ends and the
 # 2025/26 FPL-API offset scheme begins -- matches the MATCHID_OFFSET originally

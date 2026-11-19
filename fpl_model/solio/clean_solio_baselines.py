@@ -22,7 +22,7 @@ Solio sets g90, a90, bon90 and dc90 to 0 (and leaves them blank on screen) for p
 cut-off (about 18 expected minutes at GW11). Those four become blank here; the shares and CS stay. The
 cut-off is read from the data each run, never set here.
 
-Output (data/current/):
+Output (data/current/sourced/):
     solio_baselines.csv     one row per Solio player, linked to Web_Name / Team_Short / Pos through the
                             FPL code (fpl_player_codes.csv Opta_Code -> players_current.csv)
     solio_status.json       usable_for_comparison and the reasons; a comparison skips an unusable week
@@ -52,8 +52,8 @@ DATA = paths.CURRENT
 RAW = paths.RAW / "solio"
 SOURCE_NAME = "solio_baselines.csv"
 CAPTURE_NAME = "capture.json"
-OUT_FILE = paths.CURRENT / "solio_baselines.csv"
-STATUS_FILE = paths.CURRENT / "solio_status.json"
+OUT_FILE = paths.current_file("solio_baselines.csv", root=paths.CURRENT)
+STATUS_FILE = paths.current_file("solio_status.json", root=paths.CURRENT)
 
 RAW_COLUMNS = ["fpl_id", "fpl_code", "name", "position", "solio_team_id", "now_cost", "status",
                "pts90", "mins_per_match", "g90", "a90", "g_pct", "a_pct", "cs_pct", "bon90", "dc90"]
@@ -112,8 +112,8 @@ def share_check(raw):
 
 def link_players(raw):
     """FPL code -> full name (fpl_player_codes.csv) -> Web_Name, Team_Short, Pos (players_current.csv)."""
-    codes = pd.read_csv(DATA / "fpl_player_codes.csv", encoding="utf-8-sig")
-    players = pd.read_csv(DATA / "players_current.csv", encoding="utf-8-sig")
+    codes = pd.read_csv(paths.current_file("fpl_player_codes.csv", root=DATA), encoding="utf-8-sig")
+    players = pd.read_csv(paths.current_file("players_current.csv", root=DATA), encoding="utf-8-sig")
     codes = codes.drop_duplicates("Opta_Code", keep=False)[["Opta_Code", "Player"]]
     players = players.drop_duplicates("Player", keep=False)[["Player", "Web_Name", "Team_Short", "Pos", "Price"]]
     linked = (raw.merge(codes, left_on="fpl_code", right_on="Opta_Code", how="left", validate="one_to_one")
@@ -140,7 +140,7 @@ def capture_info(folder, source):
 
 
 def deadline_for(gameweek):
-    path = DATA / "gameweek_deadlines.csv"
+    path = paths.current_file("gameweek_deadlines.csv", root=DATA)
     if not path.is_file():
         return None
     d = pd.read_csv(path, encoding="utf-8-sig")
@@ -221,7 +221,7 @@ def build(gameweek, season):
 
 def default_gameweek():
     """The first forecast round in minutes.csv, which part 2 is about to use."""
-    minutes = pd.read_csv(DATA / "minutes.csv", encoding="utf-8-sig", nrows=1)
+    minutes = pd.read_csv(paths.current_file("minutes.csv", root=DATA), encoding="utf-8-sig", nrows=1)
     return min(int(c.split("_")[0]) for c in minutes.columns if re.fullmatch(r"\d+_xMins", c))
 
 

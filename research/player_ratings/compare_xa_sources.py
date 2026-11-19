@@ -26,12 +26,12 @@ N_BOOT, SEED = 5000, 42
 
 
 def load():
-    ps = pd.read_csv(DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False)
+    ps = pd.read_csv(paths.current_file("player_match_stats.csv", root=DATA), encoding="utf-8-sig", low_memory=False)
     ps["Season"] = np.where(ps["Data_Source"] == "fbref", 2017 + ps["MatchID"] // 380, ps["Season"])
     ps = ps[ps["Minutes"] > 0]
-    pos = pd.read_csv(DATA / "player_match_positions.csv", encoding="utf-8-sig", low_memory=False)
+    pos = pd.read_csv(paths.current_file("player_match_positions.csv", root=DATA), encoding="utf-8-sig", low_memory=False)
     pos = pos.drop_duplicates(K + ["Player"])[K + ["Player", "Player_ID_Understat"]]
-    u = pd.read_csv(DATA / "understat_match_positions.csv", encoding="utf-8-sig", low_memory=False)
+    u = pd.read_csv(paths.current_file("understat_match_positions.csv", root=DATA), encoding="utf-8-sig", low_memory=False)
     u = u[K + ["Player_ID_Understat", "Date", "Assists", "Understat_xA"]].rename(columns={"Assists": "conv_ast"})
     m = ps.merge(pos, on=K + ["Player"], how="left").merge(u, on=K + ["Player_ID_Understat"], how="inner")
     m["era"] = np.where(m["Data_Source"] == "fbref", "fbref", "FPL")

@@ -112,7 +112,7 @@ def run_stage(stage: dict, preseason: bool = False, gameweek: int = None) -> boo
 
     # Summarize output files
     for fname in stage.get("summary_files", []):
-        print(_file_info(DATA / fname))
+        print(_file_info(paths.current_file(fname, root=DATA)))
 
     return True
 

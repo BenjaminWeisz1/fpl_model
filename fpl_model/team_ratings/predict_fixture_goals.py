@@ -19,9 +19,9 @@ from fpl_model.team_ratings.update_team_ratings import home_advantage
 _DATA = paths.CURRENT
 
 
-FIXTURES_FILE = paths.CURRENT / "fixtures.csv"
-TEAM_RATINGS_FILE = paths.CURRENT / "team_ratings_current.csv"  # latest current ratings
-OUT_FILE = paths.CURRENT / "fixture_goal_predictions.csv"
+FIXTURES_FILE = paths.current_file("fixtures.csv", root=paths.CURRENT)
+TEAM_RATINGS_FILE = paths.current_file("team_ratings_current.csv", root=paths.CURRENT)  # latest current ratings
+OUT_FILE = paths.current_file("fixture_goal_predictions.csv", root=paths.CURRENT)
 
 CURRENT_SEASON = current_season()
 AVG_CONCEDED = mean_npg()

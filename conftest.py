@@ -7,7 +7,7 @@ import pytest
 
 from fpl_model import paths
 
-HAVE_DATA = (paths.CURRENT / "player_match_stats.csv").exists()
+HAVE_DATA = (paths.current_file("player_match_stats.csv", root=paths.CURRENT)).exists()
 
 # The modules these tests import read data/current at import time (league_rates.current_season(), keeper_saves, ...).
 NEEDS_DATA_AT_IMPORT = {

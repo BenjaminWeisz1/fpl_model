@@ -10,6 +10,8 @@ import numpy as np
 import pandas as pd
 import statsmodels.formula.api as smf
 
+from fpl_model import paths
+
 HERE = Path(__file__).resolve().parent
 from research.absence import build_absence_frame as B
 
@@ -60,7 +62,7 @@ def calendar():
     g = g[g.comp.isin(EUROPE | CUP)]
     g["date"] = pd.to_datetime(g.date)
     all_cup = pd.concat([g, league_cup()], ignore_index=True)
-    hist = pd.read_csv(DATA / "team_ratings_history.csv", encoding="utf-8-sig", usecols=["Season", "Home", "Away"])
+    hist = pd.read_csv(paths.current_file("team_ratings_history.csv", root=DATA), encoding="utf-8-sig", usecols=["Season", "Home", "Away"])
     teams = set(hist.Home)
     rows = []
     for _, r in all_cup.iterrows():

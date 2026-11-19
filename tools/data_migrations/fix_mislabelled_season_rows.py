@@ -52,7 +52,7 @@ _DATA = paths.CURRENT
 _ARCHIVE = paths.ARCHIVE
 
 CURRENT_SEASON = 2026  # bump manually each new season
-STATS_FILE = paths.CURRENT / "player_match_stats.csv"
+STATS_FILE = paths.current_file("player_match_stats.csv", root=paths.CURRENT)
 
 # A MatchID holding at most this many rows is a per-row id, not a gameweek id.
 # Real gameweek ids in the completed-season block hold ~300 rows each.

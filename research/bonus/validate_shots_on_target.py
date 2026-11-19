@@ -21,6 +21,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
+from fpl_model import paths
 from fpl_model.bonus import build_residual_bps_baseline as residual
 from fpl_model.bonus import pass_bands, simulate_bonus
 from research.bonus import validate_bonus_accounting as acc
@@ -42,10 +43,10 @@ ARMS = BASE_ARMS + [a + "_drawn" for a in BASE_ARMS]
 def load_sofascore():
     """§68 Sofascore rows plus non-goal shots on target, NP goals and 90s played."""
     so = vpb.load_sofascore()
-    extra = pd.read_csv(calibration.DATA / "sofascore_player_match_stats.csv", encoding="utf-8-sig",
+    extra = pd.read_csv(paths.current_file("sofascore_player_match_stats.csv", root=calibration.DATA), encoding="utf-8-sig",
                         low_memory=False, usecols=["Sofascore_goals"])
     so["goals"] = extra.loc[so.index, "Sofascore_goals"].fillna(0)
-    pms = pd.read_csv(calibration.DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    pms = pd.read_csv(paths.current_file("player_match_stats.csv", root=calibration.DATA), encoding="utf-8-sig", low_memory=False,
                       usecols=["Season", "Player", "Team", "Opponent", "Venue", "PK"])
     key = ["Season", "Team", "Opponent", "Venue", "Player"]
     pk = so.rename(columns={"Local_Player": "Player"})[key].merge(pms.drop_duplicates(key), on=key, how="left")

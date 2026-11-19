@@ -16,7 +16,7 @@ RECORDED_TEAM_MINUTES = 11 * 90     # eleven players x 90 recorded minutes a mat
 
 @lru_cache(maxsize=1)
 def current_season():
-    deadlines = pd.read_csv(_DATA / "gameweek_deadlines.csv", encoding="utf-8-sig")
+    deadlines = pd.read_csv(paths.current_file("gameweek_deadlines.csv", root=_DATA), encoding="utf-8-sig")
     first = deadlines.loc[deadlines["Gameweek"] == deadlines["Gameweek"].min(), "Deadline_UTC"].iloc[0]
     return int(str(first)[:4])
 
@@ -24,14 +24,14 @@ def current_season():
 @lru_cache(maxsize=1)
 def mean_npg():
     """Mean non-penalty goals per team-match, the ave_goals update_team_ratings.py trains on."""
-    results = pd.read_csv(_DATA / "match_results.csv", encoding="utf-8-sig", usecols=["Home_NPG", "Away_NPG"])
+    results = pd.read_csv(paths.current_file("match_results.csv", root=_DATA), encoding="utf-8-sig", usecols=["Home_NPG", "Away_NPG"])
     return float(pd.concat([results["Home_NPG"], results["Away_NPG"]]).mean())
 
 
 @lru_cache(maxsize=1)
 def penalty_rates():
     """(attempts per non-penalty goal, conversion) over every league match in player_match_stats.csv."""
-    stats = pd.read_csv(_DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    stats = pd.read_csv(paths.current_file("player_match_stats.csv", root=_DATA), encoding="utf-8-sig", low_memory=False,
                         usecols=["PKatt", "PK", "NPG"])
     return float(stats["PKatt"].sum() / stats["NPG"].sum()), float(stats["PK"].sum() / stats["PKatt"].sum())
 
@@ -42,7 +42,7 @@ def check_minutes_round(first_round):
     Later stages pair its rounds with the forecast by position, so a mismatch would give every player
     the wrong week's minutes with no error. Column names such as 10_xMins carry the real round.
     """
-    columns = pd.read_csv(_DATA / "minutes.csv", encoding="utf-8-sig", nrows=0).columns
+    columns = pd.read_csv(paths.current_file("minutes.csv", root=_DATA), encoding="utf-8-sig", nrows=0).columns
     rounds = sorted(int(c.split("_")[0]) for c in columns if re.match(r"^\d+_xMins$", c))
     if not rounds or rounds[0] != first_round:
         raise ValueError(f"minutes.csv starts at round {rounds[0] if rounds else None} but the forecast starts at "
@@ -61,7 +61,7 @@ def recorded_clock_scale(rows):
 @lru_cache(maxsize=1)
 def minute_bands():
     """(mean minutes of a 60+ appearance, mean minutes of a 1-59 appearance), FPL-era recorded minutes."""
-    stats = pd.read_csv(_DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    stats = pd.read_csv(paths.current_file("player_match_stats.csv", root=_DATA), encoding="utf-8-sig", low_memory=False,
                         usecols=["Data_Source", "Minutes"])
     minutes = stats.loc[stats["Data_Source"] == "FPL_API", "Minutes"]
     return float(minutes[minutes >= 60].mean()), float(minutes[(minutes >= 1) & (minutes < 60)].mean())

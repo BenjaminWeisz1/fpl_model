@@ -13,6 +13,7 @@ import sys
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from fpl_model.player_ratings import fotmob_priors as fp  # noqa: E402
 from fpl_model.player_ratings import new_player_priors as npp  # noqa: E402
 from fpl_model.player_ratings.build_new_player_priors import era_scales  # noqa: E402
@@ -83,7 +84,7 @@ def test():
 
     tm = arr["Season"].between(min(TEST_SEASONS), max(TEST_SEASONS)).to_numpy()
     fpath = tm & (arr["Path"] == "fotmob").to_numpy()
-    coef = pd.read_csv(npp.DATA / "league_coefficients.csv", encoding="utf-8-sig").set_index("League")["Coefficient"]
+    coef = pd.read_csv(paths.current_file("league_coefficients.csv", root=npp.DATA), encoding="utf-8-sig").set_index("League")["Coefficient"]
     res = {"test_arrivals": int(tm.sum()), "fotmob_path_test": int(fpath.sum()),
            "fotmob_path_by_group": arr[fpath].groupby("Group").size().to_dict(),
            "fits": fits, "by_group": {}, "secondary": {}}

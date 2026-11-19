@@ -31,7 +31,7 @@ data/raw/fotmob/understat_overlap_2026.csv by `--freeze-overlap` before the swit
 mapping reproduces Understat's conventions, e.g. 3-4-2-1's central pair is MC there and DM in FotMob.
 Back_Three and the FBref-style Position follow fetch_understat.py exactly (3+ DC starters; _mapped_position).
 
-Outputs (data/current/, rebuilt from the cache every run):
+Outputs (data/current/sourced/, rebuilt from the cache every run):
   * fotmob_match_positions.csv -- one row per player who played (starters + substitutes who came on)
   * fotmob_shots.csv           -- every shot, with minute (+ added time / 100), xG, situation, result
 
@@ -74,12 +74,12 @@ HEADERS = {"User-Agent": "Mozilla/5.0"}
 THROTTLE_S = 7
 MIN_OVERLAP_STARTERS = 500   # the slot mapping needs at least this many starters seen by both sources
 
-POSITIONS_OUT = paths.CURRENT / "fotmob_match_positions.csv"
-SHOTS_OUT = paths.CURRENT / "fotmob_shots.csv"
-CODES_FILE = paths.CURRENT / "fpl_player_codes.csv"
+POSITIONS_OUT = paths.current_file("fotmob_match_positions.csv", root=paths.CURRENT)
+SHOTS_OUT = paths.current_file("fotmob_shots.csv", root=paths.CURRENT)
+CODES_FILE = paths.current_file("fpl_player_codes.csv", root=paths.CURRENT)
 OVERLAP_FILE = paths.RAW / "fotmob" / "understat_overlap_2026.csv"   # frozen; see freeze_overlap()
-RESULTS_FILE = paths.CURRENT / "match_results.csv"
-PMS_FILE = paths.CURRENT / "player_match_stats.csv"
+RESULTS_FILE = paths.current_file("match_results.csv", root=paths.CURRENT)
+PMS_FILE = paths.current_file("player_match_stats.csv", root=paths.CURRENT)
 
 TEAM_NAMES = {"Manchester United": "Manchester Utd", "Nottingham Forest": "Nott'ham Forest",
               "AFC Bournemouth": "Bournemouth", "Brighton & Hove Albion": "Brighton",
@@ -324,7 +324,7 @@ def freeze_overlap(path=OVERLAP_FILE):
     """
     if path.exists():
         sys.exit(f"{path.name} already exists; it is frozen and never rewritten")
-    cw = pd.read_csv(_DATA / "player_match_positions.csv", encoding="utf-8-sig", low_memory=False)
+    cw = pd.read_csv(paths.current_file("player_match_positions.csv", root=_DATA), encoding="utf-8-sig", low_memory=False)
     if "Source" in cw.columns:
         sys.exit("player_match_positions.csv already carries FotMob rows; the overlap must be frozen before the switch")
     cw = cw[cw["Season"] >= FIRST_SEASON][KEY + ["Player_ID_Understat", "Position_Understat", "Is_Starter"]]

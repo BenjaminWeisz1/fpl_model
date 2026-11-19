@@ -29,7 +29,7 @@ def frame():
     sub = log["Is_Starter"].astype(str).str.lower().eq("false").astype(float)
     # share of the previous 20 appearances that were substitute appearances
     log["cameo"] = sub.groupby(log["Player"]).transform(lambda s: s.shift(1).rolling(20, min_periods=1).mean()).fillna(0)
-    t = pd.read_csv(ROOT / "data" / "current" / "transfers.csv", encoding="utf-8-sig")
+    t = pd.read_csv(paths.current_file("transfers.csv"), encoding="utf-8-sig")
     gk = set(t.loc[t["Pos"] == "GK", "Player"])
     d = log[(log["Season"] >= 2018) & (log["k"] >= 10) & ~log["Player"].isin(gk)].copy()
     d["era"] = np.where(d["Season"] >= 2025, "2025+", "2018-24")

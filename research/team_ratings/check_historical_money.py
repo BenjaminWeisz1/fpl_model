@@ -6,9 +6,10 @@ wage-v-value mismatches. Run from the project root: python -m research.team_rati
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from research.team_ratings import validate_money_priors_pooled as vmp
 
-m = pd.read_csv("data/current/historical_money.csv", encoding="utf-8-sig")
+m = pd.read_csv(paths.current_file("historical_money.csv"), encoding="utf-8-sig")
 print("dups", m.duplicated(["Season","Team"]).sum(), "rows/season", m.groupby("Season").size().unique())
 k = m[m.GF.notna()]
 g = k.groupby("Season")[["GF","GA"]].sum(); print("GF!=GA seasons:\n", g[g.GF!=g.GA])

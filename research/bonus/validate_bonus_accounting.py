@@ -41,7 +41,7 @@ ARMS = {
 
 def load_rows():
     rows = calibration.build_match_rows()
-    players_current = pd.read_csv(calibration.DATA / "players_current.csv", encoding="utf-8-sig")
+    players_current = pd.read_csv(paths.current_file("players_current.csv", root=calibration.DATA), encoding="utf-8-sig")
     rows["Pos"] = rows["Player"].map(dict(zip(players_current["Player"], players_current["Pos"])))
     rows["Pos"] = rows["Pos"].fillna(rows["Position_Mapped"].map(calibration.SLOT_POSITION))
     rows = rows[rows["Minutes"] > 0].copy()

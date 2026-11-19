@@ -24,10 +24,10 @@ from fpl_model import paths
 
 ROOT = paths.ROOT
 DATA = paths.CURRENT
-STATS_FILE = paths.CURRENT / "player_match_stats.csv"
-POSITIONS_FILE = paths.CURRENT / "player_match_positions.csv"
-RESULTS_FILE = paths.CURRENT / "match_results.csv"
-FIXTURES_FILE = paths.CURRENT / "fixtures.csv"
+STATS_FILE = paths.current_file("player_match_stats.csv", root=paths.CURRENT)
+POSITIONS_FILE = paths.current_file("player_match_positions.csv", root=paths.CURRENT)
+RESULTS_FILE = paths.current_file("match_results.csv", root=paths.CURRENT)
+FIXTURES_FILE = paths.current_file("fixtures.csv", root=paths.CURRENT)
 FROZEN_FORECAST = (
     paths.SNAPSHOTS / "2026" / "GW08" / "20261020T210325_940676Z_partall" / "gameweek" / "bonus_predictions.csv"
 )

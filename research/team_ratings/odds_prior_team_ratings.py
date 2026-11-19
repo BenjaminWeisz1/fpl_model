@@ -28,7 +28,7 @@ reference on an odds-modified prior_map at startup.
 
 Run:
     python -m research.team_ratings.odds_prior_team_ratings
-Writes data/current/team_ratings_oot/odds_prior_report.txt + _summary.json.
+Writes data/validation/team_ratings_oot/odds_prior_report.txt + _summary.json.
 """
 import json
 from datetime import datetime

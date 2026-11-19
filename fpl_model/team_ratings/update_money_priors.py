@@ -9,8 +9,11 @@ Run manually whenever historical_money.csv has been updated -- not part of
 the routine weekly cycle, since squad value/wages don't change every
 gameweek the way match results do.
 """
+import shutil
 import subprocess
 import sys
+import tempfile
+from pathlib import Path
 
 import pandas as pd
 
@@ -24,15 +27,18 @@ def main():
     if not _COMPUTE_SCRIPT.exists():
         raise FileNotFoundError(f"Money-rating producer not found: {_COMPUTE_SCRIPT}")
 
-    # The recovered producer uses relative paths. Run it in data/current so
-    # it reads the live historical_money.csv and writes its output there.
-    subprocess.run(
-        [sys.executable, str(_COMPUTE_SCRIPT)],
-        cwd=_DATA,
-        check=True,
-    )
-
-    fresh = pd.read_csv(_DATA / "money_ratings_2026.csv")
+    with tempfile.TemporaryDirectory() as working_directory:
+        working_directory = Path(working_directory)
+        shutil.copy2(
+            paths.current_file("historical_money.csv", root=_DATA),
+            working_directory / "historical_money.csv",
+        )
+        subprocess.run(
+            [sys.executable, str(_COMPUTE_SCRIPT)],
+            cwd=working_directory,
+            check=True,
+        )
+        fresh = pd.read_csv(working_directory / "money_ratings_2026.csv")
     required = {"Team", "Money_Attack_Rating", "Money_Defense_Rating"}
     missing = required - set(fresh.columns)
     if missing:
@@ -46,12 +52,12 @@ def main():
         "Money_Attack_Rating": "Money_GF", "Money_Defense_Rating": "Money_GA"})
     fresh_rows["Season"] = CURRENT_SEASON
 
-    lookup = pd.read_csv(_DATA / "money_priors_by_season.csv")
+    lookup = pd.read_csv(paths.current_file("money_priors_by_season.csv", root=_DATA))
     lookup["Season"] = pd.to_numeric(lookup["Season"], errors="raise").astype(int)
     lookup = lookup[lookup["Season"] != CURRENT_SEASON]  # drop stale season rows
     lookup = pd.concat([lookup, fresh_rows[["Season", "Team", "Money_GF", "Money_GA"]]],
                         ignore_index=True)
-    lookup.to_csv(_DATA / "money_priors_by_season.csv", index=False)
+    lookup.to_csv(paths.current_file("money_priors_by_season.csv", root=_DATA), index=False)
     print(f"Refreshed {len(fresh_rows)} rows for Season {CURRENT_SEASON}. "
           f"Re-run update_team_ratings.py to propagate.")
 

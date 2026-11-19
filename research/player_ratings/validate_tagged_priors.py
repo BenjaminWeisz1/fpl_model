@@ -8,6 +8,7 @@ import json
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from fpl_model.player_ratings import fotmob_priors as fp  # noqa: E402
 from fpl_model.player_ratings import new_player_priors as npp  # noqa: E402
 from fpl_model.player_ratings.build_new_player_priors import (  # noqa: E402
@@ -25,12 +26,12 @@ LEAGUES = ["Championship", "Ligue 1"]
 
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
-    t = pd.read_csv(npp.DATA / "transfers.csv", encoding="utf-8-sig")
+    t = pd.read_csv(paths.current_file("transfers.csv", root=npp.DATA), encoding="utf-8-sig")
     for c in ["Min_Old", "npxG_Old", "xAG_Old", "NPG_Old", "Assists_Old", "Team_Attack_Rating"]:
         t[c] = pd.to_numeric(t[c], errors="coerce")
     arr = t[t["Notes"].notna() & ~t["Notes"].isin(["youth", "second season", "missed season"]) & (t["Pos"] != "GK")
             & (t["Season"] > 2016) & t["League"].isin(LEAGUES)].copy()
-    pms = pd.read_csv(npp.DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False)
+    pms = pd.read_csv(paths.current_file("player_match_stats.csv", root=npp.DATA), encoding="utf-8-sig", low_memory=False)
     log = pd.read_csv(LOG, encoding="utf-8-sig", low_memory=False)
     arr = npp.attach_outcomes(arr, pms, log)
     uplayers, _ = npp.load_understat()

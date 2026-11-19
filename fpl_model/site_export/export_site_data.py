@@ -67,7 +67,7 @@ DECIMALS = {"points": 3, "minutes": 1, "goals": 4, "assists": 4, "cs": 4, "defco
 
 
 def read(name):
-    return pd.read_csv(DATA / name, encoding="utf-8-sig")
+    return pd.read_csv(paths.current_file(name, root=DATA), encoding="utf-8-sig")
 
 
 def rated_players(ratings):
@@ -193,7 +193,7 @@ def build_ratings(data_files=None, rates=None, conversion_rates=None):
     pen_attempts_per_npg, pen_conversion = rates or penalty_rates()
     if conversion_rates is None:
         conversion_rates = build_conversion_rates(
-            read("penalty_log.csv"), pd.read_csv(DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False))
+            read("penalty_log.csv"), pd.read_csv(paths.current_file("player_match_stats.csv", root=DATA), encoding="utf-8-sig", low_memory=False))
     teams = team_strengths(get("team_ratings_current.csv"), players_current, pen_attempts_per_npg, pen_conversion)
     shares = weekly_shares(get("penalty_share.csv"), players_current, rounds)
     minutes = mean_minutes(get("minutes.csv"), players_current, rounds)

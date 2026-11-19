@@ -16,6 +16,7 @@ from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
 
+from fpl_model import paths
 from fpl_model.fetch import fetch_sofascore as f
 from fpl_model.fetch.player_identity import Registry, read_csv
 from fpl_model.fetch.sofascore_browser_pilot import sha, validate_event
@@ -375,7 +376,7 @@ def checkpoint(raw,data,run):
 
 def reconcile(raw,data,run):
     local={}
-    for row in read_csv(data/'understat_match_positions.csv'):
+    for row in read_csv(paths.current_file('understat_match_positions.csv', root=data)):
         key=(int(row['Season']),row['Home'],row['Away'])
         local[key]=dict(date=row['Date'],event_id=row['MatchID_Understat'])
     results={}
@@ -411,7 +412,7 @@ def audit(raw,data,run):
         return {str(p):(p.stat().st_size,p.stat().st_mtime_ns)
                 for p in (raw/'matches').glob('*/*.json')}
     before=raw_snapshot()
-    rows=read_csv(data/'sofascore_player_match_stats.csv')
+    rows=read_csv(paths.current_file('sofascore_player_match_stats.csv', root=data))
     by_key={(r['Event_ID_Sofascore'],r['Player_ID_Sofascore']):r for r in rows}
     if len(by_key)!=len(rows):
         raise ValueError('Duplicate derived source identity')

@@ -6,6 +6,7 @@ import json
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from fpl_model.card_points import DATA, KEYS, K, build_frame, decayed_multiplier, trailing_level
 
 OUT = DATA.parent / "validation" / "card_exposure_20261102"
@@ -14,7 +15,7 @@ N_BOOT, SEED = 5000, 175
 
 def prepare():
     d = build_frame()
-    s = pd.read_csv(DATA / "sofascore_player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    s = pd.read_csv(paths.current_file("sofascore_player_match_stats.csv", root=DATA), encoding="utf-8-sig", low_memory=False,
                     usecols=["Season", "Local_Player", "Team", "Opponent", "Venue", "Is_Starter"]).rename(columns={"Local_Player": "Player"})
     s = s.dropna(subset=["Player"]).drop_duplicates(KEYS)
     n = len(d)
@@ -42,7 +43,7 @@ def prepare():
 
 
 def panel(d):
-    u = pd.read_csv(DATA / "understat_match_positions.csv", encoding="utf-8-sig", low_memory=False,
+    u = pd.read_csv(paths.current_file("understat_match_positions.csv", root=DATA), encoding="utf-8-sig", low_memory=False,
                     usecols=["Season", "Team", "Date"]).drop_duplicates()
     u["Date"] = pd.to_datetime(u.Date)
     span = d.groupby(["Season", "Team", "Player"]).Date.agg(first="min", last="max").reset_index()

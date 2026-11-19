@@ -104,7 +104,7 @@ def main():
         runs[name] = pd.read_csv(sb.OUT_FILE, encoding="utf-8-sig")
     sb.simulate_match = ORIGINAL
     print("\nproduction file unchanged:", prod_hash == hashlib.sha256(
-        (sb._DATA / "bonus_predictions.csv").read_bytes()).hexdigest())
+        (paths.current_file("bonus_predictions.csv", root=sb._DATA)).read_bytes()).hexdigest())
 
     d = pd.DataFrame(DIAG)
     print("expected player goals / team expected goals (coherent run): median %.3f, IQR %.3f-%.3f, share >1 %.1f%%" % (

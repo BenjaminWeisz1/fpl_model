@@ -10,7 +10,7 @@ is 37.5 per gameweek (375). The text below is the original GW9 brief.
 
 
 Maximise my time-decayed FPL points over the next 5 gameweeks (GW9–13) from my current squad. Predicted points come from
-`data/current/predicted_points.csv`, and from nowhere else.
+`data/current/forecasts/predicted_points.csv`, and from nowhere else.
 
 Output 3 plans. Each plan lists, week by week:
 - transfers in and out, hits taken, free transfers available, bank
@@ -106,9 +106,9 @@ Saved 2026-10-30 15:05 in the format of FPL's `/my-team/` endpoint. Prices are i
 | 346 | Calvert-Lewin | LEE | F | 6.0 | 6.0 | 6.1 | 20.11 |
 
 ### Projections and player IDs
-- `data/current/predicted_points.csv` is the points source: columns `Player, Pos, Team, Price, 9..13, Total`; 669 rows. Columns
+- `data/current/forecasts/predicted_points.csv` is the points source: columns `Player, Pos, Team, Price, 9..13, Total`; 669 rows. Columns
   `9`..`13` are each player's expected points for that gameweek. `Player` is `Web_Name` and has no FPL ID.
-- `data/current/minutes.csv` supplies IDs and expected minutes only, never points. FPL Review format: `ID` is the FPL element ID,
+- `data/current/manual/minutes.csv` supplies IDs and expected minutes only, never points. FPL Review format: `ID` is the FPL element ID,
   with `Name` (raw web name), `BV`, `SV`, `Team` and `9_xMins`..`13_xMins`. It has 680 rows; drop the 11 that are not in FPL
   (`BV` 99.9).
 - **Join:** `predicted_points (Player, Team)` → `players_current (Web_Name, Team_Short)` → `(Raw_Web_Name, Team_Short)` →

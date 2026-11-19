@@ -14,8 +14,8 @@ FIXTURES_URL = "https://fantasy.premierleague.com/api/fixtures/"
 LIVE_URL = "https://fantasy.premierleague.com/api/event/{event_id}/live/"
 
 _DATA = paths.CURRENT
-PLAYER_STATS_FILE = paths.CURRENT / "player_match_stats.csv"
-PENALTY_LOG_FILE = paths.CURRENT / "penalty_log.csv"
+PLAYER_STATS_FILE = paths.current_file("player_match_stats.csv", root=paths.CURRENT)
+PENALTY_LOG_FILE = paths.current_file("penalty_log.csv", root=paths.CURRENT)
 
 from fpl_model.atomic_write import to_csv_atomic  # noqa: E402
 from fpl_model.league_rates import current_season  # noqa: E402

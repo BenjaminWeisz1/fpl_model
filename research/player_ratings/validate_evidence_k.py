@@ -21,6 +21,7 @@ import sys
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from research.player_ratings import validate_prior_k as vpk  # noqa: E402
 
 OUT = vpk.ROOT / "data" / "validation" / "evidence_k_20261112"
@@ -34,7 +35,7 @@ def load(log_path):
     log = pd.read_csv(log_path, encoding="utf-8-sig", low_memory=False)
     log["n"] = log.groupby("Player").cumcount()
     ent = vpk.entrants(log)
-    t = pd.read_csv(vpk.DATA / "transfers.csv", encoding="utf-8-sig")
+    t = pd.read_csv(paths.current_file("transfers.csv", root=vpk.DATA), encoding="utf-8-sig")
     t["Min_Old"] = pd.to_numeric(t["Min_Old"], errors="coerce")
     # evidence = Min_Old of the transfers.csv row that started the player (latest row with Season <= entry)
     ev = {}

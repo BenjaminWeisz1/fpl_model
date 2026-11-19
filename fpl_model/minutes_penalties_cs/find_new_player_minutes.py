@@ -1,7 +1,7 @@
 """
 One-off helper (pre-season 2026): career Premier League minutes for each name in new_players_2026.csv.
 
-Reads the `Players` column of data/current/new_players_2026.csv, looks each name up in player_match_stats.csv and
+Reads the `Players` column of data/archive/current_unused_20261118/new_players_2026.csv, looks each name up in player_match_stats.csv and
 rewrites the file as `Player, Mins` (0 for a player with no PL minutes). Not a pipeline stage. Because it replaces its
 own input's column, run it on a fresh list only.
 
@@ -11,7 +11,7 @@ import pandas as pd
 
 from fpl_model import paths
 
-NEW_PLAYERS_FILE = paths.CURRENT / "new_players_2026.csv"
+NEW_PLAYERS_FILE = paths.current_file("new_players_2026.csv", root=paths.CURRENT)
 
 
 def career_minutes(names, player_match_stats: pd.DataFrame) -> pd.DataFrame:
@@ -23,7 +23,7 @@ def career_minutes(names, player_match_stats: pd.DataFrame) -> pd.DataFrame:
 
 def main() -> None:
     new_players = pd.read_csv(NEW_PLAYERS_FILE)
-    stats = pd.read_csv(paths.CURRENT / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False)
+    stats = pd.read_csv(paths.current_file("player_match_stats.csv", root=paths.CURRENT), encoding="utf-8-sig", low_memory=False)
     out = career_minutes(new_players["Players"], stats)
     print(len(out))
     out.to_csv(NEW_PLAYERS_FILE, index=False, encoding="utf-8-sig")

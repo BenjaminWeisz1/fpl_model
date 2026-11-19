@@ -12,6 +12,8 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 
+from fpl_model import paths
+
 HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE), str(HERE.parent), str(HERE.parent / "bonus")]
 from research.assemble import player_error_breakdown as E  # noqa: E402
@@ -41,7 +43,7 @@ def repaired_history():
     h["Mapped"] = h.Player.isin(NAMES)
     h["Player"] = h.Player.replace(NAMES)
     h = h.merge(log, on=k, how="left", validate="many_to_one")
-    pms = pd.read_csv(P.DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False, usecols=k + ["PK", "PKatt"]).drop_duplicates(k)
+    pms = pd.read_csv(paths.current_file("player_match_stats.csv", root=P.DATA), encoding="utf-8-sig", low_memory=False, usecols=k + ["PK", "PKatt"]).drop_duplicates(k)
     pms = pms.rename(columns={"PK": "PK2", "PKatt": "PKatt2"})
     h = h.merge(pms, on=k, how="left", validate="many_to_one")
     conv = pd.concat([h.loc[h.Season == s, "Player"].map(vpc.conversion_lookup(int(s))) for s in h.Season.unique()]).reindex(h.index).fillna(1.0)
@@ -63,13 +65,13 @@ def repaired_history():
 
 
 def player_outcomes():
-    p = pd.read_csv(P.DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False, usecols=P.KEY + ["npxG", "xAG"])
+    p = pd.read_csv(paths.current_file("player_match_stats.csv", root=P.DATA), encoding="utf-8-sig", low_memory=False, usecols=P.KEY + ["npxG", "xAG"])
     return p.drop_duplicates(P.KEY)
 
 
 def frame():
     h, fix = repaired_history()
-    known = set(pd.read_csv(P.DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False, usecols=["Player"]).Player)
+    known = set(pd.read_csv(paths.current_file("player_match_stats.csv", root=P.DATA), encoding="utf-8-sig", low_memory=False, usecols=["Player"]).Player)
     extra = h[["Gn", "Ga", "NPG_Rating_Pre", "Conv"]].reset_index(drop=True)
     h = h.reset_index(drop=True)
     a = E.block_frame(h, "2018-2024").join(extra).join(h[["NPG", "assists"]].rename(columns={"assists": "Ast"}))
@@ -159,7 +161,7 @@ def pre_match_sum(f):
 def team_spread(t, seasons):
     """Arm B on the full team-match table of match_results: exp(c)·T^delta fitted on earlier seasons."""
     k = ["Season", "Team", "NPG", "GA", "T", "O"]
-    H = pd.read_csv(P.DATA / "team_ratings_history.csv", encoding="utf-8-sig", low_memory=False)
+    H = pd.read_csv(paths.current_file("team_ratings_history.csv", root=P.DATA), encoding="utf-8-sig", low_memory=False)
     H = H[H.Season >= 2018]
     a = H.assign(Team=H.Home, NPG=H.Home_NPG, GA=H.Away_Goals, T=H.Home_Prediction, O=H.Away_Prediction)[k]
     b = H.assign(Team=H.Away, NPG=H.Away_NPG, GA=H.Home_Goals, T=H.Away_Prediction, O=H.Home_Prediction)[k]

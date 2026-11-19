@@ -117,10 +117,24 @@ run_post_gameweek.py, run_pre_deadline.py, run_site_export.py   the three weekly
 ## Data
 
 No data is in this repository. The pipeline reads a local `data/` folder: frozen historical downloads in
-`data/raw/`, the files each stage reads and writes in `data/current/`, snapshots in `data/snapshots/`. Some sources
-can only be collected by hand or in a browser, some have terms that rule out redistribution, and the fbref archive
-(Opta data for 2017-2024, no longer available there) could not be rebuilt. The weekly charts in `images/` are
-published.
+`data/raw/`, live inputs and outputs in `data/current/`, and immutable snapshots in `data/snapshots/`. Current files
+are grouped by purpose:
+
+```
+data/current/
+  forecasts/  generated fixture, simulation and points outputs
+  lookups/    model lookups, crosswalks and name overrides
+  manual/     fixtures, minutes and penalty-share inputs
+  sourced/    fetched and reconciled source data
+  state/      ratings and priors carried between pipeline runs
+```
+
+In code, use `fpl_model.paths.current_file(filename)` to resolve a current-data file; new filenames must be added to
+the appropriate group in `fpl_model/paths.py`. Retired files are kept in
+`data/archive/current_unused_20261118/`; some ancillary identity registries stored there are still used by the pipeline.
+Some sources can only be collected by hand or in a browser, some have terms that rule out redistribution, and the
+fbref archive (Opta data for 2017-2024, no longer available there) could not be rebuilt. The weekly charts in `images/`
+are published.
 
 Sources: the official FPL API (squads, fixtures, results, live stats); fbref (player match stats 2017-2024, saved once
 before Opta data left the site); FotMob and, until 2026, Understat (per-match positions, shots, red cards); Sofascore
@@ -136,3 +150,5 @@ vaastav's Fantasy-Premier-League archive (FPL history 2017-2024).
 - [vaastav/Fantasy-Premier-League](https://github.com/vaastav/Fantasy-Premier-League) for historical FPL data.
 - Understat, FotMob, Sofascore, Transfermarkt and fbref, whose data the models are built on; used for personal,
   non-commercial analysis, with requests throttled and raw responses cached.
+
+For commit, branch and push guidance, see [CONTRIBUTING.md](CONTRIBUTING.md).

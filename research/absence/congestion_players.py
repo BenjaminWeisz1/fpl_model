@@ -7,6 +7,7 @@ import json
 import pandas as pd
 import statsmodels.formula.api as smf
 
+from fpl_model import paths
 from research.absence import build_absence_frame as B
 from research.absence import validate_congestion as V
 
@@ -22,7 +23,7 @@ def main():
     res = {"league_only": {"n_le3": int((tm.RestPL <= 3).sum()), "home": V.row(m, "PL3H"), "away": V.row(m, "PL3A")}}
 
     s = B.load_squads()
-    p = pd.read_csv(B.DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    p = pd.read_csv(paths.current_file("player_match_stats.csv", root=B.DATA), encoding="utf-8-sig", low_memory=False,
                     usecols=["Season", "Player", "Team", "Opponent", "Venue", "Minutes", "npxG", "xAG", "CBI", "Tkl", "Recov", "Data_Source"])
     j = p.merge(s[["Season", "Local_Player", "Team", "Opponent", "Venue", "PID", "Is_Starter"]], left_on=["Season", "Player", "Team", "Opponent", "Venue"],
                 right_on=["Season", "Local_Player", "Team", "Opponent", "Venue"], how="inner").drop_duplicates(["Season", "Team", "Opponent", "Venue", "PID"])

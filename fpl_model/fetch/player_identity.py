@@ -45,9 +45,16 @@ class Registry:
         'identity_overrides': ['Provider', 'Provider_Player_ID', 'Canonical_Player_ID', 'Reason'],
     }
 
-    def __init__(self, data=DATA):
+    def __init__(self, data=DATA, identity_data=None):
         self.data = Path(data)
-        self.tables = {k: read_csv(self.data / (k + '.csv')) for k in self.SCHEMAS}
+        if identity_data is None:
+            identity_data = (
+                paths.CURRENT_UNUSED
+                if self.data.resolve() == paths.CURRENT.resolve()
+                else self.data
+            )
+        self.identity_data = Path(identity_data)
+        self.tables = {k: read_csv(self.identity_data / (k + '.csv')) for k in self.SCHEMAS}
         self.alias_rows = {tuple(r.values()) for r in self.tables['player_identity_aliases']}
         self.alias = {}
         self.context = {}
@@ -130,18 +137,18 @@ class Registry:
 
     def seed(self):
         # Preserve accepted provider identities and ALL contextual historical names.
-        for r in read_csv(self.data / 'understat_fpl_crosswalk.csv'):
+        for r in read_csv(paths.current_file('understat_fpl_crosswalk.csv', root=self.data)):
             self.ensure('understat', r['Player_ID_Understat'], r['Player_Understat'])
-        for r in read_csv(self.data / 'player_match_positions.csv'):
+        for r in read_csv(paths.current_file('player_match_positions.csv', root=self.data)):
             if r.get('Source', 'understat') != 'understat':   # FotMob rows (§197) carry no Understat identity
                 continue
             cid = self.ensure('understat', r['Player_ID_Understat'], r['Player_Understat'])
             self.add_alias('legacy_pms', '', cid, r['Player'], r['Season'], r['Team'], 'accepted_understat_row')
-        for r in read_csv(self.data / 'understat_match_positions.csv'):
+        for r in read_csv(paths.current_file('understat_match_positions.csv', root=self.data)):
             self.ensure('understat', r['Player_ID_Understat'], r['Player'])
             self.fixture('understat', r['MatchID_Understat'], r['Season'], r['Home'], r['Away'], r['Date'])
         # Current names are useful only when season AND team confirm the identity.
-        for r in read_csv(self.data / 'players_current.csv'):
+        for r in read_csv(paths.current_file('players_current.csv', root=self.data)):
             cid = self.context.get((str(current_season()), r['Team'], r['Player']))
             if cid:
                 self.add_alias('current_web_name', r['Team'] + ':' + r['Web_Name'], cid,
@@ -261,7 +268,7 @@ class Registry:
 
     def save(self):
         for k, columns in self.SCHEMAS.items():
-            write_csv(self.data / (k + '.csv'), self.tables[k], columns)
+            write_csv(self.identity_data / (k + '.csv'), self.tables[k], columns)
 
     def understat_assignments(self, key, provider_ids, names, local_names):
         """Accepted contextual IDs first; confidence-gated matching for new rows only."""

@@ -29,6 +29,7 @@ from datetime import date
 
 import pandas as pd
 
+from fpl_model import paths
 from research.player_ratings import audit_arrival_positions as v1  # noqa: E402
 
 ROOT = v1.ROOT
@@ -74,7 +75,7 @@ def lineups():
 
 
 def audit():
-    t = pd.read_csv(DATA / "transfers.csv", encoding="utf-8-sig", usecols=["Player", "Season", "Pos", "League", "Notes"])
+    t = pd.read_csv(paths.current_file("transfers.csv", root=DATA), encoding="utf-8-sig", usecols=["Player", "Season", "Pos", "League", "Notes"])
     arr = t[t["Notes"].isna() & t["League"].ne("Premier League") & t["Pos"].notna() & t["Season"].ge(2017)
             & ~t["Pos"].astype(str).str.contains("GK")].copy()
     ids = v1.tm_player_ids(arr)
@@ -117,7 +118,7 @@ def audit():
 
 def apply(changes):
     """Rewrite only the Pos cells of the changed rows, at text level (CLAUDE.md §5.2)."""
-    path = DATA / "transfers.csv"
+    path = paths.current_file("transfers.csv", root=DATA)
     backup = ARCHIVE / f"transfers_before_position_audit2_{date.today():%Y%m%d}.csv"
     if not backup.exists():
         shutil.copy2(path, backup)

@@ -60,7 +60,7 @@ def load_inputs(folder, team_file=None, check_source=True):
     projection = pd.read_csv(folder / "projection.csv", encoding="utf-8")
     gws = sorted(int(c.split("_")[0]) for c in projection.columns if c.endswith("_Pts"))
     if check_source:
-        source = pd.read_csv(_ROOT / "data" / "current" / "predicted_points.csv", encoding="utf-8-sig")
+        source = pd.read_csv(paths.current_file("predicted_points.csv"), encoding="utf-8-sig")
         source = source.set_index(["Player", "Team"])
     points = {}
     for values in projection.to_dict("records"):

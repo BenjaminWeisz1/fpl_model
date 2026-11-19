@@ -18,6 +18,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from fpl_model.player_ratings import new_player_priors as npp  # noqa: E402
 
 SEASONS = range(2019, 2026)
@@ -30,7 +31,7 @@ def load(log_path):
     log = pd.read_csv(log_path, encoding="utf-8-sig", low_memory=False)
     log = log[log["Season"].isin(SEASONS)].copy()
     log["k"] = log.groupby(["Player", "Season"]).cumcount()
-    pms = pd.read_csv(npp.DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False)
+    pms = pd.read_csv(paths.current_file("player_match_stats.csv", root=npp.DATA), encoding="utf-8-sig", low_memory=False)
     pms = pms[pms["Minutes"] > 0].copy()
     pms["Season"] = np.where(pms["Data_Source"] == "fbref", 2017 + pms["MatchID"] // 380, pms["Season"])
     first_pl = pms.groupby("Player")["Season"].min()

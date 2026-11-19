@@ -36,7 +36,7 @@ _ROOT = paths.ROOT
 RAW_DIR = paths.RAW / "clubelo"
 MIRROR_FILE = paths.RAW / "clubelo_mirror" / "EloRatings.csv"
 SOURCE = config.get("CLUBELO_SOURCE")
-MATCH_RESULTS_FILE = paths.CURRENT / "match_results.csv"
+MATCH_RESULTS_FILE = paths.current_file("match_results.csv", root=paths.CURRENT)
 
 from fpl_model.league_rates import current_season  # noqa: E402
 

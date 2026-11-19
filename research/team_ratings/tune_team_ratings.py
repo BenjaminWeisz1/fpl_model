@@ -42,7 +42,7 @@ approved by the user): the optimum sits near production alpha
 materially; any boundary winner is a range-extension flag, not a ship.
 The report scores this prediction honestly after the run.
 
-Outputs (data/current/team_ratings_oot/): tuning_grid.csv (all 1,002
+Outputs (data/validation/team_ratings_oot/): tuning_grid.csv (all 1,002
 rows incl. baseline), tuning_report.txt, tuning_summary.json.
 
 Run locally:

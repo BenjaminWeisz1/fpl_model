@@ -26,7 +26,7 @@ from fpl_model import paths
 _ROOT = paths.ROOT
 _DATA = paths.CURRENT
 RAW_DIR = paths.RAW / "football_data"
-MATCH_RESULTS_FILE = paths.CURRENT / "match_results.csv"
+MATCH_RESULTS_FILE = paths.current_file("match_results.csv", root=paths.CURRENT)
 
 from fpl_model.league_rates import current_season  # noqa: E402
 

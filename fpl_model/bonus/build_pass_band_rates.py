@@ -11,13 +11,13 @@ to the §64 model.
 Run locally (after build_residual_bps_baseline.py):
     python -m fpl_model.bonus.build_pass_band_rates
 """
-
 import pandas as pd
 
+from fpl_model import paths
 from fpl_model.bonus import pass_bands as pb
 
 _DATA = pb._DATA
-OUT_FILE = _DATA / "pass_band_rates.csv"
+OUT_FILE = paths.current_file("pass_band_rates.csv", root=_DATA)
 COLUMNS = ["Player", "Team", "Round", "Opponent", "Venue", "Sofascore_Appearances",
            "PB_P0", "PB_P2", "PB_P4", "PB_P6", "PB_Expected"]
 from fpl_model.league_rates import current_season  # noqa: E402
@@ -38,9 +38,9 @@ def main():
     named = so.dropna(subset=["Local_Player"]).sort_values("Kickoff")
     canonical = named.groupby("Local_Player")["Canonical_Player_ID"].last()
 
-    players = pd.read_csv(_DATA / "players_current.csv", encoding="utf-8-sig")
+    players = pd.read_csv(paths.current_file("players_current.csv", root=_DATA), encoding="utf-8-sig")
     players = players[players["Pos"].isin(list(pb.PRIOR))]
-    fixtures = pd.read_csv(_DATA / "fixture_goal_predictions.csv", encoding="utf-8-sig")
+    fixtures = pd.read_csv(paths.current_file("fixture_goal_predictions.csv", root=_DATA), encoding="utf-8-sig")
     sides = pd.concat([
         fixtures[["Round", "Home", "Away"]].rename(columns={"Home": "Team", "Away": "Opponent"}).assign(Venue="Home"),
         fixtures[["Round", "Away", "Home"]].rename(columns={"Away": "Team", "Home": "Opponent"}).assign(Venue="Away"),

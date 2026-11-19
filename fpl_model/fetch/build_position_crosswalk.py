@@ -28,7 +28,7 @@ Three shared prerequisites are done here:
     (same-season first, then career), so a sub's row carries a usable position
     instead of ``Sub``.
 
-Outputs (both in ``data/current/``):
+Outputs in ``data/current/sourced/``:
 
   * ``player_match_positions.csv`` -- one row per matched player_match_stats row:
     its natural key (Season, Team, Opponent, Venue, Player), the Understat id/name,
@@ -67,11 +67,11 @@ from fpl_model.fetch.player_identity import Registry
 
 _ROOT = paths.ROOT
 _DATA = paths.CURRENT
-PMS_FILE = paths.CURRENT / "player_match_stats.csv"
-UP_FILE = paths.CURRENT / "understat_match_positions.csv"
-PLAYERS_CURRENT = paths.CURRENT / "players_current.csv"
-OUT_ROWS = paths.CURRENT / "player_match_positions.csv"
-OUT_XWALK = paths.CURRENT / "understat_fpl_crosswalk.csv"
+PMS_FILE = paths.current_file("player_match_stats.csv", root=paths.CURRENT)
+UP_FILE = paths.current_file("understat_match_positions.csv", root=paths.CURRENT)
+PLAYERS_CURRENT = paths.current_file("players_current.csv", root=paths.CURRENT)
+OUT_ROWS = paths.current_file("player_match_positions.csv", root=paths.CURRENT)
+OUT_XWALK = paths.current_file("understat_fpl_crosswalk.csv", root=paths.CURRENT)
 
 # Accept a within-match name pair only at or above this similarity. Optimal
 # assignment runs first, then sub-threshold pairs are dropped, so a leftover

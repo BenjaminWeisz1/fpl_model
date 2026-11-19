@@ -50,7 +50,7 @@ def run():
 
 def entrants(log, min_season=2019):
     """Player -> (entry season, entry type) for outfield players first logged in min_season or later."""
-    t = pd.read_csv(DATA / "transfers.csv", encoding="utf-8-sig")
+    t = pd.read_csv(paths.current_file("transfers.csv", root=DATA), encoding="utf-8-sig")
     oot = pd.read_csv(OOT_PRIORS, encoding="utf-8-sig")
     adopted = set(map(tuple, oot.loc[oot["Adopted"], ["Player", "Season"]].to_numpy()))
     first = log.groupby("Player")["Season"].min()

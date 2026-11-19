@@ -46,7 +46,7 @@ def score():
     base = logs["1.0"]
     for b, lg in logs.items():
         assert len(lg) == len(base) and (lg["Player"].to_numpy() == base["Player"].to_numpy()).all(), b
-    gk = set(pd.read_csv(ROOT / "data" / "current" / "transfers.csv", encoding="utf-8-sig").query("Pos == 'GK'")["Player"])
+    gk = set(pd.read_csv(paths.current_file("transfers.csv"), encoding="utf-8-sig").query("Pos == 'GK'")["Player"])
     keep = (base["Season"] >= 2018).to_numpy() & ~base["Player"].isin(gk).to_numpy()
     masks = {"train": keep & (base["Season"] <= 2022).to_numpy(), "test": keep & (base["Season"] >= 2023).to_numpy(),
              "test_2025plus": keep & (base["Season"] >= 2025).to_numpy()}

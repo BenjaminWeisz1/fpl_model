@@ -25,10 +25,10 @@ KEY = ["Season", "Team", "Opponent", "Venue", "Player"]
 
 
 def load():
-    ps = pd.read_csv(DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False)
+    ps = pd.read_csv(paths.current_file("player_match_stats.csv", root=DATA), encoding="utf-8-sig", low_memory=False)
     ps["Season"] = np.where(ps["Data_Source"] == "fbref", 2017 + ps["MatchID"] // 380, ps["Season"])
     ps = ps[ps["Minutes"] > 0]
-    pos = pd.read_csv(DATA / "player_match_positions.csv", encoding="utf-8-sig", low_memory=False)
+    pos = pd.read_csv(paths.current_file("player_match_positions.csv", root=DATA), encoding="utf-8-sig", low_memory=False)
     pos = pos.drop_duplicates(KEY)[KEY + ["Is_Starter", "Position_Resolved"]]
     m = ps.merge(pos, on=KEY, how="inner")
     m["Is_Starter"] = m["Is_Starter"].astype(str).str.lower().eq("true")

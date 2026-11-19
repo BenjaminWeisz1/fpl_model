@@ -99,7 +99,7 @@ Usage
   python -m research.team_ratings.evaluate_team_ratings_oot --compare exp1_v1 ...
       Compare against any stored run.
 
-Results are stored in data/current/team_ratings_oot/<label>.json with
+Results are stored in data/validation/team_ratings_oot/<label>.json with
 a matching <label>_report.txt. match_results.csv grows weekly: re-run
 --label baseline (overwrite) on the current data snapshot before each
 experiment comparison so both runs see identical data. Experiments
@@ -132,10 +132,10 @@ from fpl_model.team_ratings.update_team_ratings import alpha, beta, home_advanta
 CS_PEN_GOAL_MULT = 1 + PEN_ATTEMPTS_PER_NPG * 0.79
 
 _DATA = paths.CURRENT
-MATCH_RESULTS_FILE = paths.CURRENT / "match_results.csv"
-MONEY_PRIORS_FILE = paths.CURRENT / "money_priors_by_season.csv"
-HISTORY_FILE = paths.CURRENT / "team_ratings_history.csv"
-OUT_DIR = paths.CURRENT / "team_ratings_oot"
+MATCH_RESULTS_FILE = paths.current_file("match_results.csv", root=paths.CURRENT)
+MONEY_PRIORS_FILE = paths.current_file("money_priors_by_season.csv", root=paths.CURRENT)
+HISTORY_FILE = paths.current_file("team_ratings_history.csv", root=paths.CURRENT)
+OUT_DIR = paths.VALIDATION / "team_ratings_oot"
 
 # Default held-out seasons: each is scored once, under its own cutoff,
 # with 6+ seasons of training behind it. Overridable via --cutoffs.
@@ -832,13 +832,13 @@ def parse_args():
                    help="override money_weight (default: production value)")
     p.add_argument("--label", default="adhoc", help="run label used for stored artifacts")
     p.add_argument("--save", action="store_true",
-                   help="store results as <label>.json + <label>_report.txt in data/current/team_ratings_oot/")
+                   help="store results as <label>.json + <label>_report.txt in data/validation/team_ratings_oot/")
     p.add_argument("--compare", default=None,
                    help="label of stored run to compare against (default: 'baseline' when present)")
     p.add_argument("--no-equivalence-check", action="store_true",
                    help="skip the full-history replication vs team_ratings_history.csv")
     p.add_argument("--match-results", type=Path, default=None,
-                   help="experiment input: read this file instead of data/current/match_results.csv "
+                   help="experiment input: read this file instead of data/current/sourced/match_results.csv "
                         "(the equivalence check then needs --no-equivalence-check; CHANGELOG §81)")
     p.add_argument("--dump-predictions", type=Path, default=None,
                    help="write every held-out team-match's frozen and walk-forward predictions to this CSV")

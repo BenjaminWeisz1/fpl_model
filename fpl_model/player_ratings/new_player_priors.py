@@ -98,7 +98,7 @@ def position_priors(positions, seasons=None):
     GOAL_MODEL_POSITION_RATES = slots | slots3 (§246), keyed {(Pos, Season): ...} on that season's slot rates."""
     if seasons is not None and _pr.WINDOW is not None:
         return {(pos, int(S)): _pr.combined_rate(pos, int(S)) for pos, S in set(zip(positions, seasons))}
-    single = pd.read_csv(DATA / "position_combinations.csv").set_index("Pos")
+    single = pd.read_csv(paths.current_file("position_combinations.csv", root=DATA)).set_index("Pos")
     out = {}
     for pos in set(positions):
         parts = [p.strip() for p in str(pos).split(",")]
@@ -110,7 +110,7 @@ def position_priors(positions, seasons=None):
 # ── arrivals dataset ──────────────────────────────────────────────────────────
 
 def in_scope_transfers():
-    t = pd.read_csv(DATA / "transfers.csv", encoding="utf-8-sig")
+    t = pd.read_csv(paths.current_file("transfers.csv", root=DATA), encoding="utf-8-sig")
     for c in ["Min_Old", "npxG_Old", "xAG_Old", "NPG_Old", "Assists_Old", "Team_Attack_Rating"]:
         t[c] = pd.to_numeric(t[c], errors="coerce")
     return t[t["Notes"].isna() & (t["League"] != "Premier League") & (t["Pos"] != "GK") & (t["Season"] > 2016)].copy()
@@ -118,7 +118,7 @@ def in_scope_transfers():
 
 def understat_ids():
     """PMS player name -> Understat ID, from the crosswalk (both name conventions)."""
-    cw = pd.read_csv(DATA / "understat_fpl_crosswalk.csv", encoding="utf-8-sig")
+    cw = pd.read_csv(paths.current_file("understat_fpl_crosswalk.csv", root=DATA), encoding="utf-8-sig")
     ids = {}
     for col in ["PMS_Player_fbref", "PMS_Player_FPL"]:
         for name, uid in zip(cw[col], cw["Player_ID_Understat"]):
@@ -232,7 +232,7 @@ def birth_dates():
                 q = pl.get("player", {})
                 if q.get("dateOfBirthTimestamp") is not None:
                     dob[q["id"]] = q["dateOfBirthTimestamp"]
-    s = pd.read_csv(DATA / "sofascore_player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    s = pd.read_csv(paths.current_file("sofascore_player_match_stats.csv", root=DATA), encoding="utf-8-sig", low_memory=False,
                     usecols=["Player_ID_Sofascore", "Local_Player"]).dropna().drop_duplicates()
     s["dob"] = s["Player_ID_Sofascore"].map(dob)
     return s.dropna(subset=["dob"]).groupby("Local_Player")["dob"].agg(lambda x: x.mode().iloc[0]).to_dict()
@@ -249,7 +249,7 @@ def attach_age(arr, dob):
 
 def build_dataset(log_path):
     uplayers, _ = load_understat()
-    pms = pd.read_csv(DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False)
+    pms = pd.read_csv(paths.current_file("player_match_stats.csv", root=DATA), encoding="utf-8-sig", low_memory=False)
     log = pd.read_csv(log_path, encoding="utf-8-sig")
     arr = attach_outcomes(in_scope_transfers(), pms, log)
     arr, slots = attach_priors(arr, uplayers)

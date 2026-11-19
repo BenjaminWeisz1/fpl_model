@@ -22,7 +22,7 @@ Base: 2017-2024 fbref team xG - 0.79 x summed player PKatt (2022-2024 also x the
 NPxG_Adj / base: the user's source reads a little higher there); 2025+ summed player npxG (kept current by
 penalty_reconcile).
 
-    python -m fpl_model.team_ratings.red_card_adjust            # writes data/current/red_card_factors.csv and prints a check
+    python -m fpl_model.team_ratings.red_card_adjust            # writes data/current/state/red_card_factors.csv and prints a check
     python -m fpl_model.team_ratings.red_card_adjust --apply    # also writes NPxG_Adj of every red-card match into match_results.csv
 """
 import argparse
@@ -40,7 +40,7 @@ from fpl_model.fetch.fetch_fotmob_matches import SHOTS_OUT as FOTMOB_SHOTS
 ROOT = paths.ROOT
 MATCHES = paths.RAW / "understat" / "matches"
 DATA = paths.CURRENT
-OUT = paths.CURRENT / "red_card_factors.csv"
+OUT = paths.current_file("red_card_factors.csv", root=paths.CURRENT)
 UP, DOWN = 0.8, 1.2   # the user's factors for the side with more / fewer players
 UP2, DOWN2 = None, None   # two-player differential (None = same as one)
 
@@ -110,7 +110,7 @@ def unequal_minutes(reds, end):
 
 
 def team_map():
-    u = pd.read_csv(DATA / "understat_match_positions.csv", encoding="utf-8-sig",
+    u = pd.read_csv(paths.current_file("understat_match_positions.csv", root=DATA), encoding="utf-8-sig",
                     usecols=["Season", "MatchID_Understat", "Team", "Team_Understat"]).drop_duplicates()
     names = dict(zip(u["Team_Understat"], u["Team"]))
     season = dict(zip(u["MatchID_Understat"].astype(str), u["Season"]))
@@ -194,7 +194,7 @@ def build(up=UP, down=DOWN, up2=UP2, down2=DOWN2, out_path=OUT):
 
 def bases(m, stats=None):
     """Unadjusted team npxG of each match_results row, per side (see module docstring)."""
-    p = stats if stats is not None else pd.read_csv(DATA / "player_match_stats.csv", encoding="utf-8-sig",
+    p = stats if stats is not None else pd.read_csv(paths.current_file("player_match_stats.csv", root=DATA), encoding="utf-8-sig",
                                                     low_memory=False)
     g = p.groupby(["Season", "Team", "Opponent", "Venue"]).agg(npxG=("npxG", "sum"), PKatt=("PKatt", "sum"))
     out = {}
@@ -238,7 +238,7 @@ def adjusted_values(m, fac, stats=None, ratio=None):
 
 def apply(fac):
     """Write NPxG_Adj of every red-card match into match_results.csv, text-level (other cells untouched)."""
-    path = DATA / "match_results.csv"
+    path = paths.current_file("match_results.csv", root=DATA)
     enc = "utf-8-sig" if path.read_bytes().startswith(b"\xef\xbb\xbf") else "utf-8"
     text = pd.read_csv(path, dtype=str, keep_default_na=False, encoding=enc)
     m = pd.read_csv(path, encoding="utf-8-sig")
@@ -258,8 +258,8 @@ def apply(fac):
 
 def check(out):
     """Agreement with the user's manual 2026 values: NPxG_Adj / summed player npxG."""
-    m = pd.read_csv(DATA / "match_results.csv", encoding="utf-8-sig")
-    p = pd.read_csv(DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False)
+    m = pd.read_csv(paths.current_file("match_results.csv", root=DATA), encoding="utf-8-sig")
+    p = pd.read_csv(paths.current_file("player_match_stats.csv", root=DATA), encoding="utf-8-sig", low_memory=False)
     s = p.groupby(["Season", "Team", "Opponent", "Venue"])["npxG"].sum()
     rows = []
     for r in out[out["Season"] == 2026].itertuples():

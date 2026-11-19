@@ -17,7 +17,7 @@ two tiers + early window, cluster bootstrap -- with a different signal:
 
 Run (after fpl_model/fetch/fetch_clubelo.py):
     python -m research.team_ratings.elo_prior_team_ratings
-Writes data/current/team_ratings_oot/elo_prior_report.txt + _summary.json.
+Writes data/validation/team_ratings_oot/elo_prior_report.txt + _summary.json.
 """
 from pathlib import Path
 

@@ -7,6 +7,8 @@ No production writes. Run: python -u -X utf8 -m research.defcon.evaluate_opponen
 """
 import os
 
+from fpl_model import paths
+
 os.environ.setdefault("OMP_NUM_THREADS", "2")
 import json
 import time
@@ -17,7 +19,7 @@ from joblib import Parallel, delayed
 
 from research.defcon import overnight_frames as H
 
-DATA = H.ROOT / "data" / "current"
+DATA = paths.CURRENT
 YEARS = [2022, 2023, 2024, 2025, 2026]
 HALF_LIVES = [10, 19, 38]   # opponent matches
 KS = [20, 60, 120]          # pseudo player-rows at the league ratio
@@ -26,7 +28,7 @@ KEY = ["Season", "Team", "Opponent", "Venue"]
 
 def calendar():
     """(Season, Team, Opponent, Venue) -> kickoff, plus each team's pass share in that match."""
-    s = pd.read_csv(DATA / "sofascore_player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    s = pd.read_csv(paths.current_file("sofascore_player_match_stats.csv", root=DATA), encoding="utf-8-sig", low_memory=False,
                     usecols=KEY + ["Kickoff", "Sofascore_totalPass"])
     v = s.groupby(KEY, as_index=False).agg(Kickoff=("Kickoff", "first"), Passes=("Sofascore_totalPass", "sum"))
     v["Kickoff"] = pd.to_datetime(v.Kickoff, utc=True)
@@ -61,7 +63,7 @@ def trailing_possession(cal, half_life=10, k=3.0):
 
 
 def opponent_attack():
-    h = pd.read_csv(DATA / "team_ratings_history.csv", encoding="utf-8-sig")
+    h = pd.read_csv(paths.current_file("team_ratings_history.csv", root=DATA), encoding="utf-8-sig")
     a = h[["Season", "Home", "Away", "Away_Attack_Rating", "Home_Attack_Rating"]]
     x = a.rename(columns={"Home": "Team", "Away": "Opponent", "Away_Attack_Rating": "OppAttack", "Home_Attack_Rating": "TeamAttack"}).assign(Venue="Home")
     y = a.rename(columns={"Away": "Team", "Home": "Opponent", "Home_Attack_Rating": "OppAttack", "Away_Attack_Rating": "TeamAttack"}).assign(Venue="Away")

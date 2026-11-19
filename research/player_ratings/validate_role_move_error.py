@@ -30,12 +30,12 @@ KEYS = ["Season", "Team", "Opponent", "Venue"]
 
 def starts_table():
     """Starts with date, line and pre-match log values, in player-date order."""
-    u = pd.read_csv(DATA / "understat_match_positions.csv", encoding="utf-8-sig", low_memory=False)
+    u = pd.read_csv(paths.current_file("understat_match_positions.csv", root=DATA), encoding="utf-8-sig", low_memory=False)
     s = u[(u.Is_Starter == True) & u.Position.isin(LINE)].copy()  # noqa: E712
     s["Date"] = pd.to_datetime(s["Date"])
     s["Line"] = s.Position.map(LINE)
     s = s[KEYS + ["Player_ID_Understat", "Date", "Line"]]
-    pos = pd.read_csv(DATA / "player_match_positions.csv", encoding="utf-8-sig", low_memory=False,
+    pos = pd.read_csv(paths.current_file("player_match_positions.csv", root=DATA), encoding="utf-8-sig", low_memory=False,
                       usecols=KEYS + ["Player", "Player_ID_Understat"])
     pos = pos.drop_duplicates(KEYS + ["Player_ID_Understat"])
     n = len(s)

@@ -17,6 +17,7 @@ import json
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from research.bonus import validate_bonus_accounting as acc
 from research.bonus import validate_bonus_calibration as calibration
 
@@ -41,7 +42,7 @@ FEATURES = {
 def load():
     rows, _ = acc.load_rows()
     rows = rows[rows["Season"] >= 2025].copy()
-    so = pd.read_csv(calibration.DATA / "sofascore_player_match_stats.csv", encoding="utf-8-sig", low_memory=False)
+    so = pd.read_csv(paths.current_file("sofascore_player_match_stats.csv", root=calibration.DATA), encoding="utf-8-sig", low_memory=False)
     so = so[so["Appearance_Status"].eq("played")].copy()
     so["Kickoff"] = pd.to_datetime(so["Kickoff"], utc=True)
     so["Local_Player"] = so["Local_Player"].replace(LOCAL_RENAMES)

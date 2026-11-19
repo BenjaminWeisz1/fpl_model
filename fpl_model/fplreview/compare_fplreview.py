@@ -69,8 +69,8 @@ LABEL = {"TotalPts": "points", "Goals": "goals", "Assists": "assists", "CS_Prob"
 
 def find_inputs(args):
     if args.current:
-        return DATA / "predicted_components.csv", DATA / "fplreview_projections.csv", DATA / "fplreview_status.json", \
-            DATA / "fixture_goal_predictions.csv", DATA / "penalty_predictions.csv", "current"
+        return paths.current_file("predicted_components.csv", root=DATA), paths.current_file("fplreview_projections.csv", root=DATA), paths.current_file("fplreview_status.json", root=DATA), \
+            paths.current_file("fixture_goal_predictions.csv", root=DATA), paths.current_file("penalty_predictions.csv", root=DATA), "current"
     if args.snapshot:
         snap = Path(args.snapshot)
     else:
@@ -145,7 +145,7 @@ def team_goals(pr, fixtures_path, pens_path, ours):
         long = pd.concat([fx.rename(columns={"Home": "Team_Full", "Home_Pred_NPG": "Team_Model_NPG"})[["Round", "Team_Full", "Team_Model_NPG"]],
                           fx.rename(columns={"Away": "Team_Full", "Away_Pred_NPG": "Team_Model_NPG"})[["Round", "Team_Full", "Team_Model_NPG"]]])
         long = long.groupby(["Round", "Team_Full"], as_index=False)["Team_Model_NPG"].sum()
-        players = pd.read_csv(DATA / "players_current.csv", encoding="utf-8-sig")
+        players = pd.read_csv(paths.current_file("players_current.csv", root=DATA), encoding="utf-8-sig")
         long["Team"] = long["Team_Full"].map(dict(zip(players["Team"], players["Team_Short"])))
         teams = teams.merge(long[["Team", "Round", "Team_Model_NPG"]], on=["Team", "Round"], how="left")
     return teams.round(3)
@@ -173,9 +173,9 @@ def relevant_players(pr):
     for c in PARTS:
         f[f"Gap_{c}"] = f[f"o_{c}"] - f[f"f_{c}"]
     # Premier League evidence: career minutes in player_match_stats.csv, keyed through players_current.csv.
-    players = pd.read_csv(DATA / "players_current.csv", encoding="utf-8-sig")
+    players = pd.read_csv(paths.current_file("players_current.csv", root=DATA), encoding="utf-8-sig")
     full = players.drop_duplicates(["Web_Name", "Team_Short"]).set_index(["Web_Name", "Team_Short"])["Player"]
-    stats = pd.read_csv(DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False, usecols=["Player", "Minutes"])
+    stats = pd.read_csv(paths.current_file("player_match_stats.csv", root=DATA), encoding="utf-8-sig", low_memory=False, usecols=["Player", "Minutes"])
     minutes = stats.groupby("Player")["Minutes"].sum()
     f["PL_Minutes"] = [minutes.get(full.get((p, t)), 0.0) for p, t in zip(f["Player"], f["Team"])]
     f["xMins_Band"] = pd.cut(f["Mean_xMins"], [RELEVANT_XMINS - 1e-9, 70, 80, 88, 200],

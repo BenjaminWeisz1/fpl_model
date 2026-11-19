@@ -79,16 +79,16 @@ def json_write(path, payload):
 
 
 def _input_hashes():
-    paths = {name: _DATA / name for name in _INPUTS}
-    paths.update({
+    input_paths = {name: paths.current_file(name, root=_DATA) for name in _INPUTS}
+    input_paths.update({
         "predict.py": _PREDICT,
         "recent_defcon.py": _PREDICT.with_name("recent_defcon.py"),
         "defender_model.py": _PREDICT.with_name("defender_model.py"),
     })
-    missing = [str(path) for path in paths.values() if not path.is_file()]
+    missing = [str(path) for path in input_paths.values() if not path.is_file()]
     if missing:
         raise FileNotFoundError(f"Required experiment inputs are missing: {missing}")
-    return {name: sha256(path) for name, path in paths.items()}
+    return {name: sha256(path) for name, path in input_paths.items()}
 
 
 def preserve_baseline():
@@ -104,7 +104,7 @@ def preserve_baseline():
 
     frozen_outputs = {}
     for name in _PRODUCTION_OUTPUTS:
-        source = _DATA / name
+        source = paths.current_file(name, root=_DATA)
         if not source.is_file():
             raise FileNotFoundError(f"Cannot preserve missing production output: {source}")
         destination = baseline / name
@@ -221,7 +221,7 @@ def prepare_frames():
     if not comparison["Target_frame"].eq(comparison["Target_source"]).all():
         raise AssertionError("Midfielder target labels differ from production source construction.")
 
-    raw = pd.read_csv(_DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False)
+    raw = pd.read_csv(paths.current_file("player_match_stats.csv", root=_DATA), encoding="utf-8-sig", low_memory=False)
     scale_checks = {}
     raw_keys = raw[_KEYS + ["Data_Source", "CBI", "Tkl", "Recov"]].copy()
     raw_keys["_RowOccurrence"] = raw_keys.groupby(
@@ -337,7 +337,7 @@ def assert_preserved(manifest):
     if _input_hashes() != manifest["input_sha256"]:
         raise RuntimeError("An experiment input changed after baseline preservation.")
     for name, expected in manifest["production_output_sha256"].items():
-        if sha256(_DATA / name) != expected:
+        if sha256(paths.current_file(name, root=_DATA)) != expected:
             raise RuntimeError(f"Production output changed during the diagnostic: {name}")
     cache_dir = _ROOT / "cache" / "defcon"
     actual_cache = {}

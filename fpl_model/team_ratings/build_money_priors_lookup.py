@@ -24,7 +24,7 @@ _PROJECT = Path(__file__).resolve().parents[3]
 _DATA = paths.CURRENT
 
 SOURCE_FILE = _PROJECT / "Archive" / "all_matchlogs_with_money_pred.csv"
-OUT_FILE = paths.CURRENT / "money_priors_by_season.csv"
+OUT_FILE = paths.current_file("money_priors_by_season.csv", root=paths.CURRENT)
 
 
 def main():

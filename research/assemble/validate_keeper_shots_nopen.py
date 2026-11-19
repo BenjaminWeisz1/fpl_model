@@ -10,6 +10,7 @@ import json
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from research.assemble import validate_keeper_saves as K
 from research.assemble import validate_keeper_shots as S
 
@@ -18,7 +19,7 @@ SAVED_KICK_XGOT, UNSAVED_KICK_SHORTFALL = .80, .14
 
 def table():
     e = S.keeper_table()
-    p = pd.read_csv(K.DATA / "sofascore_player_extra.csv.gz", low_memory=False, usecols=["Event_ID_Sofascore", "Player_ID_Sofascore", "penaltyFaced", "penaltySave"])
+    p = pd.read_csv(paths.current_file("sofascore_player_extra.csv.gz", root=K.DATA), low_memory=False, usecols=["Event_ID_Sofascore", "Player_ID_Sofascore", "penaltyFaced", "penaltySave"])
     e = e.merge(p, on=["Event_ID_Sofascore", "Player_ID_Sofascore"], how="left", validate="one_to_one")
     faced, saved = e.penaltyFaced.fillna(0), e.penaltySave.fillna(0)
     e["goalsPrevented"] = e.goalsPrevented - SAVED_KICK_XGOT * saved + UNSAVED_KICK_SHORTFALL * (faced - saved)

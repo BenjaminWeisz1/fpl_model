@@ -45,12 +45,12 @@ def freeze_control():
         manifest = json.loads((BASELINE / "manifest.json").read_text())
         assert digest(OUT / "preregistration.json") == manifest["preregistration_sha256"], "Pre-registration changed"
         for name, expected in manifest["inputs"].items():
-            assert digest(DATA / name) == expected, f"Input changed: {name}"
+            assert digest(paths.current_file(name, root=DATA)) == expected, f"Input changed: {name}"
         return
     BASELINE.mkdir()
     shutil.copy2(HERE / "predict.py", BASELINE / "predict.py")
     for name in ("predictions_defensive.csv", "defcon_average_probabilities.csv", "player_ratings.csv"):
-        shutil.copy2(DATA / name, BASELINE / name)
+        shutil.copy2(paths.current_file(name, root=DATA), BASELINE / name)
     models = BASELINE / "models"
     models.mkdir()
     for p in (ROOT / "cache" / "defcon").glob("*.pkl.gz"):
@@ -58,7 +58,7 @@ def freeze_control():
     inputs = ["player_match_stats.csv", "players_current.csv", "transfers.csv",
               "player_match_positions.csv", "fixtures.csv", "match_results.csv",
               "minutes_probabilities.csv"]
-    manifest = {"inputs": {n: digest(DATA / n) for n in inputs},
+    manifest = {"inputs": {n: digest(paths.current_file(n, root=DATA)) for n in inputs},
                 "outputs": {p.name: digest(p) for p in BASELINE.glob("*.csv")},
                 "source_sha256": digest(BASELINE / "predict.py"),
                 "preregistration_sha256": digest(OUT / "preregistration.json")}

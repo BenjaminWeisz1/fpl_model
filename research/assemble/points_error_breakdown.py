@@ -30,11 +30,11 @@ KEY = ["Season", "Player", "Team", "Opponent", "Venue"]
 
 def history_rows():
     h = pd.read_csv(VAL / "prematch_bonus_history_20261101" / "hindcast_predictions.csv", encoding="utf-8-sig", low_memory=False)  # identities repaired, §167
-    v = pd.read_csv(DATA / "vaastav_player_match_history.csv", encoding="utf-8-sig", low_memory=False)
+    v = pd.read_csv(paths.current_file("vaastav_player_match_history.csv", root=DATA), encoding="utf-8-sig", low_memory=False)
     v["Match_Key"] = v.Season.astype(str) + "_" + v.Fixture_FPL.astype(str)
     v["Player"] = v.Local_Player.fillna(v.Name_FPL)
     v = v.rename(columns={"minutes": "Min2"})
-    pms = pd.read_csv(DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False, usecols=KEY + ["PK", "PKatt"]).drop_duplicates(KEY)
+    pms = pd.read_csv(paths.current_file("player_match_stats.csv", root=DATA), encoding="utf-8-sig", low_memory=False, usecols=KEY + ["PK", "PKatt"]).drop_duplicates(KEY)
     v = v.merge(pms, on=KEY, how="left")
     v[["PK", "PKatt"]] = v[["PK", "PKatt"]].fillna(0)
     cols = ["Match_Key", "Player", "Team", "goals_scored", "assists", "clean_sheets", "goals_conceded", "saves", "penalties_saved",
@@ -52,7 +52,7 @@ def history_rows():
 
 def recent_rows():
     h = pd.read_csv(VAL / "prematch_bonus_rerun_20261028" / "hindcast_predictions.csv", encoding="utf-8-sig", low_memory=False)
-    p = pd.read_csv(DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False)
+    p = pd.read_csv(paths.current_file("player_match_stats.csv", root=DATA), encoding="utf-8-sig", low_memory=False)
     p = p[p.Data_Source == "FPL_API"].drop_duplicates(KEY)
     r = h.merge(p[KEY + ["Clean_Sheet", "Goals_Conceded", "Saves", "PK", "PKatt", "Own_Goals", "CrdY", "CrdR", "Penalties_Saved", "Penalties_Missed"]],
                 on=KEY, how="left", validate="one_to_one")
@@ -76,7 +76,7 @@ def floor_moments(lam, k):
 
 
 def actual_penalty_share(r):
-    pk = pd.read_csv(DATA / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False, usecols=["Season", "Player", "Team", "PKatt"])
+    pk = pd.read_csv(paths.current_file("player_match_stats.csv", root=DATA), encoding="utf-8-sig", low_memory=False, usecols=["Season", "Player", "Team", "PKatt"])
     t = pk.groupby(["Season", "Team", "Player"]).PKatt.sum()
     return (t / t.groupby(level=[0, 1]).transform("sum")).fillna(0)
 

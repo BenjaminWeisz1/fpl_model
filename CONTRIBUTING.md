@@ -47,7 +47,7 @@ No output changes: tools/regression_check.py compare reports IDENTICAL.
 ## When to commit
 
 - One logical change per commit. A refactor and a behaviour change never share a commit.
-- Commit only when the unit tests pass (`python -m unittest discover -s scripts -p "test_*.py"`).
+- Commit only when the unit tests pass (`python -m pytest`).
 - A `refactor` commit also needs `tools/regression_check.py` to report IDENTICAL against the
   commit before it.
 - Weekly data refreshes are not commits: they change data, not code.

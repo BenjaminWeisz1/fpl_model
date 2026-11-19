@@ -15,10 +15,11 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
 
+from fpl_model import paths
 from fpl_model.player_ratings import fotmob_priors as fp  # noqa: E402
 from fpl_model.player_ratings import new_player_priors as npp  # noqa: E402
 
-COEFFS = npp.DATA / "league_coefficients_20261029.csv"
+COEFFS = paths.current_file("league_coefficients_20261029.csv", root=npp.DATA)
 UNDERSTAT_NAME = {v: k for k, v in npp.UNDERSTAT_LEAGUE.items()}
 UNDERSTAT_NAME["EPL"] = "Premier League"
 

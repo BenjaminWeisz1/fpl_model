@@ -7,6 +7,8 @@ This reconstructs a counterfactual old rating, not a saved live GW6 output.
 """
 import os
 
+from fpl_model import paths
+
 os.environ.setdefault("OMP_NUM_THREADS", "2")
 import ast
 import gzip
@@ -55,7 +57,7 @@ def score(model, feat, ctx, team, cols):
 
 def main():
     freeze_control()
-    production_hash = hashlib.sha256((DATA / "predictions_defensive.csv").read_bytes()).hexdigest()
+    production_hash = hashlib.sha256((paths.current_file("predictions_defensive.csv", root=DATA)).read_bytes()).hexdigest()
     scope = load_scope()
     # Extract only the already-defined transfer/youth inference helpers.
     source = (OUT / "baseline" / "predict.py").read_text(encoding="utf-8-sig")
@@ -72,7 +74,7 @@ def main():
     if "RecentEWPer90" in cols:
         personal_cols.append("RecentEWPer90")
     logs = scope["matchlogs"]
-    fixtures = pd.read_csv(DATA / "fixtures.csv", encoding="utf-8-sig")
+    fixtures = pd.read_csv(paths.current_file("fixtures.csv", root=DATA), encoding="utf-8-sig")
     gw = fixtures[fixtures.Season.eq(2026) & fixtures.Round.eq(7)].copy()
     for c in ("Home", "Away"):
         gw[c] = gw[c].str.strip()
@@ -84,7 +86,7 @@ def main():
     before_logs = logs.loc[~pd.MultiIndex.from_frame(logs[keys]).isin(latest_keys)].copy()
     print(f"Removed {len(latest)} GW7 appearances; reconstructing the new model before GW7.", flush=True)
     after_ctx = context(scope, scope["def_agg"])
-    current_features = pd.read_csv(DATA / "predictions_defensive.csv", encoding="utf-8-sig")
+    current_features = pd.read_csv(paths.current_file("predictions_defensive.csv", root=DATA), encoding="utf-8-sig")
     current_features = current_features[current_features.Pos.eq("D")].drop_duplicates("Player").set_index("Player")
     model_files = list((DATA.parents[1] / "cache" / "defcon").glob("Defender__*.pkl.gz"))
     assert len(model_files) == 1
@@ -167,7 +169,7 @@ def main():
             "one_feature_effects_current_model_old_context": {c: score(after_model, {**old, c: new[c]}, before_ctx, team, cols)-p1
                 for c in old if c in new and old[c] != new[c]}}
     table = pd.DataFrame(rows)
-    current_avg = pd.read_csv(DATA / "defcon_average_probabilities.csv", encoding="utf-8-sig").set_index("Player")
+    current_avg = pd.read_csv(paths.current_file("defcon_average_probabilities.csv", root=DATA), encoding="utf-8-sig").set_index("Player")
     for _, row in table.iterrows():
         assert round(row.RatingAfter, 4) == current_avg.loc[row.Player, "Defcon"]
     full = table[table.Minutes.ge(60)].copy()
@@ -194,7 +196,7 @@ def main():
         "feature_mode": mode, "production_changed": False}
     (OUT / f"{prefix}_rating_change_details.json").write_text(json.dumps(details, indent=2), encoding="utf-8")
     (OUT / f"{prefix}_rating_change_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
-    assert hashlib.sha256((DATA / "predictions_defensive.csv").read_bytes()).hexdigest() == production_hash
+    assert hashlib.sha256((paths.current_file("predictions_defensive.csv", root=DATA)).read_bytes()).hexdigest() == production_hash
     print(json.dumps(summary, indent=2), flush=True)
 
 

@@ -26,10 +26,10 @@ beta = 0.8
 home_advantage = 1.084340351
 money_weight = 0.3
 
-MATCH_RESULTS_FILE = paths.CURRENT / "match_results.csv"
-MONEY_PRIORS_FILE = paths.CURRENT / "money_priors_by_season.csv"
-OUT_FILE = paths.CURRENT / "team_ratings_history.csv"
-CURRENT_RATINGS_FILE = paths.CURRENT / "team_ratings_current.csv"
+MATCH_RESULTS_FILE = paths.current_file("match_results.csv", root=paths.CURRENT)
+MONEY_PRIORS_FILE = paths.current_file("money_priors_by_season.csv", root=paths.CURRENT)
+OUT_FILE = paths.current_file("team_ratings_history.csv", root=paths.CURRENT)
+CURRENT_RATINGS_FILE = paths.current_file("team_ratings_current.csv", root=paths.CURRENT)
 
 
 def main():

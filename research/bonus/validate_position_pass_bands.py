@@ -19,6 +19,7 @@ from collections import deque
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
 from fpl_model.bonus import build_residual_bps_baseline as residual
 from fpl_model.bonus import pass_bands as pb
 from research.bonus import validate_bonus_accounting as acc
@@ -42,7 +43,7 @@ SEED, REPS = 42, 2000
 def load():
     so = vpb.load_sofascore()
     key = ["Season", "Team", "Opponent", "Venue", "Player"]
-    pos = pd.read_csv(calibration.DATA / "player_match_positions.csv", encoding="utf-8-sig", low_memory=False,
+    pos = pd.read_csv(paths.current_file("player_match_positions.csv", root=calibration.DATA), encoding="utf-8-sig", low_memory=False,
                       usecols=key + ["Position_Resolved", "Is_Starter"])
     n = len(so)
     so = so.merge(pos.rename(columns={"Player": "Local_Player"}), on=["Season", "Team", "Opponent", "Venue",

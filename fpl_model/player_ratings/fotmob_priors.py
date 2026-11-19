@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
 
+from fpl_model import paths
 from fpl_model.fetch.fetch_fotmob_leagues import CALENDAR_LEAGUES, FIRST_SEASON, LEAGUE_DIR, LEAGUES  # noqa: E402
 from fpl_model.player_ratings import new_player_priors as npp  # noqa: E402
 
@@ -25,7 +26,7 @@ def _norm(name):
     """Name tokens, accents dropped (same rule as build_new_player_priors._norm; kept here to avoid a circular import)."""
     t = unicodedata.normalize("NFKD", str(name)).encode("ascii", "ignore").decode().lower()
     return re.sub(r"[^a-z ]", " ", t).split()
-OVERRIDES = npp.DATA / "fotmob_id_overrides.csv"
+OVERRIDES = paths.current_file("fotmob_id_overrides.csv", root=npp.DATA)
 MIN_TEAMS = 8          # league-seasons listing fewer clubs are fragments and are dropped
 MIN_LIST_SHARE = 0.5   # an xG (xA) list summing to less than this share of goals (assists) is partial
 

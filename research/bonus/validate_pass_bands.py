@@ -18,6 +18,7 @@ import numpy as np
 import pandas as pd
 from scipy import optimize
 
+from fpl_model import paths
 from fpl_model.bonus import build_residual_bps_baseline as residual
 from fpl_model.bonus import simulate_bonus
 from research.bonus import validate_bonus_accounting as acc
@@ -46,7 +47,7 @@ CONTROLS = {  # 2026/27 BPS weights; controls for the amended definition check (
 
 
 def load_sofascore():
-    so = pd.read_csv(calibration.DATA / "sofascore_player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    so = pd.read_csv(paths.current_file("sofascore_player_match_stats.csv", root=calibration.DATA), encoding="utf-8-sig", low_memory=False,
                      usecols=["Season", "Canonical_Player_ID", "Local_Player", "Team", "Opponent", "Venue", "Kickoff",
                               "Appearance_Status", "Position_Sofascore", "Sofascore_minutesPlayed",
                               "Sofascore_totalPass", "Sofascore_accuratePass"]

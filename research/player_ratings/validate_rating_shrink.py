@@ -23,7 +23,7 @@ GRID = np.round(np.arange(0.50, 1.0001, 0.02), 2)
 
 def position_groups(log):
     """Player's group in each season: first position of his latest transfers.csv row with Season <= season."""
-    t = pd.read_csv(ROOT / "data" / "current" / "transfers.csv", encoding="utf-8-sig").dropna(subset=["Pos"])
+    t = pd.read_csv(paths.current_file("transfers.csv"), encoding="utf-8-sig").dropna(subset=["Pos"])
     t = t.sort_values("Season")
     rows = {p: list(zip(g["Season"], g["Pos"])) for p, g in t.groupby("Player")}
     out = {}

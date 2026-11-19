@@ -1,6 +1,6 @@
 """Manager tenures from Transfermarkt games (AGENDA 2026-10-31 item 9, CHANGELOG §158). Event flag only; no bounce term.
 
-Writes data/current/manager_tenures.csv: one row per spell, Premier League 2017/18-2025/26. Spells under MIN_SPELL matches
+Writes data/archive/current_unused_20261118/manager_tenures.csv: one row per spell, Premier League 2017/18-2025/26. Spells under MIN_SPELL matches
 that sit between two spells of the same manager are one-off stand-ins (Ian Woan, Everton 2023/24) and are folded into the
 surrounding spell, flagged in Stand_Ins. 2026/27 changes must be added by hand; the source ends in July 2026.
 Also runs the §158 check on team residuals. Run: python -u -X utf8 -m research.team_ratings.build_manager_tenures
@@ -16,7 +16,7 @@ ROOT = paths.ROOT
 from research.absence import build_absence_frame as B
 
 MIN_SPELL = 3
-OUT = paths.CURRENT / "manager_tenures.csv"
+OUT = paths.current_file("manager_tenures.csv", root=paths.CURRENT)
 
 
 def team_games():

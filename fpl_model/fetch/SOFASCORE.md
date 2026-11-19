@@ -29,7 +29,7 @@ downloads, then imported offline by `sofascore_weekly.py`. It never makes HTTP r
 4. Run `run_pre_deadline.py`. Its first stage, `sofascore_weekly.py pipeline`, does steps 3
    and `build` itself. It imports from Downloads and rebuilds only when cached lineups are
    missing from the output (about 70 s; otherwise skipped). It writes
-   `data/current/sofascore_status.json` and never halts: import or build problems are recorded
+   `data/current/sourced/sofascore_status.json` and never halts: import or build problems are recorded
    there as warnings or errors. Model stages may use Sofascore only when `usable_for_model`
    is true: no errors, every cached lineup is built, and the cache is at most 2 rounds behind
    FPL. Otherwise they keep the §64 baseline. Steps 3 and `build` can still be run by hand.
@@ -53,9 +53,10 @@ transport, payload and DOM provenance; 3,470 new lineups were collected through 
 connected Chrome navigation. All seasons reconcile exactly against independent local
 fixture teams/dates. Missing/deferred/unavailable/discovery gaps: zero.
 
-Published `data/current/sofascore_player_match_stats.csv` (135,136 rows) and
-`sofascore_field_coverage.csv`, plus compatible additions to the shared player/alias/
-fixture registries. All original registry rows and accepted IDs remain unchanged;
+Published `data/current/sourced/sofascore_player_match_stats.csv` (135,136 rows) and
+`data/archive/current_unused_20261118/sofascore_field_coverage.csv`, plus compatible additions to the shared
+player/alias/fixture registries. The identity registries and overrides are stored in
+`data/archive/current_unused_20261118/`. All original registry rows and accepted IDs remain unchanged;
 Every source row has project IDs. After the §63 identity repair (matcher fix plus 18
 reviewed overrides), every played appearance is resolved. 544 source-only IDs / 2,664
 rows remain, all unused substitutes. Event 8243397 retains
@@ -206,7 +207,7 @@ persists failed requests. All-cache rebuilds preserve earlier seasons. Empty reb
 retain previous good player-stat output. `access_probe.json` stores request status, body
 hash, timing and errors, never fabricated successful responses.
 
-`data/current/sofascore_player_match_stats.csv` is emitted only when actual valid cached
+`data/current/sourced/sofascore_player_match_stats.csv` is emitted only when actual valid cached
 matches exist. It retains original source IDs/names, project IDs, local names when known,
 fixture home/away membership, kickoff, starter flag, played/unused/unknown bench state,
 coarse source position/formation and raw provenance. All numeric exports are prefixed
@@ -222,7 +223,8 @@ is filled or changed. No incidents, shot maps or penalty-log automation are incl
 
 ## Identity schemas
 
-All tables are UTF-8-BOM CSV under `data/current/`, written atomically, with IDs as strings.
+Identity tables are UTF-8-BOM CSV under `data/archive/current_unused_20261118/`, written atomically, with IDs as
+strings. The published Sofascore player-match table is in `data/current/sourced/`.
 
 | Table | Columns and invariant |
 |---|---|
