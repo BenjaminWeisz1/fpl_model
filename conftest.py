@@ -14,7 +14,7 @@ NEEDS_DATA_AT_IMPORT = {
     "test_goalkeeper_points.py", "test_xmins_clock.py", "test_coherence.py", "test_integer_bps.py",
     "test_pass_bands.py", "test_fetch_fotmob_matches.py", "test_fixture_rounds.py", "test_penalty_log_understat.py",
     "test_sofascore.py", "test_sofascore_backfill.py", "test_sofascore_browser.py", "test_sofascore_weekly.py",
-    "test_new_player_priors.py", "test_export_site_data.py", "test_save_gameweek_outputs.py",
+    "test_sofascore_keepers.py", "test_sofascore_set_pieces.py", "test_new_player_priors.py", "test_export_site_data.py", "test_save_gameweek_outputs.py",
 }
 _skipped_modules = []
 
