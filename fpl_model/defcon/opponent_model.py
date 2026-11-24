@@ -10,6 +10,8 @@ priors) and removed in the 2026-11-16 cleanup; it is in git history before that.
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
+
 OPP_HALF_LIFE, OPP_K = 19, 20        # §149, chosen on 2018-2021
 WIDE_DEF = ["Pos_FB", "Pos_WB", "Pos_LB", "Pos_RB"]
 
@@ -23,7 +25,7 @@ def position_groups(frame, head):
 
 def match_order(data_dir):
     """Team-match keys in chronological order: one list per match, home side first."""
-    m = pd.read_csv(data_dir / "match_results.csv", encoding="utf-8-sig", usecols=["Season", "Home", "Away"])
+    m = pd.read_csv(paths.current_file("match_results.csv", root=data_dir), encoding="utf-8-sig", usecols=["Season", "Home", "Away"])
     return [((int(s), h, a, "Home"), (int(s), a, h, "Away")) for s, h, a in zip(m.Season, m.Home, m.Away)]
 
 

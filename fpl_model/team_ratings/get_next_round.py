@@ -11,6 +11,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from fpl_model import paths
+
 
 def get_next_round(data_dir: Path, season: int) -> int:
     """Returns the next round number to predict: the first round with an
@@ -24,8 +26,8 @@ def get_next_round(data_dir: Path, season: int) -> int:
     corresponds to. This assumes fixtures.csv Round is current;
     fetch_fixtures_results.py checks it against FPL's event each part 1.
     """
-    match_results = pd.read_csv(data_dir / "match_results.csv")
-    fixtures = pd.read_csv(data_dir / "fixtures.csv")
+    match_results = pd.read_csv(paths.current_file("match_results.csv", root=data_dir))
+    fixtures = pd.read_csv(paths.current_file("fixtures.csv", root=data_dir))
 
     played = match_results[match_results["Season"] == season]
     fixtures_this_season = fixtures[fixtures["Season"] == season].copy()
