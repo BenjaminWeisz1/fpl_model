@@ -5,7 +5,9 @@ minutes and the penalty share are reasonably settled.
 Everything here turns the ratings produced by part 1 (``run_post_gameweek.py``)
 into per-player, per-gameweek predicted points:
 
-    Sofascore import/build/status -> minutes probabilities -> fixture goal predictions -> penalty predictions
+    Sofascore import/build/status (with set-piece and keeper tables) -> set-piece, shot-stopping and finishing charts
+      -> minutes probabilities
+      -> fixture goal predictions -> penalty predictions
       -> residual BPS baseline -> pass-band rates -> simulation features -> bonus simulation
       -> predicted points -> part-2 heatmaps
 
@@ -35,6 +37,22 @@ STAGES = [
         "label": "Sofascore import, build and status (non-halting)",
         "script": SCRIPTS / "fetch" / "sofascore_weekly.py",
         "args": ["pipeline"],
+        "summary_files": [],
+    },
+    # Exploratory chart from the Sofascore set-piece tables; skips when they are missing.
+    {
+        "label": "Set-piece creators chart (EDA)",
+        "script": SCRIPTS / "eda" / "set_piece_takers.py",
+        "summary_files": [],
+    },
+    {
+        "label": "Goalkeeper shot-stopping chart (EDA)",
+        "script": SCRIPTS / "eda" / "keeper_shot_stopping.py",
+        "summary_files": [],
+    },
+    {
+        "label": "Finishing chart (EDA)",
+        "script": SCRIPTS / "eda" / "player_finishing.py",
         "summary_files": [],
     },
     {

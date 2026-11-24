@@ -14,13 +14,22 @@ by normal Chrome navigation and saved as downloads (CHANGELOG §66):
           Model stages may use Sofascore only when usable_for_model is true
           (built, valid, at most MAX_LAG rounds behind).
   pipeline  the run_pre_deadline.py stage: import, build only when cached lineups
-          are missing from the output, then status. Never halts; problems are
+          are missing from the output, rebuild the set-piece tables
+          (sofascore_set_pieces.py), then status. Never halts; problems are
           recorded in sofascore_status.json.
+
+Each finished match has three pages: lineups, plus commentary (`/event/{id}/comments`)
+and shot map (`/event/{id}/shotmap`) for the set-piece tables. The two set-piece feeds
+never affect usable_for_model; a missing one is a warning. Goalkeepers' player pages
+(`/player/{id}/statistics/seasons` and per-season statistics) are imported too and feed
+sofascore_keeper_seasons.csv (sofascore_keepers.py; `python -m fpl_model.fetch.sofascore_keepers plan`
+lists them); the top midfielders' and forwards' pages feed sofascore_player_finishing_seasons.csv
+(sofascore_finishing.py, same `plan`).
 
 Capture files: `sofascore_capture_*.json` holding {"capture_version": 1, "url",
 "retrieved_at", "transport", "dom_text"}, where dom_text is the page's exact
 document.body.innerText. Manual saves: the raw page JSON named
-`sofascore__round__<n>.json` or `sofascore__lineups__<event>.json`. Collect at least
+`sofascore__round__<n>.json` or `sofascore__<lineups|comments|shotmap>__<event>.json`. Collect at least
 ~2 days after a round's last match; stats were stable from 36 h onward
 (data/validation/sofascore_revision_check_20261028). See SOFASCORE.md.
 
@@ -39,6 +48,9 @@ from pathlib import Path
 
 from fpl_model import paths
 from fpl_model.fetch import fetch_sofascore as f
+from fpl_model.fetch import sofascore_finishing as finishing
+from fpl_model.fetch import sofascore_keepers as keepers
+from fpl_model.fetch import sofascore_set_pieces as sp
 from fpl_model.fetch.player_identity import Registry, read_csv
 from fpl_model.fetch.sofascore_browser_backfill import metadata_path
 from fpl_model.fetch.sofascore_browser_pilot import validate_event
@@ -46,9 +58,10 @@ from fpl_model.fetch.sofascore_browser_pilot import validate_event
 INBOX = Path.home() / 'Downloads'
 MAX_LAG = 2
 CAPTURE_GLOB = 'sofascore_capture_*.json'
-MANUAL = re.compile(r'^sofascore__(?:round__(\d+)|lineups__(\d+))\.json$')
+MANUAL = re.compile(r'^sofascore__(?:round__(\d+)|(lineups|comments|shotmap)__(\d+))\.json$')
 ROUND_ROUTE = re.compile(r'^/unique-tournament/17/season/(\d+)/events/round/(\d+)(?:\?page=(\d+))?$')
 LINEUP_ROUTE = re.compile(r'^/event/(\d+)/lineups$')
+FEED_ROUTE = re.compile(r'^/event/(\d+)/(comments|shotmap)$')
 VOLATILE_KEYS = {'userCount'}  # follower counts; observed changing on GW8 re-captures (§66)
 
 
@@ -112,6 +125,16 @@ def plan(raw, data):
             capture.append({'kind': 'lineup', 'round': rnd, 'fixture': list(fx),
                             'url': f.BASE + f'/event/{known[fx]}/lineups',
                             'manual_filename': f'sofascore__lineups__{known[fx]}.json'})
+    # Commentary and shot map for every match with lineups (cached or about to be).
+    have = {kind: {p.stem for p in (raw / kind / str(f.CURRENT_SEASON)).glob('*.json')} for kind in sp.FEEDS}
+    rounds = fpl_fixtures(data)
+    targets = {fx: eid for fx, eid in {**known, **cached}.items() if fx in rounds}
+    for fx, eid in sorted(targets.items(), key=lambda kv: (rounds[kv[0]] or 0, kv[0])):
+        for kind in sp.FEEDS:
+            if str(eid) not in have[kind]:
+                capture.append({'kind': kind, 'round': rounds[fx], 'fixture': list(fx),
+                                'url': f.BASE + f'/event/{eid}/{kind}',
+                                'manual_filename': f'sofascore__{kind}__{eid}.json'})
     return {'season_id': sid, 'missing_fixtures': [dict(home=h, away=a, round=r) for (h, a), r in sorted(needed.items())],
             'capture': capture,
             'note': 'Lineup URLs for a round appear once its round page is imported; '
@@ -136,7 +159,7 @@ def read_inbox(inbox):
             continue
         retrieved = datetime.fromtimestamp(path.stat().st_mtime, UTC).isoformat()
         route = (f'/unique-tournament/17/season/{{sid}}/events/round/{m.group(1)}' if m.group(1)
-                 else f'/event/{m.group(2)}/lineups')
+                 else f'/event/{m.group(3)}/{m.group(2)}')
         yield path, route, retrieved, 'manual_browser_save', path.read_bytes()
 
 
@@ -149,7 +172,7 @@ def import_inbox(raw, inbox):
             failures[path.name] = {'route': None, 'kind': 'capture_invalid', 'error': dom}
             continue
         captures.append((path, route.replace('{sid}', str(sid)), retrieved, transport, dom))
-    captures.sort(key=lambda c: (LINEUP_ROUTE.match(c[1]) is not None, c[1]))
+    captures.sort(key=lambda c: (ROUND_ROUTE.match(c[1]) is None, c[1]))
     added = {}
     done = []
     for path, route, retrieved, transport, dom in captures:
@@ -192,6 +215,28 @@ def import_inbox(raw, inbox):
                     client.store(path_cache, payload, f.BASE + route, f.validate_lineup,
                                  event=event, season=f.CURRENT_SEASON, event_id=eid, **meta)
                     imported['lineup_new'] += 1
+            elif m := FEED_ROUTE.match(route):
+                eid, kind = int(m.group(1)), m.group(2)
+                event = added.get(eid) or events.get(eid)
+                if event is None:
+                    raise f.FetchError('event_not_discovered', f'Event {eid}: import its round page first')
+                validate_event(event, f.CURRENT_SEASON, sid)
+                validator = sp.VALIDATORS[kind]
+                validator(payload)
+                path_cache = sp.feed_path(raw, kind, f.CURRENT_SEASON, eid)
+                old = client.load(path_cache, validator)
+                if old:
+                    if without_volatile(old['payload']) != without_volatile(payload):
+                        raise f.FetchError('cache_revision', f'{kind} differs from the frozen cache')
+                    imported[f'{kind}_unchanged'] += 1
+                else:
+                    write_dom(dom_path, dom)
+                    client.store(path_cache, payload, f.BASE + route, validator,
+                                 event=event, season=f.CURRENT_SEASON, event_id=eid, **meta)
+                    imported[f'{kind}_new'] += 1
+            elif keepers.route_path(raw, route):
+                write_dom(dom_path, dom)
+                imported[keepers.store(client, raw, route, payload, **meta)] += 1
             else:
                 raise f.FetchError('schema', f'Unsupported route {route}')
             done.append(path)
@@ -268,6 +313,22 @@ def pipeline(raw, data, inbox):
             print('Sofascore build: outputs already current, skipped')
     except Exception as exc:  # build raises before replacing any good output
         errors.append(f'build failed: {type(exc).__name__}: {exc}')
+    try:  # keeper season table: supplementary, so problems are warnings only
+        summary = keepers.build(raw, data)
+        print(f"Sofascore keepers: {summary['rows']} keeper-season rows")
+    except Exception as exc:
+        warnings.append(f'keeper build failed: {type(exc).__name__}: {exc}')
+    try:  # finishing table: supplementary, so problems are warnings only
+        summary = finishing.build(raw, data)
+        print(f"Sofascore finishing: {summary['rows']} player-season rows")
+    except Exception as exc:
+        warnings.append(f'finishing build failed: {type(exc).__name__}: {exc}')
+    try:  # set-piece tables: supplementary, so problems are warnings only
+        summary = sp.build(raw, data)
+        print(f"Sofascore set pieces: {summary['matches']} matches, {summary.get('rows', 0)} rows, "
+              f"{summary['unpaired_shots']} unpaired shots, {len(summary['unmatched_assisters'])} unmatched assisters")
+    except Exception as exc:
+        warnings.append(f'set-piece build failed: {type(exc).__name__}: {exc}')
     return status(raw, data, errors, warnings)
 
 
@@ -292,6 +353,10 @@ def status(raw, data, errors=(), warnings=()):
                       cached_not_built=unbuilt)
         if unbuilt:
             result['errors'].append('Cached lineups missing from sofascore_player_match_stats.csv: run build')
+        no_feeds = sorted(str(e) for e in cached.values() if str(e) not in sp.cached_events(raw, f.CURRENT_SEASON))
+        result['set_piece_feeds_missing'] = no_feeds
+        if no_feeds:
+            result['warnings'].append(f'{len(no_feeds)} matches lack commentary or shot map (set-piece tables)')
     except (OSError, ValueError, KeyError) as exc:
         result['errors'].append(f'{type(exc).__name__}: {exc}')
     result['usable_for_model'] = not result['errors'] and result.get('lag_rounds', MAX_LAG + 1) <= MAX_LAG

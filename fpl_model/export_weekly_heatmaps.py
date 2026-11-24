@@ -72,6 +72,7 @@ _FONTSIZE_TITLE = 15
 _FONTSIZE_SUBTITLE = 10.5
 _FONTSIZE_RANK = 11
 _FONTSIZE_LEGEND = 8
+_FONTSIZE_FOOTNOTE = 9
 
 # Greys for the editorial chrome (team-ratings.png reference look).
 _C_SUBTITLE = "#666666"        # subtitle text
@@ -126,9 +127,9 @@ def _active_players() -> set:
     return active
 
 
-def _norm(series: pd.Series) -> pd.Series:
-    """Min-max normalise to [0, 1]; degenerate (flat) column → 0.5."""
-    lo, hi = series.min(), series.max()
+def _norm(series: pd.Series, bounds: tuple = None) -> pd.Series:
+    """Min-max normalise to [0, 1] (over *bounds* when given); degenerate (flat) column → 0.5."""
+    lo, hi = bounds if bounds is not None else (series.min(), series.max())
     if hi == lo:
         return pd.Series(0.5, index=series.index)
     return (series - lo) / (hi - lo)
@@ -149,9 +150,11 @@ def _fmt(v: float, precision: int) -> str:
 
 
 def _wrap_subtitle(text: str, width: int) -> list:
-    """Wrap a subtitle to *width* chars, preferring sentence boundaries."""
+    """Wrap a subtitle to *width* chars, preferring sentence boundaries; a newline forces a line break."""
     if not text:
         return []
+    if "\n" in text:
+        return [line for block in text.split("\n") for line in _wrap_subtitle(block, width)]
     parts = [p for p in re.split(r"(?<=\.)\s+", text) if p]
     lines, cur = [], ""
     for part in parts:
@@ -175,7 +178,11 @@ def _render_heatmap(df: pd.DataFrame, sort_col: str, display_cols: list,
                     fig_height_per_row: float = 0.34,
                     bold_max_cols: list = None,
                     pct_cols: tuple = (),
-                    show_legend: bool = True) -> None:
+                    int_cols: tuple = (),
+                    show_legend: bool = True,
+                    color_range: dict = None,
+                    top_n: int = _TOP_N, panels: int = 1,
+                    footnote: str = "") -> None:
     """Render a single leaderboard-style heatmap PNG (team-ratings.png look).
 
     Layout: bold left-aligned title + grey subtitle + separator rule, a
@@ -197,7 +204,9 @@ def _render_heatmap(df: pd.DataFrame, sort_col: str, display_cols: list,
                     whole-number percentage (e.g. 0.63 -> "63%").  Only the
                     annotation text changes; the colour scale still uses the
                     raw probability.
+    int_cols   -- columns shown as whole numbers (counts).
     subtitle    -- grey explainer line under the title.
+    footnote    -- optional small grey text under the table (method, source); empty draws nothing.
     """
     (_OUT_DIR / filename).parent.mkdir(parents=True, exist_ok=True)
     sorted_df = (df.dropna(subset=[sort_col])
@@ -214,7 +223,8 @@ def _render_heatmap(df: pd.DataFrame, sort_col: str, display_cols: list,
 
     # Normalise the data columns on the FULL eligible population so the
     # colour scale is comparable across charts, then slice to top N.
-    norm_all = show_df[display_cols].apply(_norm)
+    # color_range {column: (lo, hi)} fixes a column's scale, e.g. to share it between charts of subsets.
+    norm_all = show_df[display_cols].apply(lambda s: _norm(s, (color_range or {}).get(s.name)))
     for col in invert_cols:
         if col in norm_all.columns:
             norm_all[col] = 1.0 - norm_all[col]
@@ -228,9 +238,11 @@ def _render_heatmap(df: pd.DataFrame, sort_col: str, display_cols: list,
             col_maxes[col] = show_df[col].max()
 
     # Now slice to top N.
-    show_df = show_df.head(_TOP_N).reset_index(drop=True)
-    norm_df = norm_all.head(_TOP_N).reset_index(drop=True)
+    show_df = show_df.head(top_n).reset_index(drop=True)
+    norm_df = norm_all.head(top_n).reset_index(drop=True)
     n = len(show_df)
+    # panels > 1 splits the rows into side-by-side tables (1-25 | 26-50) under one title.
+    rows_per = -(-n // panels)
 
     # ── Variable-width columns via pcolormesh ──────────────────────────
     # Meta columns are sized to fit their content; data columns share
@@ -246,7 +258,7 @@ def _render_heatmap(df: pd.DataFrame, sort_col: str, display_cols: list,
     _RANK_W  = 2 * _FONTSIZE_RANK * 0.64 / 72 + 0.06
     _DATA_W = max(
         4 * _CELL_CW + 0.7,
-        max((len(str(c)) for c in display_cols), default=0)
+        max((len(line) for c in display_cols for line in str(c).split("\n")), default=0)
         * (_FONTSIZE_HEADER * 0.70 / 72) + 0.4,
     )
     meta_widths = []
@@ -260,10 +272,12 @@ def _render_heatmap(df: pd.DataFrame, sort_col: str, display_cols: list,
             meta_widths.append(0.12 + content + 0.12)
     data_widths = [_DATA_W] * len(display_cols)
     widths = meta_widths + data_widths
-    total_w = sum(widths)
+    panel_w = sum(widths)
+    _PANEL_GAP = 0.45
+    total_w = panels * panel_w + (panels - 1) * _PANEL_GAP
 
     x_edges = np.concatenate([[0], np.cumsum(widths)])
-    y_edges = np.arange(n + 1)
+    y_edges = np.arange(rows_per + 1)
 
     # The header band (title/subtitle/rule/legend) lives in data
     # coordinates above the table: 1 y-unit = fig_height_per_row inches,
@@ -277,10 +291,16 @@ def _render_heatmap(df: pd.DataFrame, sort_col: str, display_cols: list,
     sub_chars = max(20, int(total_w / (_FONTSIZE_SUBTITLE * 0.52 / 72)))
     sub_lines = _wrap_subtitle(subtitle, sub_chars)
     _SUB_LINE_PT = 13.0
-    sub_bottom, sub_top = 37.0, 37.0 + _SUB_LINE_PT * len(sub_lines)
+    # A header written over several lines ("\n") pushes the rule and subtitle up by one line each.
+    hdr_extra = 16.0 * max((str(c).count("\n") for c in display_cols), default=0)
+    sub_bottom = 37.0 + hdr_extra
+    sub_top = sub_bottom + _SUB_LINE_PT * len(sub_lines)
     title_bottom = sub_top + 5.0
     title_top = title_bottom + 15.0
     header_pt = title_top + 6.0
+    # Optional grey footnote under the table (method and source), so the subtitle can stay a one-line setup.
+    foot_lines = _wrap_subtitle(footnote, max(20, int(total_w / (_FONTSIZE_FOOTNOTE * 0.52 / 72))))
+    footer_pt = (10.0 + 12.0 * len(foot_lines)) if foot_lines else 0.0
 
     # Figure sized EXACTLY to the content with the axes filling it, so
     # one x-unit is exactly one inch and one y-unit exactly one row.
@@ -288,70 +308,78 @@ def _render_heatmap(df: pd.DataFrame, sort_col: str, display_cols: list,
     # axes -- e.g. a long subtitle -- makes it squeeze the axes box and
     # every column with it.)
     fig_w = total_w
-    fig_h = (n + header_pt / _row_pt) * fig_height_per_row
+    fig_h = (rows_per + (header_pt + footer_pt) / _row_pt) * fig_height_per_row
     fig, ax = plt.subplots(figsize=(fig_w, fig_h))
     fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
 
-    # Data columns: colour-scaled cells with white gridlines.
-    ax.pcolormesh(x_edges[n_meta:], y_edges, norm_df.values,
-                  cmap=cmap, vmin=0.0, vmax=1.0,
-                  edgecolors="white", linewidths=0.5)
+    base_edges = x_edges
+    for p in range(panels):
+        x_edges = base_edges + p * (panel_w + _PANEL_GAP)
+        rows = range(p * rows_per, min(n, (p + 1) * rows_per))
+        # Data columns: colour-scaled cells with white gridlines.
+        ax.pcolormesh(x_edges[n_meta:], y_edges[:len(rows) + 1], norm_df.values[rows.start:rows.stop],
+                      cmap=cmap, vmin=0.0, vmax=1.0,
+                      edgecolors="white", linewidths=0.5)
 
-    # Meta area: white background, light-grey separators between rows.
-    if n_meta:
-        for r in range(1, n):
-            ax.plot([x_edges[0], x_edges[n_meta]], [r, r],
-                    color=_C_ROWLINE, lw=0.8, zorder=1)
-
-    # Place text annotations in each cell.
-    name_x = x_edges[0] + 0.08
-    for r in range(n):
-        cy = r + 0.5
-        # First meta column: rank (muted grey) + name (bold), left-aligned.
+        # Meta area: white background, light-grey separators between rows.
         if n_meta:
-            ax.text(name_x, cy, str(r + 1), ha="left", va="center",
-                    fontsize=_FONTSIZE_RANK, color=_C_RANK)
-            ax.text(name_x + _RANK_W, cy, str(show_df.iloc[r, 0]),
-                    ha="left", va="center", fontsize=_FONTSIZE_CELL,
-                    fontweight="bold", color="black")
-            for c in range(1, n_meta):                  # other meta -- centred
-                cx = (x_edges[c] + x_edges[c + 1]) / 2
-                ax.text(cx, cy, str(show_df.iloc[r, c]),
-                        ha="center", va="center",
-                        fontsize=_FONTSIZE_CELL, color="black")
-        # Data columns: formatted value, text colour by cell luma.
-        for c in range(n_meta, n_all):
-            cx = (x_edges[c] + x_edges[c + 1]) / 2
-            raw = show_df.iloc[r, c]
-            v = float(raw)
-            if all_cols[c] in pct_cols:  # noqa: SIM108 (a nested conditional expression would read worse)
-                txt = "" if pd.isna(raw) else f"{v * 100:.0f}%"
-            else:
-                txt = _fmt(v, precision)
-            rgba = cmap(norm_df.iloc[r, c - n_meta])
-            luma = 0.299 * rgba[0] + 0.587 * rgba[1] + 0.114 * rgba[2]
-            is_col_max = (all_cols[c] in col_maxes
-                          and show_df.iloc[r, c] == col_maxes[all_cols[c]])
-            ax.text(cx, cy, txt, ha="center", va="center",
-                    fontsize=_FONTSIZE_CELL,
-                    fontweight="bold" if is_col_max else "normal",
-                    color="white" if luma < 0.5 else "black")
+            for r in range(1, len(rows)):
+                ax.plot([x_edges[0], x_edges[n_meta]], [r, r],
+                        color=_C_ROWLINE, lw=0.8, zorder=1)
 
-    # Column headers: meta (uppercase, muted grey) and data (bold black).
-    hdr_y = _hy(15)
-    if n_meta:
-        ax.text(name_x, hdr_y, str(all_cols[0]).upper(), ha="left",
-                va="center", fontsize=_FONTSIZE_METAHDR,
-                fontweight="bold", color=_C_MUTED)
-        for c in range(1, n_meta):
-            cx = (x_edges[c] + x_edges[c + 1]) / 2
-            ax.text(cx, hdr_y, str(all_cols[c]).upper(), ha="center",
+        # Place text annotations in each cell.
+        name_x = x_edges[0] + 0.08
+        for r in rows:
+            cy = r - rows.start + 0.5
+            # First meta column: rank (muted grey) + name (bold), left-aligned.
+            if n_meta:
+                ax.text(name_x, cy, str(r + 1), ha="left", va="center",
+                        fontsize=_FONTSIZE_RANK, color=_C_RANK)
+                ax.text(name_x + _RANK_W, cy, str(show_df.iloc[r, 0]),
+                        ha="left", va="center", fontsize=_FONTSIZE_CELL,
+                        fontweight="bold", color="black")
+                for c in range(1, n_meta):                  # other meta -- centred
+                    cx = (x_edges[c] + x_edges[c + 1]) / 2
+                    ax.text(cx, cy, str(show_df.iloc[r, c]),
+                            ha="center", va="center",
+                            fontsize=_FONTSIZE_CELL, color="black")
+            # Data columns: formatted value, text colour by cell luma.
+            for c in range(n_meta, n_all):
+                cx = (x_edges[c] + x_edges[c + 1]) / 2
+                raw = show_df.iloc[r, c]
+                v = float(raw)
+                if all_cols[c] in pct_cols:  # noqa: SIM108 (a nested conditional expression would read worse)
+                    txt = "" if pd.isna(raw) else f"{v * 100:.0f}%"
+                elif all_cols[c] in int_cols:
+                    txt = "" if pd.isna(raw) else f"{v:.0f}"
+                else:
+                    txt = _fmt(v, precision)
+                rgba = cmap(norm_df.iloc[r, c - n_meta])
+                luma = 0.299 * rgba[0] + 0.587 * rgba[1] + 0.114 * rgba[2]
+                is_col_max = (all_cols[c] in col_maxes
+                              and show_df.iloc[r, c] == col_maxes[all_cols[c]])
+                ax.text(cx, cy, txt, ha="center", va="center",
+                        fontsize=_FONTSIZE_CELL,
+                        fontweight="bold" if is_col_max else "normal",
+                        color="white" if luma < 0.5 else "black")
+
+        # Column headers: meta (uppercase, muted grey) and data (bold black).
+        hdr_y = _hy(15 + hdr_extra / 2)
+        if n_meta:
+            ax.text(name_x, hdr_y, str(all_cols[0]).upper(), ha="left",
                     va="center", fontsize=_FONTSIZE_METAHDR,
                     fontweight="bold", color=_C_MUTED)
-    for c in range(n_meta, n_all):
-        cx = (x_edges[c] + x_edges[c + 1]) / 2
-        ax.text(cx, hdr_y, str(all_cols[c]), ha="center", va="center",
-                fontsize=_FONTSIZE_HEADER, fontweight="bold", color="black")
+            for c in range(1, n_meta):
+                cx = (x_edges[c] + x_edges[c + 1]) / 2
+                ax.text(cx, hdr_y, str(all_cols[c]).upper(), ha="center",
+                        va="center", fontsize=_FONTSIZE_METAHDR,
+                        fontweight="bold", color=_C_MUTED)
+        for c in range(n_meta, n_all):
+            cx = (x_edges[c] + x_edges[c + 1]) / 2
+            ax.text(cx, hdr_y, str(all_cols[c]), ha="center", va="center",
+                    fontsize=_FONTSIZE_HEADER, fontweight="bold", color="black")
+
+    x_edges = np.array([0.0, total_w])  # title, subtitle and rule span every panel
 
     # Title / wrapped subtitle / separator rule.
     if sub_lines:
@@ -360,7 +388,7 @@ def _render_heatmap(df: pd.DataFrame, sort_col: str, display_cols: list,
                 color=_C_SUBTITLE, linespacing=1.25)
     ax.text(x_edges[0], _hy(title_top), title, ha="left", va="top",
             fontsize=_FONTSIZE_TITLE, fontweight="bold", color="black")
-    ax.plot([x_edges[0], x_edges[-1]], [_hy(33), _hy(33)],
+    ax.plot([x_edges[0], x_edges[-1]], [_hy(33 + hdr_extra), _hy(33 + hdr_extra)],
             color=_C_RULE, lw=1.0)
 
     if show_legend:
@@ -379,8 +407,12 @@ def _render_heatmap(df: pd.DataFrame, sort_col: str, display_cols: list,
         ax.text(_lx1 + 0.07, _ly, "STRONGER", ha="left", va="center",
                 fontsize=_FONTSIZE_LEGEND, color=_C_MUTED)
 
+    if foot_lines:  # the y-axis is inverted: below the table is beyond rows_per
+        ax.text(x_edges[0], rows_per + 8.0 / _row_pt, "\n".join(foot_lines), ha="left", va="top",
+                fontsize=_FONTSIZE_FOOTNOTE, color=_C_MUTED, linespacing=1.25)
+
     ax.set_xlim(x_edges[0], x_edges[-1])
-    ax.set_ylim(n, _hy(header_pt))                     # header band at top
+    ax.set_ylim(rows_per + footer_pt / _row_pt, _hy(header_pt))  # header band at top, footnote at bottom
     ax.set_axis_off()
     path = _OUT_DIR / filename
     fig.savefig(path, dpi=150, bbox_inches="tight")

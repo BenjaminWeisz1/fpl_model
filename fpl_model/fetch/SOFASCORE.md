@@ -14,8 +14,9 @@ downloads, then imported offline by `sofascore_weekly.py`. It never makes HTTP r
    (and any known lineups) still needed for completed FPL fixtures.
 2. Ask Claude to "collect Sofascore round N". In Chrome it opens
    `/api/v1/unique-tournament/17/season/{season_id}/events/round/N`, downloads a capture,
-   reads the finished event IDs from that page, then opens each `/api/v1/event/{id}/lineups`
-   and downloads it. Navigation starts are at least 6.1 s apart. Each capture is
+   reads the finished event IDs from that page, then opens each `/api/v1/event/{id}/lineups`,
+   `/api/v1/event/{id}/comments` and `/api/v1/event/{id}/shotmap` and downloads them (the last
+   two feed the set-piece tables, below). Navigation starts are at least 6.1 s apart. Each capture is
    `sofascore_capture_<kind>_<id>_<UTC>.json` in Downloads, holding the URL, retrieval time
    and the page's exact `document.body.innerText`. Check that all files have arrived before
    importing; a download can still be in progress, or Chrome may have blocked it.
@@ -34,9 +35,38 @@ downloads, then imported offline by `sofascore_weekly.py`. It never makes HTTP r
    is true: no errors, every cached lineup is built, and the cache is at most 2 rounds behind
    FPL. Otherwise they keep the §64 baseline. Steps 3 and `build` can still be run by hand.
 
+**Set-piece tables (CHANGELOG §257):** the commentary and shot map are frozen under
+`data/raw/sofascore/comments/<season>/` and `shotmap/<season>/` by the same import (a changed
+re-capture is refused as `cache_revision`, follower counts aside). `pipeline` then runs
+`sofascore_set_pieces.py`, which writes `data/current/sourced/sofascore_set_piece_events.csv`
+(every corner won, free kick won and set-piece shot; the taker where Sofascore names one) and
+`sofascore_player_on_pitch.csv`. Sofascore names the taker only for set pieces that ended in a
+shot (the assister, or the shooter for direct free kicks and penalties), never the side of a
+corner. Missing feeds are a warning (`set_piece_feeds_missing`) and never change
+`usable_for_model`. The next part-2 stage draws `images/set_pieces/set_piece_xa_top30.png`
+(`fpl_model/eda/set_piece_takers.py`).
+
+**Goalkeepers' player pages (CHANGELOG §258):** `python -u -X utf8 -m fpl_model.fetch.sofascore_keepers plan`
+lists, for each team's starting keeper (most FPL Review xMins over the next five gameweeks), the
+`/player/{id}/statistics/seasons` page and every `/player/{id}/unique-tournament/{ut}/season/{sid}/statistics/overall`
+page from 2021/22 that is not cached yet, plus current-season pages, which change weekly. Capture them like the
+match pages (`sofascore_capture_*` downloads); `import` freezes them under `data/raw/sofascore/players/<id>/`
+(a changed page replaces the file and keeps the old one as `.revision.<ns>`), and `pipeline` builds
+`data/current/sourced/sofascore_keeper_seasons.csv`. A new starting keeper needs his seasons page imported first;
+`plan` then lists his stats pages. The part-2 stage `fpl_model/eda/keeper_shot_stopping.py` draws
+`images/goalkeepers/shot_stopping.png`.
+
+**Finishers' player pages (CHANGELOG §259):** `python -u -X utf8 -m fpl_model.fetch.sofascore_finishing plan` lists
+the same pages for the top 100 midfielders and forwards by predicted points and the top 10 defenders by
+non-penalty goal rating predicted over 100 minutes in the next five gameweeks (~224 current-season pages a week, plus
+a new entrant's seasons page and history). `import` freezes them as above; `pipeline` builds
+`data/current/sourced/sofascore_player_finishing_seasons.csv` and the part-2 stage `fpl_model/eda/player_finishing.py`
+draws `images/finishing/` (`finishing_top30.png`, `finishing_top_midfielders.png`, `finishing_top_forwards.png`, `finishing_top50_midfielders.png`).
+
 **Manual fallback (without Claude):** open each URL from `plan`, save the page with
 Ctrl+S into Downloads under the `manual_filename` that `plan` prints
-(`sofascore__round__<n>.json`, `sofascore__lineups__<event>.json`), then run step 4.
+(`sofascore__round__<n>.json`, `sofascore__lineups__<event>.json`, `sofascore__comments__<event>.json`,
+`sofascore__shotmap__<event>.json`), then run step 4.
 For a new round, import the round page first and rerun `plan` to get its lineup URLs.
 
 **Chrome setting:** a site's second automatic download is blocked until it is allowed.

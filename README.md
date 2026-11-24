@@ -108,6 +108,7 @@ fpl_model/                 the package: every pipeline stage, as python -m fpl_m
   assemble/                simulation features and predicted points
   optimizer/               transfer optimizer around a vendored open-fpl-solver
   site_export/             JSON export for the website
+  eda/                     exploratory weekly charts (set pieces, keeper shot-stopping, finishing), feeding no model
   config.py, paths.py      settings and data folders, each declared once
 research/                  experiments behind every model decision (never imported by the package)
 tools/                     regression check and applied one-off data migrations
@@ -141,7 +142,7 @@ are published.
 
 Sources: the official FPL API (squads, fixtures, results, live stats); fbref (player match stats 2017-2024, saved once
 before Opta data left the site); FotMob and, until 2026, Understat (per-match positions, shots, red cards); Sofascore
-(player match statistics for the bonus model); Transfermarkt (squad market values for preseason priors);
+(player match statistics for the bonus model; match commentary and shot maps for set-piece takers; keepers' season pages for shot-stopping); Transfermarkt (squad market values for preseason priors);
 football-data.co.uk and ClubElo (research only); FPL Review (expected minutes and penalty shares, entered by hand);
 vaastav's Fantasy-Premier-League archive (FPL history 2017-2024).
 
