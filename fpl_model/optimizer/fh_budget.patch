@@ -1,0 +1,34 @@
+diff --git a/fpl_model/optimizer/open_fpl_solver/dev/solver.py b/fpl_model/optimizer/open_fpl_solver/dev/solver.py
+index e44385d..e22f236 100644
+--- a/fpl_model/optimizer/open_fpl_solver/dev/solver.py
++++ b/fpl_model/optimizer/open_fpl_solver/dev/solver.py
+@@ -410,7 +410,6 @@ def solve_multi_period_fpl(data, options):
+         )
+         for w in gws
+     }
+-    fh_sell_price = {p: sell_price[p] if p in price_modified_players else buy_price[p] for p in players}
+     bought_amount = {w: sum_(buy_price[p] * transfer_in[p, w] for p in players) for w in gws}
+     pts_by_week = {w: merged_data[f"{w}_Pts"].to_dict() for w in gws}
+     xmins_by_week = {w: merged_data[f"{w}_xMins"].to_dict() for w in gws}
+@@ -473,9 +472,20 @@ def solve_multi_period_fpl(data, options):
+             for w in gws
+         ]
+     )
++    # Local patch (fh_budget.patch, see PINNED.md): a price-modified player is worth his selling price only while
++    # still held from the start (never sold before w). Once sold, his value and his Free Hit cost are the current
++    # price, as in FPL. Upstream priced him at the selling price in the Free Hit squad even after selling him.
++    original_kept = {(p, w): 1 - sum_(transfer_out_first[p, v] for v in gws if v < w) for p in price_modified_players for w in gws}
++    fh_discount = cont_vars(price_modified_players, gws, name="fh_disc", lb=0, ub=1)
++    m.addConstrs([fh_discount[p, w] <= squad_fh[p, w] for p in price_modified_players for w in gws])
++    m.addConstrs([fh_discount[p, w] <= original_kept[p, w] for p in price_modified_players for w in gws])
+     m.addConstrs(
+         [
+-            sum_(fh_sell_price[p] * squad[p, w - 1] for p in players) + in_the_bank[w - 1] >= sum_(fh_sell_price[p] * squad_fh[p, w] for p in players)
++            sum_(buy_price[p] * squad[p, w - 1] for p in players)
++            - sum_((buy_price[p] - sell_price[p]) * original_kept[p, w] for p in price_modified_players)
++            + in_the_bank[w - 1]
++            >= sum_(buy_price[p] * squad_fh[p, w] for p in players)
++            - sum_((buy_price[p] - sell_price[p]) * fh_discount[p, w] for p in price_modified_players)
+             for w in gws
+         ]
+     )
