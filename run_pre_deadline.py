@@ -105,7 +105,7 @@ STAGES = [
         "summary_files": ["predicted_points.csv"],
     },
     {
-        "label": "Heatmap exports (predicted points, next gameweek)",
+        "label": "Heatmap exports (player ratings, predicted points, next gameweek)",
         "script": SCRIPTS / "export_weekly_heatmaps.py",
         "args": ["--part", "2"],
         "summary_files": [],

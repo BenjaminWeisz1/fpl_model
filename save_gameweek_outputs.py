@@ -239,7 +239,8 @@ def save_snapshot(data=DATA, output=SNAPSHOTS, season=CURRENT_SEASON, gameweek=N
         target.parent.mkdir(exist_ok=True)
         frame.to_csv(target, index=False, encoding="utf-8-sig")
     if include_images:
-        families = ["team_ratings", "player_ratings"] + (["predicted_points", "next_gameweek"] if part == "all" else [])
+        # Player ratings images are drawn in part 2 (their Goals need the week's penalty shares).
+        families = ["team_ratings"] + (["player_ratings", "predicted_points", "next_gameweek"] if part == "all" else [])
         for family in families:
             for source in (ROOT/"images"/family).glob("*.png"):
                 image_hash = digest(source)

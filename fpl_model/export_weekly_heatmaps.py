@@ -7,18 +7,22 @@ pipeline's CSV artifacts, grouped into one images/ subfolder per family.
 The charts split along the same line as the pipeline itself, so each
 orchestrator renders only what its own stages have just refreshed:
 
-  --part 1  (run_post_gameweek.py)   team ratings + player ratings
-  --part 2  (run_pre_deadline.py)    predicted points + next gameweek
+  --part 1  (run_post_gameweek.py)   team ratings
+  --part 2  (run_pre_deadline.py)    player ratings + predicted points + next gameweek
   --part all (default, standalone)   everything
+
+Player ratings are drawn in part 2 because their Goals include penalties, which need the week's penalty shares
+(penalty_share.csv, refreshed before part 2). Goals per 90 = NPG + share x team penalty attempts per 90 x conversion,
+taken from site_export.export_site_data.build_ratings, so the charts and the site's Player ratings page agree.
 
 Outputs:
   images/team_ratings/team_ratings_overall.png
   images/team_ratings/team_ratings_attack.png      (same table, sorted by attack)
   images/team_ratings/team_ratings_defense.png     (same table, best defense first)
-  images/player_ratings/player_ratings_all_npg_assists.png
-  images/player_ratings/player_ratings_mid_npg_assists.png
-  images/player_ratings/player_ratings_fwd_npg_assists.png
-  images/player_ratings/player_ratings_def_npg_assists.png
+  images/player_ratings/player_ratings_all_goals_assists.png
+  images/player_ratings/player_ratings_mid_goals_assists.png
+  images/player_ratings/player_ratings_fwd_goals_assists.png
+  images/player_ratings/player_ratings_def_goals_assists.png
   images/player_ratings/player_ratings_def_defcon.png
   images/player_ratings/player_ratings_mid_defcon.png
   images/predicted_points/predicted_points_all.png
@@ -95,8 +99,8 @@ GAMEWEEK_HORIZON = 5
 
 # Which input files each part needs (checked up front in main()).
 _PART_INPUTS = {
-    1: (_TEAM_RATINGS, _PLAYER_RATINGS, _MINUTES, _PLAYERS_CURRENT),
-    2: (_PREDICTED_PTS, _SIM_FEATURES, _PENALTIES, _MINUTES, _PLAYERS_CURRENT),
+    1: (_TEAM_RATINGS,),
+    2: (_PLAYER_RATINGS, _PREDICTED_PTS, _SIM_FEATURES, _PENALTIES, _MINUTES, _PLAYERS_CURRENT),
 }
 
 
@@ -524,24 +528,27 @@ def player_ratings_charts() -> None:
     active = _active_players()
     df = df[df[["Player", "Team"]].apply(tuple, axis=1).isin(active)].copy()
     df["Defcon"] = pd.to_numeric(df["Defcon"], errors="coerce").fillna(0.0)
-    df["NPG+Assists"] = df["NPG"] + df["Assists"]
+    # Goals per 90 including penalties, exactly as the site's Player ratings page computes it (module docstring).
+    from fpl_model.site_export.export_site_data import build_ratings
+    site = build_ratings()["players"]
+    goals = {(p["name"], p["team"]): p["npg"] + p["share"] * p["team_att90"] * p["conversion"] for p in site}
+    df["Goals"] = [goals.get(k) for k in zip(df["Player"], df["Team"])]
+    missing = df["Goals"].isna()
+    if missing.any():
+        raise ValueError(f"{int(missing.sum())} rated players have no site rating, e.g. "
+                         f"{df.loc[missing, 'Player'].head(3).tolist()}")
+    df["G+A"] = df["Goals"] + df["Assists"]
 
     # (sort_col, pos_filter, filename, display_cols)
     specs = [
-        # NPG+Assists views
-        ("NPG+Assists", None, "player_ratings/player_ratings_all_npg_assists.png",
-         ["NPG", "Assists", "NPG+Assists"]),
-        ("NPG+Assists", "M",  "player_ratings/player_ratings_mid_npg_assists.png",
-         ["NPG", "Assists", "NPG+Assists"]),
-        ("NPG+Assists", "F",  "player_ratings/player_ratings_fwd_npg_assists.png",
-         ["NPG", "Assists", "NPG+Assists"]),
-        ("NPG+Assists", "D",  "player_ratings/player_ratings_def_npg_assists.png",
-         ["NPG", "Assists", "NPG+Assists"]),
+        # G+A views
+        ("G+A",    None, "player_ratings/player_ratings_all_goals_assists.png", ["Goals", "Assists", "G+A"]),
+        ("G+A",    "M",  "player_ratings/player_ratings_mid_goals_assists.png", ["Goals", "Assists", "G+A"]),
+        ("G+A",    "F",  "player_ratings/player_ratings_fwd_goals_assists.png", ["Goals", "Assists", "G+A"]),
+        ("G+A",    "D",  "player_ratings/player_ratings_def_goals_assists.png", ["Goals", "Assists", "G+A"]),
         # Defcon views
-        ("Defcon",      "D",  "player_ratings/player_ratings_def_defcon.png",
-         ["Defcon", "NPG", "Assists"]),
-        ("Defcon",      "M",  "player_ratings/player_ratings_mid_defcon.png",
-         ["Defcon", "NPG", "Assists"]),
+        ("Defcon", "D",  "player_ratings/player_ratings_def_defcon.png", ["Defcon", "Goals", "Assists"]),
+        ("Defcon", "M",  "player_ratings/player_ratings_mid_defcon.png", ["Defcon", "Goals", "Assists"]),
     ]
     _POS_LABEL = {None: "All positions", "M": "Midfielders",
                   "F": "Forwards", "D": "Defenders"}
@@ -552,7 +559,7 @@ def player_ratings_charts() -> None:
             title = f"Player Ratings by {sort_col}"
             # Only the all-positions chart carries a subtitle; the
             # position-specific ones are self-explanatory from the title.
-            subtitle = ("Predicted non-penalty goals and assists in a "
+            subtitle = ("Predicted goals (penalties included) and assists in a "
                         "90 minute match vs the average opponent.")
         else:
             title = f"{_POS_LABEL[pos]} by {sort_col}"
@@ -773,8 +780,8 @@ def main() -> int:
 
     if 1 in parts:
         team_ratings_chart()
-        player_ratings_charts()
     if 2 in parts:
+        player_ratings_charts()   # part 2: Goals need the week's penalty shares
         predicted_points_charts()
         next_gameweek_charts()
     print(f"\nDone — {_OUT_DIR}/")

@@ -151,7 +151,7 @@ STAGES = [
         "summary_files": ["player_ratings.csv"],
     },
     {
-        "label": "Heatmap exports (team ratings, player ratings)",
+        "label": "Heatmap exports (team ratings)",
         "script": SCRIPTS / "export_weekly_heatmaps.py",
         "args": ["--part", "1"],
         "summary_files": [],
