@@ -5,15 +5,16 @@ were played. fixtures.csv Round is the only date-like field covering those rows,
 with MatchID keeping the existing order inside a round and in seasons fixtures.csv doesn't cover. MatchIDs
 themselves are never renumbered.
 """
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+from fpl_model import paths
+
 
 def chrono_order(frame, data_dir):
     """A unique integer per row of frame (columns Season, MatchID, Team, Opponent, Venue); ascending = chronological."""
-    fixtures = pd.read_csv(Path(data_dir) / "fixtures.csv")
+    fixtures = pd.read_csv(paths.current_file("fixtures.csv", root=data_dir))
     rounds = {(s, h.strip(), a.strip()): r for s, h, a, r in
               zip(fixtures["Season"], fixtures["Home"], fixtures["Away"], fixtures["Round"])}
     is_home = frame["Venue"].eq("Home")

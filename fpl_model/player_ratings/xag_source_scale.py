@@ -13,6 +13,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from fpl_model import paths
+
 CANON = {"CB": "CB", "LB": "FB", "RB": "FB", "WB": "WB", "DM": "DM", "CM": "CM", "AM": "AM",
          "LM": "WM", "RM": "WM", "LW": "W", "RW": "W", "FW": "FW", "GK": "GK"}
 KEY = ["Season", "Team", "Opponent", "Venue", "Player"]
@@ -22,12 +24,12 @@ OVERLAP = (2022, 2024)
 def slot_factors(data_dir):
     """{canonical slot: fbref xAG / Opta xA on the 2022-2024 overlap}, plus 'overall'. GK is left at 1."""
     d = Path(data_dir)
-    s = pd.read_csv(d / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    s = pd.read_csv(paths.current_file("player_match_stats.csv", root=d), encoding="utf-8-sig", low_memory=False,
                     usecols=KEY + ["Minutes", "xAG", "Data_Source"])
     s = s[s["Season"].between(*OVERLAP) & s["Data_Source"].eq("fbref") & s["Minutes"].gt(0)]
-    p = pd.read_csv(d / "player_match_positions.csv", encoding="utf-8-sig", low_memory=False,
+    p = pd.read_csv(paths.current_file("player_match_positions.csv", root=d), encoding="utf-8-sig", low_memory=False,
                     usecols=KEY + ["Position_Resolved", "Is_Starter"]).drop_duplicates(KEY)
-    sf = pd.read_csv(d / "sofascore_player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    sf = pd.read_csv(paths.current_file("sofascore_player_match_stats.csv", root=d), encoding="utf-8-sig", low_memory=False,
                      usecols=["Season", "Team", "Opponent", "Venue", "Local_Player", "Sofascore_minutesPlayed",
                               "Sofascore_expectedAssists"]).rename(columns={"Local_Player": "Player"})
     sf = sf[(sf["Sofascore_minutesPlayed"].fillna(0) > 0) & sf["Sofascore_expectedAssists"].notna()].drop_duplicates(KEY)
@@ -44,12 +46,12 @@ def slot_factors(data_dir):
 
 def _starts_with_sofascore(data_dir, seasons):
     d = Path(data_dir)
-    s = pd.read_csv(d / "player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    s = pd.read_csv(paths.current_file("player_match_stats.csv", root=d), encoding="utf-8-sig", low_memory=False,
                     usecols=KEY + ["Minutes", "xAG", "Data_Source"])
     s = s[s["Season"].between(*seasons) & s["Minutes"].gt(0)]
-    p = pd.read_csv(d / "player_match_positions.csv", encoding="utf-8-sig", low_memory=False,
+    p = pd.read_csv(paths.current_file("player_match_positions.csv", root=d), encoding="utf-8-sig", low_memory=False,
                     usecols=KEY + ["Position_Resolved", "Is_Starter"]).drop_duplicates(KEY)
-    sf = pd.read_csv(d / "sofascore_player_match_stats.csv", encoding="utf-8-sig", low_memory=False,
+    sf = pd.read_csv(paths.current_file("sofascore_player_match_stats.csv", root=d), encoding="utf-8-sig", low_memory=False,
                      usecols=["Season", "Team", "Opponent", "Venue", "Local_Player", "Sofascore_minutesPlayed",
                               "Sofascore_goalAssist", "Sofascore_expectedAssists"]).rename(columns={"Local_Player": "Player"})
     sf = sf[sf["Sofascore_minutesPlayed"].fillna(0) > 0].drop_duplicates(KEY)
